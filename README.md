@@ -22,3 +22,16 @@ benefits:
 - Record application state in a key-value store, with data accessible
   to all your back-end logic at extremely low latency.
 - Build workflows and orchestrate long running tasks.
+
+This repository contains the source to our `nim` command line tool.
+Our plan is to open it for contributions but those policies are not in place yet.
+Currently, to build it
+
+```
+npm install
+npm pack
+```
+
+This gives you a tarball that can be installed globally or locally.
+
+
