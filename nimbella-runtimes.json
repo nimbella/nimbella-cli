@@ -1,0 +1,246 @@
+{
+  "runtimes": {
+    "nodejs": [
+      {
+        "kind": "nodejs:10",
+        "default": true,
+        "image": {
+          "name": "action-nodejs-v10"
+        },
+        "stemCells": [
+          {
+            "count": 3,
+            "memory": "256 MB"
+          }
+        ],
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "js": {
+            "binary": false
+          }
+        }
+      },
+      {
+        "kind": "nodejs-lambda:10",
+        "default": false,
+        "image": {
+          "name": "action-nodejs-v10-lambda"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "js": {
+            "binary": false
+          }
+        }
+      },
+      {
+        "kind": "nodejs:8",
+        "default": false,
+        "image": {
+          "name": "action-nodejs-v8"
+        },
+        "deprecated": false,
+        "extensions": {
+          "js": {
+            "binary": false
+          }
+        }
+      },
+      {
+        "kind": "tessjs:10",
+        "default": false,
+        "image": {
+          "name": "action-tessjs-v10"
+        },
+        "stemCells": [
+          {
+            "count": 1,
+            "memory": "768 MB"
+          }
+        ],
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "js": {
+            "binary": false
+          }
+        }
+      },
+      {
+        "kind": "cloudjs:10",
+        "default": false,
+        "image": {
+          "name": "action-cloudjs-v10"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "js": {
+            "binary": false
+          }
+        }
+      }
+    ],
+    "python": [
+      {
+        "kind": "python:2",
+        "image": {
+          "name": "actionloop-python-v2.7"
+        },
+        "deprecated": false,
+        "extensions": {
+          "py": {
+            "binary": false
+          }
+        }
+      },
+      {
+        "kind": "python:3",
+        "default": true,
+        "image": {
+          "name": "actionloop-python-v3.7"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "py": {
+            "binary": false
+          }
+        }
+      },
+      {
+        "kind": "python:3ai",
+        "default": false,
+        "image": {
+          "name": "actionloop-python-v3.7ai"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "py": {
+            "binary": false
+          }
+        }
+      }
+    ],
+    "typescript": [
+      {
+        "kind": "typescript:3.7",
+        "image": {
+          "name": "action-typescript-v3.7"
+        },
+        "deprecated": false,
+        "default": true,
+        "extensions": {
+          "ts": {
+            "binary": false
+          }
+        }
+      }
+    ],
+    "java": [
+      {
+        "kind": "java:8",
+        "default": true,
+        "image": {
+          "name": "actionloop-java-v8"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "java": {
+            "binary": false
+          },
+          "jar": {
+            "binary": true
+          }
+        }
+      }
+    ],
+    "go": [
+      {
+        "kind": "go:1.12",
+        "default": true,
+        "image": {
+          "name": "actionloop-golang-v1.12"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "go": {
+            "binary": false
+          }
+        }
+      }
+    ],
+    "swift": [
+      {
+        "kind": "swift:4",
+        "default": true,
+        "image": {
+          "name": "actionloop-swift-v4.2"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "swift": {
+            "binary": false
+          }
+        }
+      }
+    ],
+    "php": [
+      {
+        "kind": "php:7.3",
+        "default": true,
+        "image": {
+          "name": "actionloop-php-v7.3"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "php": {
+            "binary": false
+          }
+        }
+      }
+    ]
+  },
+  "blackboxes": [
+    {
+      "name": "action-dockerskeleton"
+    }
+  ]
+}

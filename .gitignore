@@ -1,0 +1,10 @@
+node_modules
+package-lock.json
+/lib
+version.json
+runtimes.json
+productionProjects.json
+404.html
+*.tgz
+/oclif.manifest.json
+/bin/nim
