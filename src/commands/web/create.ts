@@ -16,7 +16,8 @@ import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
 import { basename } from 'path';
 import { existsSync, lstatSync } from 'fs';
-import { authPersister, NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { authPersister } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 
 export default class WebContentCreate extends NimBaseCommand {

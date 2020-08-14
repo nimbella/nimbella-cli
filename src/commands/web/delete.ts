@@ -14,7 +14,8 @@
 import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
-import { authPersister, NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { authPersister } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 
 export default class WebContentDelete extends NimBaseCommand {

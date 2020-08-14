@@ -12,10 +12,9 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, inBrowser, parseAPIHost, authPersister } from '../NimBaseCommand'
+import { NimBaseCommand, NimLogger, parseAPIHost } from 'nimbella-deployer'
 import { open } from '../ui'
-import { wskRequest, RuntimeTable } from '../deployer/util'
-import { getCredentials } from '../deployer/credentials'
+import { wskRequest, RuntimeTable, inBrowser, authPersister, getCredentials } from 'nimbella-deployer'
 
 export default class Info extends NimBaseCommand {
   static description = "Show information about this version of 'nim'"

@@ -13,7 +13,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { initializeAPI } from './deployer/api'
+import { initializeAPI } from 'nimbella-deployer'
 import { CLIError } from '@oclif/errors'
 
 // A screening function called at top level (before the real oclif dispatching begins).  Does various fixups.
@@ -34,7 +34,7 @@ export async function run() {
     colonize(topicNames)
     // Run the command while cleaning up errors that have leaked from the oclif mechanism
     try {
-        await require('@oclif/command').run()
+        await require('@oclif/command').run(undefined, __dirname)
     } catch (err) {
         if (err.message && !err.oclif) {
             err = new CLIError(err.message, { exit: 1 })

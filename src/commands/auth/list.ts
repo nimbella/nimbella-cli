@@ -11,9 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, authPersister } from '../../NimBaseCommand'
-import { getCredentialDict } from '../../deployer/credentials'
-import { CredentialRow } from '../../deployer/deploy-struct'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { getCredentialDict, authPersister, CredentialRow } from 'nimbella-deployer'
+
 
 // Constants used in formatting the credential list
 const LIST_HEADER = '  Namespace            Current Storage   Redis Production Project'
@@ -25,7 +25,7 @@ const MAYBE = '   -?-  '
 export default class AuthList extends NimBaseCommand {
   static description = 'List all your Nimbella namespaces'
 
-  static flags = {
+  static flags: typeof NimBaseCommand.flags = {
     ...NimBaseCommand.flags
   }
 

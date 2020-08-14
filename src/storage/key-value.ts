@@ -11,8 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { getCredentials, getCredentialsForNamespace } from '../deployer/credentials';
-import { Credentials } from '../deployer/deploy-struct';
+import { getCredentials, getCredentialsForNamespace, Credentials } from 'nimbella-deployer'
+
 
 const openwhisk = require('openwhisk');
 const systemNamespace = 'nimbella';

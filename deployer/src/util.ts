@@ -31,6 +31,9 @@ const debug = makeDebug('nim:deployer:util')
 // List of files to skip as actions inside packages, or from auto-zipping
 export const FILES_TO_SKIP = [ '.gitignore', '.DS_Store' ]
 
+// Flag indicating running in browser
+export const inBrowser = (typeof process === 'undefined') || (!process.release) || (process.release.name !== 'node')
+
 //
 // General utilities
 //
@@ -546,7 +549,7 @@ export type RuntimeTable = { [ key: string ]: RuntimeEntry[] }
 function initRuntimes() {
     if (!runtimesRead) {
         runtimesRead = true
-        const runtimes: RuntimeTable = require('../../runtimes.json').runtimes
+        const runtimes: RuntimeTable = require('../runtimes.json').runtimes
         for (const runtime in runtimes) {
             const runtimeEntries: RuntimeEntry[] = runtimes[runtime]
             for (const entry of runtimeEntries) {
@@ -928,8 +931,8 @@ export function saveUsFromOurselves(namespace: string, apihost: string): boolean
     let sensitiveNamespaces : string[]
     let productionProjects : string[]
     try {
-        sensitiveNamespaces = require('../../sensitiveNamespaces.json')
-        productionProjects = require('../../productionProjects.json')
+        sensitiveNamespaces = require('../sensitiveNamespaces.json')
+        productionProjects = require('../productionProjects.json')
     } catch (_) {
         // Customers don't need a --production flag ... their auth token defines what they can and can't do
         return false

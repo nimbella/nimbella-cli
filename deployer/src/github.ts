@@ -20,7 +20,7 @@ import * as Octokit from '@octokit/rest'
 import * as rimrafOrig from 'rimraf'
 import { promisify } from 'util'
 import * as makeDebug from 'debug'
-import { authPersister } from '../NimBaseCommand'
+import { authPersister } from './credentials'
 
 const rimraf = promisify(rimrafOrig)
 const debug = makeDebug('nim:deployer:github')

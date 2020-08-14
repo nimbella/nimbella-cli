@@ -13,7 +13,8 @@
 
 import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
-import { authPersister, NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { authPersister } from 'nimbella-deployer'
 import { getObjectStorageClient } from '../../storage/clients'
 import { existsSync } from 'fs'
 import { join, basename } from 'path'

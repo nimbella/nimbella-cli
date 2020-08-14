@@ -12,10 +12,9 @@
  */
 
 import  * as querystring from 'querystring'
-import { NimLogger, inBrowser } from './NimBaseCommand'
-import { OWOptions } from './deployer/deploy-struct'
+import { NimLogger} from 'nimbella-deployer'
+import { OWOptions, wskRequest, inBrowser, FullCredentials, IdProvider } from 'nimbella-deployer'
 import { open } from './ui'
-import { wskRequest } from './deployer/util'
 
 import * as makeDebug from 'debug'
 const debug = makeDebug('nim:oauth')
@@ -216,25 +215,6 @@ function provisioningHtml(loginUrl, progressUrl, id) {
 
 // Contains support for the oauth flows underlying interactive login and `nim auth github`.  Also support for
 // the tokenizer used to pass credentials between workbenches and CLI.
-
-// These types duplicate declarations in main/deployable/login, except that Credentials is renamed to FullCredentials
-// to avoid confusing it with the Credentials type used throught nim.
-export type IdProvider = {
-    provider: string,
-    name: string,
-    key: string
-}
-
-export type FullCredentials = {
-    status: string,
-    apihost: string,
-    namespace: string,
-    uuid: string,
-    key: string,
-    redis: boolean,
-    storage?: string,
-    externalId?: IdProvider
-}
 
 // The response can be either
 export type OAuthResponse = FullCredentials | IdProvider | true

@@ -12,7 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { authPersister, NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { authPersister } from 'nimbella-deployer'
 import { getObjectStorageClient } from '../../storage/clients'
 import { errorHandler } from '../../storage/util'
 
@@ -39,7 +40,7 @@ export default class ObjectUrl extends NimBaseCommand {
             const file = await client.file(args.objectName)
             const expiration = flags.ttl * 60 * 1000
             const options = {
-                version: 'v4',
+                version: 'v4' as 'v2' | 'v4',
                 action: flags.permission,
                 expires: Date.now() + expiration
             }

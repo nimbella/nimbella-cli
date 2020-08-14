@@ -12,7 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, authPersister } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { authPersister } from 'nimbella-deployer'
 import { queryKVStore } from '../../storage/key-value'
 
 const queryCommand = 'redis/setMany'

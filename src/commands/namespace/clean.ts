@@ -12,11 +12,9 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, authPersister, parseAPIHost, disambiguateNamespace } from '../../NimBaseCommand'
-import { getCredentialsForNamespace, getCredentials } from '../../deployer/credentials'
-import { wipeNamespace } from '../../deployer/api'
-import { computeBucketStorageName, cleanBucket } from '../../deployer/deploy-to-bucket'
-import { Credentials } from '../../deployer/deploy-struct'
+import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
+import { getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace, computeBucketStorageName,
+     cleanBucket, Credentials } from 'nimbella-deployer'
 import { Storage } from '@google-cloud/storage'
 import { prompt } from '../../ui'
 

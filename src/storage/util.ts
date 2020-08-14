@@ -12,7 +12,7 @@
  */
 
 import { Bucket } from '@google-cloud/storage'
-import { NimLogger } from '../NimBaseCommand'
+import { NimLogger } from 'nimbella-deployer'
 
 // Constants used in formatting the file list
 const SIZE_LEN = 10

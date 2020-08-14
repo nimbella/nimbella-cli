@@ -16,7 +16,8 @@ import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
 import { basename } from 'path';
 import { existsSync } from 'fs';
-import { authPersister, NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { authPersister } from 'nimbella-deployer'
 import { getObjectStorageClient } from '../../storage/clients'
 
 export default class ObjectCreate extends NimBaseCommand {

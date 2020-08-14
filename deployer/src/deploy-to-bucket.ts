@@ -13,7 +13,7 @@
 
 import { Storage, Bucket } from '@google-cloud/storage'
 import { Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader, OWOptions } from './deploy-struct'
-import { wrapSuccess, wrapError } from './util'
+import { wrapSuccess, wrapError, inBrowser } from './util'
 import axios from 'axios'
 import * as openwhisk from 'openwhisk'
 import * as path from 'path'
@@ -21,7 +21,6 @@ import * as fs from 'fs'
 import * as crypto from 'crypto'
 import * as URL from 'url-parse'
 import * as makeDebug from 'debug'
-import { inBrowser } from '../NimBaseCommand'
 const debug = makeDebug('nim:deployer:deploy-to-bucket')
 
 // Open a "bucket client" (object of type Bucket) to use in deploying web resources to the bucket associated with the
@@ -187,9 +186,9 @@ export async function cleanBucket(client: Bucket, spec: BucketSpec, owOptions: O
 export async function restore404Page(client: Bucket, owOptions: OWOptions): Promise<string> {
     let our404: Buffer
     if (inBrowser) {
-        our404 = require('../../404.html').default
+        our404 = require('../404.html').default
     } else {
-        const file404 = require.resolve('../../404.html')
+        const file404 = require.resolve('../404.html')
         our404 = fs.readFileSync(file404)
     }
     let phaseTracker: string[] = []

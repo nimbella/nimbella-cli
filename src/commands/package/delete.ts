@@ -11,11 +11,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, authPersister } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
 import { flags } from '@oclif/command'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/package/delete')
-import { getCredentials, wipePackage } from '../../deployer'
+import { getCredentials, wipePackage, authPersister } from 'nimbella-deployer'
 
 export default class PackageDelete extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {

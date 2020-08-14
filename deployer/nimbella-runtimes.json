@@ -1,5 +1,24 @@
 {
   "runtimes": {
+    "rust": [
+      {
+        "kind": "rust:1.34",
+        "default": true,
+        "image": {
+          "name": "actionloop-rust-v1.34"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "rs": {
+            "binary": false
+          }
+        }
+      }
+    ],
     "nodejs": [
       {
         "kind": "nodejs:10",
@@ -232,6 +251,42 @@
         },
         "extensions": {
           "php": {
+            "binary": false
+          }
+        }
+      }
+    ],
+    "ruby": [
+      {
+        "kind": "ruby:2.6",
+        "default": true,
+        "image": {
+          "name": "actionloop-ruby-v2.6"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "rb": {
+            "binary": false
+          }
+        }
+      },
+      {
+        "kind": "ruby:2.5",
+        "default": false,
+        "image": {
+          "name": "action-ruby-v2.5"
+        },
+        "deprecated": false,
+        "attached": {
+          "attachmentName": "codefile",
+          "attachmentType": "text/plain"
+        },
+        "extensions": {
+          "rb": {
             "binary": false
           }
         }

@@ -13,9 +13,8 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import { extFromRuntime } from '../deployer/util'
 import * as yaml from 'js-yaml'
-import { DeployStructure, PackageSpec, ActionSpec } from '../deployer/deploy-struct'
+import { DeployStructure, PackageSpec, ActionSpec, extFromRuntime } from 'nimbella-deployer'
 import { samples } from './samples';
 
 // Working function used by both create and update

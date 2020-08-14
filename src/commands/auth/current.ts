@@ -11,10 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, authPersister } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { flags } from '@oclif/command'
-import { getCredentials } from '../../deployer/credentials'
-import { computeBucketDomainName } from '../../deployer/deploy-to-bucket'
+import { getCredentials, computeBucketDomainName, authPersister } from 'nimbella-deployer'
 
 export default class AuthInspect extends NimBaseCommand {
   static description = 'Get current namespace with optional details'

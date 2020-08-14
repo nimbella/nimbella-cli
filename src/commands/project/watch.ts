@@ -11,18 +11,17 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, inBrowser } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { ProjectDeploy, processCredentials, doDeploy } from './deploy'
-import { Flags, Credentials, OWOptions } from '../../deployer/deploy-struct'
+import { Flags, Credentials, OWOptions, inBrowser, isGithubRef } from 'nimbella-deployer'
 import * as fs from 'fs'
 import * as chokidar from 'chokidar'
 import * as path from 'path'
-import { isGithubRef } from '../../deployer';
 
 export default class ProjectWatch extends NimBaseCommand {
   static description = 'Watch Nimbella projects, deploying incrementally on change'
 
-  static flags = {
+  static flags: any = {
     target: ProjectDeploy.flags.target,
     env: ProjectDeploy.flags.env,
     apihost: ProjectDeploy.flags.apihost,

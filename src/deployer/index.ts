@@ -11,15 +11,20 @@
  * governing permissions and limitations under the License.
  */
 
- // Gather together the major deployer exports for convenient import in other packages
+ // Re-export what nimbella-deployer exports.  This is mostly for backward compatibility.
 
-export { initializeAPI, deployProject, readPrepareAndBuild, readAndPrepare, deploy, readProject, buildProject, prepareToDeploy,
-    wipeNamespace, wipePackage } from './api'
-export { DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, Flags, PackageSpec, ActionSpec,
-    CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback } from './deploy-struct'
-export { doLogin, doAdminLogin } from './login'
-export { addCredentialAndSave, getCredentials, getCredentialList, getCredentialsForNamespace, forgetNamespace, switchNamespace,
-    Persister, fileSystemPersister, browserPersister, addGithubAccount, addCommanderData } from './credentials'
-export { computeBucketStorageName, computeBucketDomainName, cleanBucket } from './deploy-to-bucket'
-export { extFromRuntime } from './util'
-export { GithubDef, isGithubRef, parseGithubRef, fetchProject } from './github'
+export {
+    initializeAPI, deployProject, readPrepareAndBuild, readAndPrepare, deploy, readProject, buildProject, prepareToDeploy,
+    wipeNamespace, wipePackage, getUserAgent, // from './api'
+    DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, Flags, PackageSpec, ActionSpec,
+    CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider, // from './deploy-struct'
+    doLogin, doAdminLogin, doInteractiveLogin, // from './login'
+    addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace,
+    Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
+    switchGithubAccount,addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser, // from './credentials'
+    computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page, // from './deploy-to-bucket'
+    extFromRuntime, wskRequest, inBrowser, RuntimeTable, // from './util'
+    GithubDef, isGithubRef, parseGithubRef, fetchProject, // from './github'
+    NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace // from './NimBaseCommand'
+} from 'nimbella-deployer'
+

@@ -12,7 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, inBrowser } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { inBrowser } from 'nimbella-deployer'
 import { createOrUpdateProject } from '../../generator/project'
 
 const plugins = ['postman', 'openapi']

@@ -1,6 +1,7 @@
 node_modules
 package-lock.json
 /lib
+/deployer/lib
 version.json
 runtimes.json
 productionProjects.json

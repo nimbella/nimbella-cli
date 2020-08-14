@@ -12,12 +12,9 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, authPersister, parseAPIHost, inBrowser, disambiguateNamespace } from '../../NimBaseCommand'
-import { readAndPrepare, buildProject, deploy } from '../../deployer/api'
-import { Flags, OWOptions, DeployResponse, Credentials } from '../../deployer/deploy-struct'
-import { getCredentialsForNamespace } from '../../deployer/credentials'
-import { computeBucketDomainName } from '../../deployer/deploy-to-bucket'
-import { isGithubRef } from '../../deployer/github';
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
+import { readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
+    computeBucketDomainName, isGithubRef, authPersister, inBrowser } from 'nimbella-deployer';
 import * as path from 'path'
 
 export class ProjectDeploy extends NimBaseCommand {

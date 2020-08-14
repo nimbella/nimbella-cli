@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, authPersister, disambiguateNamespace } from '../../NimBaseCommand'
-import { getCredentials, forgetNamespace, getCredentialList } from '../../deployer/credentials'
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
+import { getCredentials, forgetNamespace, getCredentialList, authPersister } from 'nimbella-deployer'
 import { prompt } from '../../ui'
 
 export default class AuthLogout extends NimBaseCommand {

@@ -18,7 +18,7 @@ import * as path from 'path'
 import { CredentialStore, CredentialStorageEntry, CredentialEntry, CredentialHostMap, Credentials,
     CredentialRow, Feedback } from './deploy-struct'
 import * as createDebug from 'debug'
-import { wskRequest } from './util'
+import { wskRequest, inBrowser } from './util'
 const debug = createDebug('nimbella.cli')
 
 // Non-exported constants
@@ -60,6 +60,13 @@ export const fileSystemPersister: Persister = { loadCredentialStoreIfPresent, lo
 export const browserPersister: Persister = { loadCredentialStoreIfPresent: browserLoadCredentialStoreIfPresent,
     loadCredentialStore: browserLoadCredentialStore, saveCredentialStore: browserSaveCredentialStore,
     saveLegacyInfo: browserSaveLegacyInfo}
+// The persister to use for all auth code if you might run in either CLI or browser
+// Not a constant so that it can be explicitly set in the workbench
+export let authPersister = inBrowser ? browserPersister : fileSystemPersister
+// For explicitly setting in workbench
+export function setInBrowser() {
+    authPersister = browserPersister
+}
 
 // Add credential to credential store and make it the default.  Does not persist the result
 export function addCredential(store: CredentialStore, apihost: string, namespace: string, api_key: string, storage: string,

@@ -11,14 +11,15 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, inBrowser } from '../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { inBrowser } from 'nimbella-deployer'
 import { open } from '../ui'
 const PUBLIC_DOC = 'https://nimbella.io/downloads/nim/nim.html'
 
 export default class Doc extends NimBaseCommand {
   static description = "Display the full documentation of this CLI"
 
-  static flags = { ...NimBaseCommand.flags }
+  static flags: typeof NimBaseCommand.flags = { ...NimBaseCommand.flags }
 
   static args = []
 

@@ -215,6 +215,27 @@ export interface OWOptions {
     ignore_certs?: boolean
 }
 
+// Supporting types for oauth
+
+// These types duplicate declarations in main/deployable/login, except that Credentials is renamed to FullCredentials
+// to avoid confusing it with the Credentials type used throught nim.
+export type IdProvider = {
+    provider: string,
+    name: string,
+    key: string
+}
+
+export type FullCredentials = {
+    status: string,
+    apihost: string,
+    namespace: string,
+    uuid: string,
+    key: string,
+    redis: boolean,
+    storage?: string,
+    externalId?: IdProvider
+}
+
 // Format of the JSON file containing credential information, persisted in ~/.nimbella/credentials.json
 export interface CredentialStore {
     currentHost: string

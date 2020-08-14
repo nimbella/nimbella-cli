@@ -12,9 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, authPersister, disambiguateNamespace, parseAPIHost } from '../../NimBaseCommand'
-import { recordNamespaceOwnership, getCredentials, getCredentialDict, getCredentialList } from '../../deployer/credentials'
-import { CredentialRow } from '../../deployer/deploy-struct'
+import { NimBaseCommand, NimLogger, disambiguateNamespace, parseAPIHost } from 'nimbella-deployer'
+import { recordNamespaceOwnership, getCredentials, getCredentialDict, getCredentialList, authPersister, CredentialRow } from 'nimbella-deployer'
 
 // 'Free' a namespace entry in the credential store by removing any ownership information
 export default class NamespaceFree extends NimBaseCommand {

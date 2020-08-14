@@ -14,11 +14,10 @@
 import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
-import { authPersister, NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 import { prompt } from '../../ui'
-import { restore404Page } from '../../deployer/deploy-to-bucket'
-import { OWOptions } from '../../deployer/deploy-struct'
+import { authPersister, restore404Page, OWOptions } from 'nimbella-deployer'
 
 export default class WebContentClean extends NimBaseCommand {
     static description = 'Deletes all Content from Web Storage'

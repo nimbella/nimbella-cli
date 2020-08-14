@@ -13,9 +13,8 @@
 
 // The login subcommands
 
-import { Credentials } from './deploy-struct'
+import { Credentials, FullCredentials } from './deploy-struct'
 import { Persister, fileSystemPersister, addCredentialAndSave, addCredential } from './credentials'
-import { FullCredentials } from '../oauth'
 import * as createDebug from 'debug'
 import { wskRequest } from './util'
 const debug = createDebug('nimbella.cli')

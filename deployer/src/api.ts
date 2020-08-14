@@ -17,14 +17,13 @@ import { cleanOrLoadVersions, doDeploy, actionWrap, cleanPackage } from './deplo
 import { DeployStructure, DeployResponse, PackageSpec, OWOptions, WebResource, Credentials, Flags, Includer, Feedback, DefaultFeedback } from './deploy-struct'
 import { readTopLevel, buildStructureParts, assembleInitialStructure } from './project-reader'
 import { isTargetNamespaceValid, wrapError, wipe, saveUsFromOurselves, writeProjectStatus, getTargetNamespace,
-    needsBuilding, errorStructure, getBestProjectName } from './util'
+    needsBuilding, errorStructure, getBestProjectName, inBrowser } from './util'
 import { openBucketClient } from './deploy-to-bucket'
 import { buildAllActions, buildWeb } from './finder-builder'
 import * as openwhisk from 'openwhisk'
 import * as path from 'path'
 import { getCredentialsForNamespace, getCredentials, Persister, recordNamespaceOwnership } from './credentials';
 import { makeIncluder } from './includer';
-import { inBrowser } from '../NimBaseCommand'
 import * as makeDebug from 'debug'
 const debug = makeDebug('nim:deployer:api')
 

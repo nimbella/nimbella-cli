@@ -31,17 +31,12 @@ import { IArg } from '@oclif/parser/lib/args'
 import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
 import { format } from 'util'
 import { STATUS_CODES } from 'http'
-import { fileSystemPersister, browserPersister, getCredentialList } from './deployer/credentials'
-import { Feedback } from './deployer/deploy-struct'
+import { authPersister, getCredentialList } from './credentials'
+import { Feedback } from './deploy-struct'
 
 import * as createDebug  from 'debug'
 const debug = createDebug('nim:base')
 const verboseError = createDebug('nim:error')
-
-// Flag indicating running in browser
-export const inBrowser = (typeof process === 'undefined') || (!process.release) || (process.release.name !== 'node')
-// The persister to use for all auth code
-export const authPersister = inBrowser ? browserPersister : fileSystemPersister
 
 // A place where workbench can store its help helper
 let helpHelper: (usage: {}) => never
@@ -348,15 +343,4 @@ export function fixAioCredentials(logger: NimLogger) {
     process.env.AIO_RUNTIME_AUTH = currentAuth
     // Don't pass the namespace to AIO.  It causes some problems with CORS in the beta workbench.
     //process.env.AIO_RUNTIME_NAMESPACE = currentNamespace
-}
-
-// Run a nim command programmatically with output capture
-export async function runNimCommand(command: string, args: string[]): Promise<CaptureLogger> {
-  const cmd = require('./commands/' + command)
-  if (!cmd || !cmd.default) {
-    throw new Error(`'${command}' is not a 'nim' command`)
-  }
-  const logger = new CaptureLogger()
-  await cmd.default.run(args, { root: __dirname, logger })
-  return logger
 }
