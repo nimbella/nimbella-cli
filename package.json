@@ -71,7 +71,6 @@
   "files": [
     "/bin",
     "/lib",
-    "/patches/@oclif+plugin-plugins+*.patch",
     "/oclif.manifest.json",
     "/LICENSE",
     "/license.html",
@@ -92,7 +91,7 @@
     "hooks": {
       "prerun": "./lib/hooks/prerun"
     },
-    "pluginsRegistry": "https://nimaio-apigcp.nimbella.io",
+    "scope":"nimbella",
     "plugins": [
       "@oclif/plugin-autocomplete",
       "@oclif/plugin-update",
