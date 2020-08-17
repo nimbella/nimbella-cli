@@ -13,6 +13,7 @@
 
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { getCredentialDict, authPersister, CredentialRow } from 'nimbella-deployer'
+import {bold} from 'chalk'
 
 
 // Constants used in formatting the credential list
@@ -39,7 +40,8 @@ export default class AuthList extends NimBaseCommand {
       for (const host in dict) {
         const rows = dict[host]
         if (rows.length === 0) continue
-        logger.log(`On API host ${host}:`)
+        logger.log('')
+        logger.log(`${bold(`On API host ${host}:`)}`)
         await this.formatCredentialList(dict[host], logger)
       }
     }
