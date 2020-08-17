@@ -390,6 +390,8 @@ export function buildWeb(build: string, sharedBuilds: BuildTable, filepath: stri
 }
 
 // Identify the files constituting web content.  Similar to its action counterpart but not identical (e.g. there is no zipping)
+// For web content, we also fail the deployment if there are node_modules inclusions but no .include directive.  That
+// is usually an error.  In case it is not, the user can indicate it's ok by adding an .include that lists node_modules explicitly.
 async function identifyWebFiles(filepath: string, reader: ProjectReader): Promise<WebResource[]> {
     debug('Identifying web files')
     const includesPath = path.join(filepath, '.include')
@@ -404,9 +406,20 @@ async function identifyWebFiles(filepath: string, reader: ProjectReader): Promis
         debug('processing .ignore and/or ignore rules')
         return promiseFilesAndFilterFiles(filepath, reader).then((items: string[]) => {
             items = applyIgnores(filepath, items, ignore)
+            checkForNodeModules(items)
             debug(`Converting ${items.length} items to resources`)
             return convertToResources(items, filepath.length + 1)
         })
+    })
+}
+
+// Fail the deployment if there are node_modules items about to be deployed to the web.  This
+// is called only when there is no `.include` directive.
+function checkForNodeModules(items: string[]) {
+    items.forEach(item => {
+        if (item.includes('node_modules')) {
+            throw new Error(`Deploying 'node_modules' to the web, which is probably an error.  Use '.include' or '.ignore' to avoid this problem.`)
+        }
     })
 }
 
