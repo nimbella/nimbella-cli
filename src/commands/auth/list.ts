@@ -13,7 +13,7 @@
 
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { getCredentialDict, authPersister, CredentialRow } from 'nimbella-deployer'
-import {bold} from 'chalk'
+import { bold } from 'chalk'
 
 
 // Constants used in formatting the credential list
@@ -48,7 +48,7 @@ export default class AuthList extends NimBaseCommand {
   }
 
   async formatCredentialList(credentialList: CredentialRow[], logger: NimLogger) {
-    logger.log(LIST_HEADER)
+    logger.log(bold(LIST_HEADER))
     for (const row of credentialList) {
         let ns = row.namespace
         let pad = ''
