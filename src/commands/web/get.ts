@@ -39,21 +39,20 @@ export default class WebContentGet extends NimBaseCommand {
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        const { client, creds  } = await getWebStorageClient(args, flags, authPersister)
+        const { client, creds } = await getWebStorageClient(args, flags, authPersister)
         if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
         if (flags.url) {
-            try {
-                // check if file exists, otherwise catch error and report non-availability through errorHandler
-                const [meta] = await client.file(args.webContentName).getMetadata()
+            // check if file exists, otherwise catch error and report non-availability
+            const [exists] = await client.file(args.webContentName).exists()
+            if (exists) {
                 const url = new URL(creds.ow.apihost)
-                logger.log(`https://${creds.namespace}-${url.hostname}/${meta.name}`)
+                logger.log(`https://${creds.namespace}-${url.hostname}/${args.webContentName}`)
                 return
-            } catch (e) {
-                errorHandler(e, logger, args.webContentName)
             }
+            logger.log(`${args.webContentName} is not available.`)
         }
         else
-        await this.downloadFile(args.webContentName, args.destination, client, logger, flags.saveAs, flags.save).catch((err: Error) => logger.handleError('', err));
+            await this.downloadFile(args.webContentName, args.destination, client, logger, flags.saveAs, flags.save).catch((err: Error) => logger.handleError('', err));
     }
 
     async downloadFile(webContentName: string, destination: string, client: Bucket, logger: NimLogger, saveAs: string, save: boolean = false) {
