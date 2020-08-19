@@ -92,7 +92,7 @@
     "hooks": {
       "prerun": "./lib/hooks/prerun"
     },
-    "scope":"nimbella",
+    "scope": "nimbella",
     "plugins": [
       "@oclif/plugin-autocomplete",
       "@oclif/plugin-update",
