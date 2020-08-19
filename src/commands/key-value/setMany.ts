@@ -37,8 +37,13 @@ export default class SetMany extends NimBaseCommand {
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
         await queryKVStore(queryCommand, args, flags, authPersister)
-            .then(res => logger.log(res.value))
-            .catch(err => logger.handleError(err.error, err));
+          .then(res => logger.log(res.value))
+          // Log the error returned by the action.
+          .catch(err =>
+            logger.handleError(
+              err.error?.response?.result?.error || err.message
+            )
+          );
     }
 
 }

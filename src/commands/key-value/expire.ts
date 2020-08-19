@@ -39,7 +39,12 @@ export default class Expire extends NimBaseCommand {
             return;
         }
         await queryKVStore(queryCommand, args, flags, authPersister)
-            .then(res => logger.log(res.value))
-            .catch(err => logger.handleError(err.error, err));
+          .then(res => logger.log(res.value))
+          // Log the error returned by the action.
+          .catch(err =>
+            logger.handleError(
+              err.error?.response?.result?.error || err.message
+            )
+          );
     }
 }

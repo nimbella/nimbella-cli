@@ -38,11 +38,16 @@ export default class LRange extends NimBaseCommand {
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
         await queryKVStore(queryCommand, args, flags, authPersister)
-            .then(res => {
-                res.value.forEach(element => {
-                    logger.log(element);
-                });
-            })
-            .catch(err => logger.handleError(err.error, err));
+          .then(res => {
+            res.value.forEach(element => {
+              logger.log(element);
+            });
+          })
+          // Log the error returned by the action.
+          .catch(err =>
+            logger.handleError(
+              err.error?.response?.result?.error || err.message
+            )
+          );
     }
 }
