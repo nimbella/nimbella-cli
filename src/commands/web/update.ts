@@ -76,3 +76,4 @@ export default class WebContentUpdate extends NimBaseCommand {
         }).then(_ => loader.stop('done'));
     }
 }
+
