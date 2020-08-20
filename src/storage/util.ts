@@ -13,6 +13,7 @@
 
 import { Bucket } from '@google-cloud/storage'
 import { NimLogger } from 'nimbella-deployer'
+import { bold } from 'chalk'
 
 // Constants used in formatting the file list
 const SIZE_LEN = 10
@@ -22,14 +23,14 @@ const MAYBE = '-?-'
 
 
 export async function fileMetaShort(files: any, client: Bucket, logger: NimLogger) {
-    logger.log(LIST_SHORT_HEADER)
+    logger.log(bold(LIST_SHORT_HEADER))
     for (const file of files) {
         logger.log(`${file.name}`);
     }
 }
 
 export async function fileMetaLong(files: any, client: Bucket, logger: NimLogger) {
-    logger.log(LIST_LONG_HEADER);
+    logger.log(bold(LIST_LONG_HEADER));
     for (const file of files) {
         await client.file(file.name).getMetadata().then(function (data) {
             const meta = data[0];
