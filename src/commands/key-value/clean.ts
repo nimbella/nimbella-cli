@@ -40,7 +40,16 @@ export default class Clean extends NimBaseCommand {
     }
     args.flush = true;
     await queryKVStore(queryCommand, args, flags, authPersister)
-      .then(res => { if (res.value) { logger.log('all content cleared') } else { logger.log('couldn\'t clear content') } })
-      .catch(err => logger.handleError(err.error, err));
+      .then(res => {
+        if (res.value) {
+          logger.log('all content cleared');
+        } else {
+          logger.log("couldn't clear content");
+        }
+      })
+      // Log the error returned by the action.
+      .catch(err =>
+        logger.handleError(err.error?.response?.result?.error || err.message)
+      );
   }
 }
