@@ -20,30 +20,30 @@ import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 
-export default class WebContentCreate extends NimBaseCommand {
-    static description = 'Adds Content to the Web Storage'
+export default class WebContentUpdate extends NimBaseCommand {
+    static description = 'Updates Content in the Web Storage'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to add content to' }),
+        apihost: flags.string({ description: 'API host of the namespace to update content in' }),
         destination: flags.string({ char: 'd', description: 'Target location in web storage' }),
         cache: flags.integer({ char: 'c', description: 'Maximum amount of time in seconds, the web content is considered fresh, relative to the time of the request' }),
         ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'webContentPath', description: 'Path to the content to be added', required: true },
-        { name: 'namespace', description: 'The namespace to add content to (current namespace if omitted)', required: false }
+        { name: 'webContentPath', description: 'Path to the content to be updated', required: true },
+        { name: 'namespace', description: 'The namespace to update content in (current namespace if omitted)', required: false }
     ]
 
-    static aliases = ['web:add'];
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        const { client } = await getWebStorageClient(args, flags, authPersister)
-        if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
-        await this.uploadFile(args.webContentPath, flags.destination, flags.cache, client, logger).catch((err: Error) => logger.handleError('', err))
+        const { client } = await getWebStorageClient(args, flags, authPersister);
+        if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
+        await this.uploadFile(args.webContentPath, flags.destination, flags.cache, client, logger).catch((err: Error) => logger.handleError('', err));
     }
 
     async uploadFile(webContentPath: string, destination: string, cache: number, client: Bucket, logger: NimLogger) {
+
         if (!existsSync(webContentPath)) {
             logger.log(`${webContentPath} doesn't exist`)
             return
@@ -56,28 +56,24 @@ export default class WebContentCreate extends NimBaseCommand {
 
         let targetPath = webContentPath
         if (isAbsolute(webContentPath)) targetPath = contentName
-        if (destination) {
-            if (destination.endsWith('/'))
-                targetPath = join(destination, contentName)
-            else
-                targetPath = destination
-        }
-
+        if (destination) targetPath = destination
+        
         const loader = await spinner()
 
         const [exists] = await client.file(targetPath).exists()
-        if (exists) {
-            logger.log(`${targetPath} already exists, use 'web:update' to update it. e.g. nim web update ${contentName}`)
+        if (!exists) {
+            logger.log(`${targetPath} doesn't exist, use 'web:create' to add it. e.g. nim web add ${contentName}`)
             return
         }
 
-        loader.start(`adding ${contentName}`, 'uploading', { stdout: true })
+        loader.start(`updating ${targetPath}`, 'uploading', { stdout: true })
         await client.upload(webContentPath, {
             destination: targetPath,
             gzip: true,
             metadata: {
                 cacheControl: cache ? `public, max-age=${cache}` : 'no-cache',
             },
-        }).then(_ => loader.stop('done'))
+        }).then(_ => loader.stop('done'));
     }
 }
+

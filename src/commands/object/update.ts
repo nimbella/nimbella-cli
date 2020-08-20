@@ -20,30 +20,28 @@ import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getObjectStorageClient } from '../../storage/clients'
 
-export default class ObjectCreate extends NimBaseCommand {
-    static description = 'Adds Object to the Object Store'
+export default class ObjectUpdate extends NimBaseCommand {
+    static description = 'Updates Object in the Object Store'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to add object to' }),
+        apihost: flags.string({ description: 'API host of the namespace to update object in' }),
         destination: flags.string({ char: 'd', description: 'Target location in object storage' }),
         ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'objectPath', description: 'The object to be added', required: true },
-        { name: 'namespace', description: 'The namespace to add object to (current namespace if omitted)', required: false }
+        { name: 'objectPath', description: 'The object to be updated', required: true },
+        { name: 'namespace', description: 'The namespace to update object in (current namespace if omitted)', required: false }
     ]
-
-    static aliases = ['objects:add', 'object:add']
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
         const { client } = await getObjectStorageClient(args, flags, authPersister)
         if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
-        await this.uploadFile(args.objectPath, flags.destination, client, logger).catch((err: Error) => logger.handleError('', err))
+        await this.uploadFile(args.objectPath,  flags.destination, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
     async uploadFile(objectPath: string, destination: string, client: Bucket, logger: NimLogger) {
-        if (!existsSync(objectPath)) {
+        if (!existsSync(objectPath)){
             logger.log(`${objectPath} doesn't exist`)
             return
         }
@@ -55,25 +53,20 @@ export default class ObjectCreate extends NimBaseCommand {
 
         let targetPath = objectPath
         if (isAbsolute(objectPath)) targetPath = objectName
-        if (destination) {
-            if (destination.endsWith('/'))
-                targetPath = join(destination, objectName)
-            else
-                targetPath = destination
-        }
+        if (destination) targetPath = destination
 
         const loader = await spinner()
 
         const [exists] = await client.file(targetPath).exists()
-        if (exists) {
-            logger.log(`${targetPath} already exists, use 'object:update' to update it. e.g. nim object update ${objectName}`)
+        if (!exists) {
+            logger.log(`${targetPath} doesn't exist, use 'object:add' to add it. e.g. nim object add ${objectName}`)
             return
         }
 
-        loader.start(`adding ${objectName}`, 'uploading', { stdout: true })
+        loader.start(`updating ${targetPath}`, 'uploading', {stdout: true})
         await client.upload(objectPath, {
             destination: targetPath,
-            gzip: true,
+            gzip: true
         }).then(_ => loader.stop('done'))
     }
 }
