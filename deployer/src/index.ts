@@ -20,7 +20,7 @@ export { DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials,
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'
 export { addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace,
     Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
-    switchGithubAccount,addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser } from './credentials'
+    switchGithubAccount, getPostmanKeys, deletePostmanKey, switchPostmanKey, addPostmanKey, getPostmanCurrentKey, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser } from './credentials'
 export { computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page } from './deploy-to-bucket'
 export { extFromRuntime, wskRequest, inBrowser, RuntimeTable } from './util'
 export { GithubDef, isGithubRef, parseGithubRef, fetchProject } from './github'
