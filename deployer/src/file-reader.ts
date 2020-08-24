@@ -105,6 +105,6 @@ class FileProjectReader implements ProjectReader {
         path = Path.resolve(this.basepath, path)
         return fs_lstat(path).then((stats: fs.Stats) => {
             return { name: Path.basename(path), isFile: stats.isFile(), isDirectory: stats.isDirectory(), mode: stats.mode }
-        })
+        }).catch(() => undefined)
     }
 }
