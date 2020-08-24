@@ -498,14 +498,16 @@ function findSpecialFile(items: PathKind[], filepath: string, isAction: boolean)
 }
 
 // The 'builder' for use when the action is a single file after all other processing
-function singleFileBuilder(action: ActionSpec, singleItem: string): Promise<ActionSpec> {
-    debug("singleFileBuilder deploying '%s'", singleItem)
-    let newMeta = actionFileToParts(singleItem)
+function singleFileBuilder(action: ActionSpec, file: string): Promise<ActionSpec> {
+    debug("singleFileBuilder deploying '%s'", file)
+    let newMeta = actionFileToParts(file)
     delete newMeta.name
     newMeta['web'] = true
-    // After a build, only the file takes precedence over what's in the action already.  Metadata calcuated from the file name is filled
-    // in, as is the default for web, but these apply only if not already specified in the action.
-    const newAction = Object.assign(newMeta, action, { file: singleItem })
+    // After a build, only the file, zipped, and binary flags take precedence over what's in the action already.
+    // Metadata calcuated from the file name is filled in, as is the default for web, but these apply only if not
+    // already specified in the action (except for binary and zipped, which always change to match the build result).
+    const { binary, zipped } = newMeta
+    const newAction = Object.assign(newMeta, action, { file, binary, zipped })
     return Promise.resolve(newAction)
 }
 
