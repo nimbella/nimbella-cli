@@ -55,7 +55,7 @@ export interface Persister {
 
 // The persister to use when local storage is accessible (deployer CLI or non-cloud workbench)
 export const fileSystemPersister: Persister = { loadCredentialStoreIfPresent, loadCredentialStore, saveCredentialStore, saveLegacyInfo }
-// The persister to use when running in a browser (cloud workbench). Kept here for dependnecy management
+// The persister to use when running in a browser (cloud workbench). Kept here for dependency management
 // convenience inside the workbench
 export const browserPersister: Persister = { loadCredentialStoreIfPresent: browserLoadCredentialStoreIfPresent,
     loadCredentialStore: browserLoadCredentialStore, saveCredentialStore: browserSaveCredentialStore,
@@ -279,7 +279,7 @@ function browserSaveLegacyInfo(apihost: string, auth: string) {
 // Utility functions (not exported)
 
 // Make the initial credential store when none exists.  It always starts out empty.  This also makes
-// the parent directory prepartory to the first write.  It does not actually write the credential store.
+// the parent directory preparatory to the first write.  It does not actually write the credential store.
 function initialCredentialStore(): CredentialStore {
     if (!fs.existsSync(nimbellaDir())) {
         fs.mkdirSync(nimbellaDir())
@@ -421,5 +421,62 @@ export async function addGithubAccount(name: string, token: string, persister: P
     debug('adding github account with name %s and token %s', name, token)
     store.github[name] = token
     store.currentGithub = name
+    persister.saveCredentialStore(store)
+}
+
+
+// Postman credentials section
+
+// Retrieve a list of locally known postman keys
+export async function getPostmanKeys(persister: Persister): Promise<{[key: string]: string}> {
+    const store = await persister.loadCredentialStore()
+    debug('Postman keys requested, returning %O', store.postman)
+    return store.postman || {}
+}
+
+// Retrieve current key
+export async function getPostmanCurrentKey(persister: Persister): Promise<string|undefined> {
+    const store = await persister.loadCredentialStore()
+    debug('Postman current key requested, returning %O', store.currentPostman)
+    return store.currentPostman
+}
+
+// Delete a postman key
+export async function deletePostmanKey(name: string, persister: Persister): Promise<DeleteResult> {
+    const store = await persister.loadCredentialStore()
+    if (store.postman && store.postman[name]) {
+        delete store.postman[name]
+        if (name == store.currentPostman) {
+            store.currentPostman = undefined
+        }
+        debug('Postman deletion of key %s succeeded, with currentPostman=%s', name, store.currentPostman)
+        persister.saveCredentialStore(store)
+        return store.currentPostman ? "DeletedOk" : "DeletedDangling"
+    } else {
+        return "NotExists"
+    }
+}
+
+// Switch the active postman key
+export async function switchPostmanKey(name: string, persister: Persister): Promise<boolean> {
+    const store = await persister.loadCredentialStore()
+    if (store.postman && store.postman[name]) {
+        store.currentPostman = name
+        persister.saveCredentialStore(store)
+        return true
+    } else {
+        return false
+    }
+}
+
+// Add a postman key
+export async function addPostmanKey(name: string, token: string, persister: Persister) {
+    const store = await persister.loadCredentialStore()
+    if (!store.postman) {
+        store.postman = {}
+    }
+    debug('adding postman key with name %s and token %s', name, token)
+    store.postman[name] = token
+    store.currentPostman = name
     persister.saveCredentialStore(store)
 }

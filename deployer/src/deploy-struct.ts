@@ -156,7 +156,7 @@ export interface BucketSpec {
     mainPageSuffix?: string  // The suffix to append to any directory URL (including the bucket root) to form the URL of a web page (defaults to 'index.html')
     notFoundPage?: string    // The name of a page (relative to the root) to show on 404 errors.
     clean?: boolean          // Deletes existing content starting at prefixPath (or the root if no prefixPath) before deploying new content
-    useCache?: boolean        // If true, default cacheing (one hour) is enabled.  Otherwise a Cache-Control header of `no-cache` is set
+    useCache?: boolean        // If true, default caching (one hour) is enabled.  Otherwise a Cache-Control header of `no-cache` is set
  }
 
  // Types used in the DeployResponse
@@ -218,7 +218,7 @@ export interface OWOptions {
 // Supporting types for oauth
 
 // These types duplicate declarations in main/deployable/login, except that Credentials is renamed to FullCredentials
-// to avoid confusing it with the Credentials type used throught nim.
+// to avoid confusing it with the Credentials type used through nim.
 export type IdProvider = {
     provider: string,
     name: string,
@@ -243,6 +243,8 @@ export interface CredentialStore {
     credentials: CredentialHostMap
     currentGithub?: string
     github?: {[ key: string ]: string}
+    currentPostman?: string
+    postman?: {[ key: string ]: string}
 }
 
 export interface CredentialHostMap {
@@ -309,7 +311,7 @@ export interface CredentialRow {
 // A simplified fs.Dirent that just distinguishes files and directories (all we really have when using github)
 export type PathKind = { name: string, isDirectory: boolean, isFile: boolean, mode: number }
 
-// The method reperotoire for reading projects.
+// The method repertoire for reading projects.
 // Path names passed to these methods may, in the most general case, be either absolute or relative to the
 // project root.  After canonicalizing `..` directives in such paths, they may point inside or outside the project.
 // For the file system, we accept absolute paths and allow a relative path to land anywhere in the file system.
