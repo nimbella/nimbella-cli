@@ -21,7 +21,7 @@ type StorageClientResponse = {
     creds: Credentials
 }
 async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix: string = ''): Promise<StorageClientResponse> {
-    let namespace = args.namespace
+    let namespace = flags.namespace
     let creds: Credentials = undefined
     let apiHost: string = flags.apihost;
     let storageKey: {} = undefined;

@@ -24,17 +24,17 @@ export default class WebList extends NimBaseCommand {
     static flags = {
         apihost: flags.string({ description: 'API host of the namespace to list web content from' }),
         long: flags.boolean({ char: 'l', description: 'Displays additional file info such as last update, owner and md5hash' }),
+        namespace: flags.string({ description: 'The namespace to list web content from (current namespace if omitted)' }),
         ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'prefix', description: 'Prefix to match the content against', required: false, default: '' },
-        { name: 'namespace', description: 'The namespace to list web content from (current namespace if omitted)', required: false }
+        { name: 'prefix', description: 'Prefix to match the content against', required: false, default: '' }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
         const { client } = await getWebStorageClient(args, flags, authPersister);
-        if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
+        if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${flags.namespace || 'current'} namespace`);
         await this.listFiles(client, logger, flags.long, args.prefix).catch((err: Error) => logger.handleError('', err));
     }
 
