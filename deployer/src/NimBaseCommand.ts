@@ -147,7 +147,7 @@ export abstract class NimBaseCommand extends Command  implements NimLogger {
   // logger argument is a CaptureLogger in fact.
   async runAio(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger, aioClass: typeof RuntimeBaseCommand) {
     debug('runAio with rawArgv: %O, argv: %O, args: %O, flags: %O', rawArgv, argv, args, flags)
-    fixAioCredentials(logger)
+    fixAioCredentials(logger, flags)
     const cmd = new aioClass(rawArgv, {})
     if (flags.verbose) {
       debug('verbose flag intercepted')
@@ -319,7 +319,11 @@ export function parseAPIHost (host: string|undefined): string|undefined {
 }
 
 // Stuff the current namespace, API host, and AUTH key into the environment so that AIO does not look in .wskprops when invoked by nim
-export function fixAioCredentials(logger: NimLogger) {
+function fixAioCredentials(logger: NimLogger, flags: any) {
+    if (flags && flags.apihost && flags.auth) {
+      // No need to fix credentials if complete creds are supplied on cmdline
+      return
+    }
     let store = authPersister.loadCredentialStoreIfPresent()
     let currentHost: string
     let currentNamespace: string
