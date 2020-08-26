@@ -18,7 +18,7 @@ export { initializeAPI, deployProject, readPrepareAndBuild, readAndPrepare, depl
 export { DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, Flags, PackageSpec, ActionSpec,
     CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider } from './deploy-struct'
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'
-export { addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace,
+export { addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace, getCurrentNamespace,
     Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
     switchGithubAccount, getPostmanKeys, deletePostmanKey, switchPostmanKey, addPostmanKey, getPostmanCurrentKey, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser } from './credentials'
 export { computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page } from './deploy-to-bucket'
