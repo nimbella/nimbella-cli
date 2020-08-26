@@ -112,10 +112,10 @@ export async function forgetNamespace(namespace: string, apihost: string|undefin
 }
 
 // Switch the active namespace in the credential store.  The namespace argument is required.
-// All occurences of the namespace across all API hosts are collected.
+// All occurrences of the namespace across all API hosts are collected.
 // If there is an explicit 'apihost' argument this collection must include an entry with that API host
 // Otherwise,
-//   - if there is just one occurence, the switch is to that namespace on that API host
+//   - if there is just one occurrence, the switch is to that namespace on that API host
 //   - otherwise, no switch occurs and the thrown Error either states that no credentials exist for that namespace
 //     or that the --apihost flag is required to indicate which one is intended
 export async function switchNamespace(namespace: string, apihost: string|undefined, persister: Persister): Promise<Credentials> {
@@ -218,8 +218,14 @@ export function getNamespace(host: string, auth: string): Promise<string> {
     return wskRequest(url, auth).then(list => list[0])
 }
 
-// fileSystemPersister functions (indirectly exported)
+// Get current namespace
+export async function getCurrentNamespace(persister: Persister): Promise<string|undefined> {
+    debug("getting current namespace")
+    const store = await persister.loadCredentialStore()
+    return store.currentNamespace
+}
 
+// fileSystemPersister functions (indirectly exported)
 function saveCredentialStore(store: CredentialStore) {
     const toWrite = JSON.stringify(store, null, 2)
     debug("writing credential store")
