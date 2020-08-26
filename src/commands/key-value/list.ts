@@ -23,6 +23,7 @@ export default class KeysList extends NimBaseCommand {
 
     static flags = {
         apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
+        namespace: flags.string({ description: 'The namespace to list keys from (current namespace if omitted)' }),
         ...NimBaseCommand.flags
     }
 

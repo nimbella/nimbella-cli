@@ -18,7 +18,7 @@ const openwhisk = require('openwhisk');
 const systemNamespace = 'nimbella';
 
 export async function queryKVStore(query: string, args: any, flags: any, authPersister: any) {
-    let namespace = args.namespace;
+    let namespace = flags.namespace;
     let creds: Credentials = undefined;
     if (!namespace) {
         creds = await getCredentials(authPersister);
