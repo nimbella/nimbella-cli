@@ -11,7 +11,6 @@
  * governing permissions and limitations under the License.
  */
 
-
 //
 //  Samples
 //  TODO: these should be in common between here, the playground, and the cloud editor.
@@ -29,7 +28,7 @@ const js = `function main(args) {
   }
   `
 
-  const ts = `export function main(args: {}): {} {
+const ts = `export function main(args: {}): {} {
     let name: string = args['name'] || 'stranger'
     let greeting: string = 'Hello ' + name + '!'
     console.log(greeting)
@@ -37,14 +36,14 @@ const js = `function main(args) {
   }
   `
 
-  const py = `def main(args):
+const py = `def main(args):
       name = args.get("name", "stranger")
       greeting = "Hello " + name + "!"
       print(greeting)
       return {"body": greeting}
   `
 
-  const swift = `func main(args: [String:Any]) -> [String:Any] {
+const swift = `func main(args: [String:Any]) -> [String:Any] {
       if let name = args["name"] as? String {
           let greeting = "Hello \(name)!"
           print(greeting)
@@ -57,7 +56,7 @@ const js = `function main(args) {
   }
   `
 
-  const php = `<?php
+const php = `<?php
   function main(array $args) : array
   {
       $name = $args["name"] ?? "stranger";
@@ -67,7 +66,7 @@ const js = `function main(args) {
   }
   `
 
-  const java = `import com.google.gson.JsonObject;
+const java = `import com.google.gson.JsonObject;
 
   public class Main {
       public static JsonObject main(JsonObject args) {
@@ -82,7 +81,7 @@ const js = `function main(args) {
   }
   `
 
-  const go = `package main
+const go = `package main
 
   func Main(args map[string]interface{}) map[string]interface{} {
     name, ok := args["name"].(string)

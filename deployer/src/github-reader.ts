@@ -12,7 +12,7 @@
  */
 
 import { ProjectReader, PathKind } from './deploy-struct'
-import { GithubDef, makeClient, readContents, seemsToBeProject } from './github';
+import { GithubDef, makeClient, readContents, seemsToBeProject, OctokitNonArrayResponse } from './github'
 import * as Octokit from '@octokit/rest'
 import * as PathPkg from 'path'
 import * as makeDebug from 'debug'
@@ -34,8 +34,8 @@ const Path = PathPkg.posix || PathPkg
 
 // Make
 export function makeGithubReader(def: GithubDef, userAgent: string): ProjectReader {
-    const client = makeClient(def, userAgent)
-    return new GithubProjectReader(client, def)
+  const client = makeClient(def, userAgent)
+  return new GithubProjectReader(client, def)
 }
 
 // The implementing class
@@ -45,103 +45,103 @@ class GithubProjectReader implements ProjectReader {
     cache: Map<string, Octokit.ReposGetContentsResponse>
 
     constructor(client: Octokit, def: GithubDef) {
-        debug('new github-reader for %O', def)
-        this.client = client
-        this.def = def
-        this.cache = new Map()
+      debug('new github-reader for %O', def)
+      this.client = client
+      this.def = def
+      this.cache = new Map()
     }
 
     // Implement getFSLocation for github (always returns null)
     getFSLocation(): string|null {
-        return null
+      return null
     }
 
     // Implement readdir for github
     async readdir(path: string): Promise<PathKind[]> {
-        path = this.fixPathArgument(path)
-        debug('reading directory %s', path)
-        if (Path.isAbsolute(path)) {
-            throw new Error(`Deploying from github does not support absolute paths`)
-        }
-        const contents = await this.retrieve(path)
-        if (!Array.isArray(contents)) {
-            debug('improper contents: %O', contents)
-            throw new Error(`Path '${path} should be a directory but is not`)
-        }
-        if (path === this.def.path && !seemsToBeProject(contents))     {
-            throw new Error(`Github location does not contain a 'nim' project`)
-        }
-        return contents.map(this.toPathKind)
+      path = this.fixPathArgument(path)
+      debug('reading directory %s', path)
+      if (Path.isAbsolute(path)) {
+        throw new Error('Deploying from github does not support absolute paths')
+      }
+      const contents = await this.retrieve(path)
+      if (!Array.isArray(contents)) {
+        debug('improper contents: %O', contents)
+        throw new Error(`Path '${path} should be a directory but is not`)
+      }
+      if (path === this.def.path && !seemsToBeProject(contents)) {
+        throw new Error('Github location does not contain a \'nim\' project')
+      }
+      return contents.map(this.toPathKind)
     }
 
     // Subroutine used by readdir; may have other uses
     toPathKind(item: Octokit.ReposGetContentsResponseItem): PathKind {
-        let mode = 0o666
-        if (item.type === 'file' && (item.name.endsWith('.sh') || item.name.endsWith('.cmd'))) {
-            mode = 0o777
-        }
-        return { name: item.name, isDirectory: item.type === 'dir', isFile: item.type === 'file', mode }
+      let mode = 0o666
+      if (item.type === 'file' && (item.name.endsWith('.sh') || item.name.endsWith('.cmd'))) {
+        mode = 0o777
+      }
+      return { name: item.name, isDirectory: item.type === 'dir', isFile: item.type === 'file', mode }
     }
 
     // Implement readFileContents for github
     async readFileContents(path: string): Promise<Buffer> {
-        path = this.fixPathArgument(path)
-        debug('reading file %s', path)
-        const contents = await this.retrieve(path)
-        // Careful with the following: we want to support empty files but the empty string is falsey.
-        if (typeof contents['content'] !== 'string'  || !contents['encoding']) {
-            debug('improper contents: %O', contents)
-            throw new Error(`Contents of file at '${path}' was not interpretable`)
-        }
-        return Buffer.from(contents['content'], contents['encoding'])
+      path = this.fixPathArgument(path)
+      debug('reading file %s', path)
+      const contents = await this.retrieve(path) as OctokitNonArrayResponse
+      // Careful with the following: we want to support empty files but the empty string is falsey.
+      if (typeof contents.content !== 'string' || !contents.encoding) {
+        debug('improper contents: %O', contents)
+        throw new Error(`Contents of file at '${path}' was not interpretable`)
+      }
+      return Buffer.from(contents.content, contents.encoding)
     }
 
     // Implement isExistingFile for github
     async isExistingFile(path: string): Promise<boolean> {
-        debug('checking file existence: %s', path)
-        const kind = await this.getPathKind(path)
-        return kind && kind.isFile
+      debug('checking file existence: %s', path)
+      const kind = await this.getPathKind(path)
+      return kind && kind.isFile
     }
 
     // Implement getPathKind for github
     async getPathKind(path: string): Promise<PathKind> {
-        path = this.fixPathArgument(path)
-        debug('getting path type: %s', path)
-        if (path === '' || path === '/' || path === undefined) {
-            return { name: '', isFile: false, isDirectory: true, mode: 0x777}
+      path = this.fixPathArgument(path)
+      debug('getting path type: %s', path)
+      if (path === '' || path === '/' || path === undefined) {
+        return { name: '', isFile: false, isDirectory: true, mode: 0x777 }
+      }
+      const name = Path.basename(path)
+      const parent = Path.dirname(path)
+      const candidates = await this.readdir(parent)
+      for (const item of candidates) {
+        if (item.name === name) {
+          return item
         }
-        const name = Path.basename(path)
-        const parent = Path.dirname(path)
-        const candidates = await this.readdir(parent)
-        for (const item of candidates) {
-            if (item.name === name) {
-                return item
-            }
-        }
-        return Promise.resolve(undefined)
+      }
+      return Promise.resolve(undefined)
     }
 
     // Basic retrieval function with cache.  Cache is dead simple since we never modify anything
     async retrieve(path: string): Promise<Octokit.ReposGetContentsResponse> {
-        const effectivePath = Path.normalize(Path.join(this.def.path, path))
-        let contents = this.cache.get(effectivePath)
-        if (!contents) {
-            debug("going to github for '%s'", path)
-            contents = await readContents(this.client, this.def, effectivePath)
-            this.cache.set(effectivePath, contents)
-        } else {
-            debug("'%s' found in cache", path)
-        }
-        return contents
+      const effectivePath = Path.normalize(Path.join(this.def.path, path))
+      let contents = this.cache.get(effectivePath)
+      if (!contents) {
+        debug("going to github for '%s'", path)
+        contents = await readContents(this.client, this.def, effectivePath)
+        this.cache.set(effectivePath, contents)
+      } else {
+        debug("'%s' found in cache", path)
+      }
+      return contents
     }
 
     // Fixup function for path arguments.   On windows, the OS-specific path resolution is used
     // elsewhere in the deployer so path arguments may arrive in "windows" form.  They should not,
     // however be absolute, so a simple substitution of / for \ will suffice.
     fixPathArgument(path: string): string {
-        if (!path) {
-            return path
-        }
-        return path.split('\\').join('/')
+      if (!path) {
+        return path
+      }
+      return path.split('\\').join('/')
     }
 }

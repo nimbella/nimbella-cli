@@ -27,6 +27,7 @@ governing permissions and limitations under the License.
 */
 
 import { Command, flags } from '@oclif/command'
+import { IConfig } from '@oclif/config'
 import { IArg } from '@oclif/parser/lib/args'
 import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
 import { format } from 'util'
@@ -34,7 +35,7 @@ import { STATUS_CODES } from 'http'
 import { authPersister, getCredentialList } from './credentials'
 import { Feedback } from './deploy-struct'
 
-import * as createDebug  from 'debug'
+import * as createDebug from 'debug'
 const debug = createDebug('nim:base')
 const verboseError = createDebug('nim:error')
 
@@ -50,9 +51,9 @@ export function setHelpHelper(helper: (usage: {}) => never) {
 // oclif.Command.  The NimBaseCommand class implements this interface using its own
 // methods
 export interface NimLogger {
-  log: (msg: string, ...args: any[]) => void
-  handleError: (msg: string, err?: Error) => never
-  exit: (code: number) => void  // don't use 'never' here because 'exit' doesn't always exit
+  log: (msg: string, ...args: any[]) => void,
+  handleError: (msg: string, err?: Error) => never,
+  exit: (code: number) => void, // don't use 'never' here because 'exit' doesn't always exit
   displayError: (msg: string, err?: Error) => void
 }
 
@@ -62,9 +63,11 @@ export class NimFeedback implements Feedback {
   constructor(logger: NimLogger) {
     this.logger = logger
   }
+
   warn(msg?: any, ...args: any[]) {
     this.logger.log(String(msg), ...args)
   }
+
   progress(msg?: any, ...args: any[]) {
     this.logger.log(String(msg), ...args)
   }
@@ -72,25 +75,28 @@ export class NimFeedback implements Feedback {
 
 // An alternative NimLogger when not using the oclif stack
 export class CaptureLogger implements NimLogger {
-    command: string[]  // The oclif command sequence being captured (aio only)
-    table: object[]    // The output table (array of entity) if that kind of output was produced
+    command: string[] // The oclif command sequence being captured (aio only)
+    table: object[] // The output table (array of entity) if that kind of output was produced
     captured: string[] = [] // Captured line by line output (flowing via Logger.log)
-    entity: object     // An output entity if that kind of output was produced
+    entity: object // An output entity if that kind of output was produced
     log(msg = '', ...args: any[]) {
       const msgs = String(msg).split('\n')
       for (const msg of msgs) {
         this.captured.push(format(msg, ...args))
       }
     }
+
     handleError(msg: string, err?: Error): never {
       if (err) throw err
       msg = improveErrorMsg(msg, err)
       throw new Error(msg)
     }
+
     displayError(msg: string, err?: Error) {
       msg = improveErrorMsg(msg, err)
       this.log('Error: %s', msg)
     }
+
     exit(code: number) {
       // a no-op here
     }
@@ -98,12 +104,12 @@ export class CaptureLogger implements NimLogger {
 
 // Test if a supplied logger is a CaptureLogger
 function isCaptureLogger(logger: NimLogger): logger is CaptureLogger {
-  return !!logger['captured']
+  return !!('captured' in logger)
 }
 
 // The base for all our commands, including the ones that delegate to aio.  There are methods designed to be called from the
 // kui repl as well as ones that implement the oclif command model.
-export abstract class NimBaseCommand extends Command  implements NimLogger {
+export abstract class NimBaseCommand extends Command implements NimLogger {
   // Superclass must implement for dual invocation by kui and oclif.  Arguments are
   //  - rawArgv -- what the process would call argv
   //  - argv -- what oclif calls argv and kui calls argvNoOptions (rawArgv with flags stripped out)
@@ -133,10 +139,14 @@ export abstract class NimBaseCommand extends Command  implements NimLogger {
     const { argv, args, flags } = this.parse(this.constructor as typeof NimBaseCommand)
     debug('run with rawArgv: %O, argv: %O, args: %O, flags: %O', this.argv, argv, args, flags)
     const bad = argv.find(arg => arg.startsWith('-'))
-    if (bad)
-      this.handleError(`Unrecognized flag: ${bad}`)
+    if (bad) { this.handleError(`Unrecognized flag: ${bad}`) }
     // Allow for a logger to be passed in when invoked programmatically.  This only has effect on aio commands if the logger is a CaptureLogger
-    const options = this.config['options']
+    interface ExtIConfig extends IConfig {
+      options: {
+        logger: NimLogger
+      }
+    }
+    const options = (this.config as ExtIConfig).options
     const logger = options ? options.logger : undefined
     await this.runCommand(this.argv, argv, args, flags, logger || this)
   }
@@ -180,7 +190,7 @@ export abstract class NimBaseCommand extends Command  implements NimLogger {
   // Replacement for table function in RuntimeBaseCommand when running with capture
   // TODO this will not work for namespace get, which produces multiple tables.  Should generalize to a list.
   saveTable = (logger: CaptureLogger) => (data: object[], columns: object, options: object = {}) => {
-    debug("Call to saveTable with %O", data)
+    debug('Call to saveTable with %O', data)
     logger.table = data
   }
 
@@ -214,7 +224,7 @@ export abstract class NimBaseCommand extends Command  implements NimLogger {
   }
 
   // Do oclif initialization (only used when invoked via the oclif dispatcher)
-  async init () {
+  async init() {
     const { flags } = this.parse(this.constructor as typeof NimBaseCommand)
 
     // See https://www.npmjs.com/package/debug for usage in commands
@@ -228,7 +238,7 @@ export abstract class NimBaseCommand extends Command  implements NimLogger {
 
   // Error handling.  This is for oclif; the CaptureLogger has a more generic implementation suitable for kui inclusion
   // Includes logic copied from Adobe I/O runtime plugin.
-  handleError (msg: string, err?: any) {
+  handleError(msg: string, err?: any) {
     this.parse(this.constructor as typeof NimBaseCommand)
     msg = improveErrorMsg(msg, err)
     verboseError(err)
@@ -236,7 +246,7 @@ export abstract class NimBaseCommand extends Command  implements NimLogger {
   }
 
   // For non-terminal errors.  The CaptureLogger has a simpler equivalent.
-  displayError (msg: string, err?: any) {
+  displayError(msg: string, err?: any) {
     this.parse(this.constructor as typeof NimBaseCommand)
     msg = improveErrorMsg(msg, err)
     verboseError(err)
@@ -253,27 +263,27 @@ export abstract class NimBaseCommand extends Command  implements NimLogger {
 
 // Improves an error message based on analyzing the accompanying Error object (based on similar code in RuntimeBaseCommand)
 function improveErrorMsg(msg: string, err?: any): string {
-    debug('msg: %s, err: %O', msg, err)
-    const getStatusCode = (code) => `${code} ${STATUS_CODES[code] || ''}`.trim()
+  debug('msg: %s, err: %O', msg, err)
+  const getStatusCode = (code) => `${code} ${STATUS_CODES[code] || ''}`.trim()
 
-    if (err) {
-      let pretty = err.message || ''
-      if (err.name === 'OpenWhiskError') {
-        if (err.error && err.error.error) {
-          pretty = err.error.error.toLowerCase()
-          if (err.statusCode) pretty = `${pretty} (${getStatusCode(err.statusCode)})`
-          else if (err.error.code) pretty = `${pretty} (${err.error.code})`
-        } else if (err.statusCode) {
-          pretty = getStatusCode(err.statusCode)
-        }
-      }
-
-      if ((pretty || '').toString().trim()) {
-        msg = msg ? `${msg}: ${pretty}` : pretty
+  if (err) {
+    let pretty = err.message || ''
+    if (err.name === 'OpenWhiskError') {
+      if (err.error && err.error.error) {
+        pretty = err.error.error.toLowerCase()
+        if (err.statusCode) pretty = `${pretty} (${getStatusCode(err.statusCode)})`
+        else if (err.error.code) pretty = `${pretty} (${err.error.code})`
+      } else if (err.statusCode) {
+        pretty = getStatusCode(err.statusCode)
       }
     }
-    debug('improved msg: %s', msg)
-    return msg
+
+    if ((pretty || '').toString().trim()) {
+      msg = msg ? `${msg}: ${pretty}` : pretty
+    }
+  }
+  debug('improved msg: %s', msg)
+  return msg
 }
 
 // Disambiguate a namespace name when the user ends the name with a '-' character
@@ -282,27 +292,27 @@ function improveErrorMsg(msg: string, err?: any): string {
 // If there is no match, return the provided string sans '-'
 // If the match is not unique up to the apihost, throw error
 export async function disambiguateNamespace(namespace: string, apihost: string|undefined): Promise<string> {
-    if (namespace.endsWith('-')) {
-      const allCreds = await getCredentialList(authPersister)
-      namespace = namespace.slice(0, -1)
-      let matches = allCreds.filter(cred => cred.namespace.startsWith(namespace))
-      if (apihost) {
-        matches = matches.filter(match => match.apihost === apihost)
-      }
-      if (matches.length > 0) {
-        if (matches.every(cred => cred.namespace === matches[0].namespace)) {
-          return matches[0].namespace
-        } else {
-          throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
-        }
+  if (namespace.endsWith('-')) {
+    const allCreds = await getCredentialList(authPersister)
+    namespace = namespace.slice(0, -1)
+    let matches = allCreds.filter(cred => cred.namespace.startsWith(namespace))
+    if (apihost) {
+      matches = matches.filter(match => match.apihost === apihost)
+    }
+    if (matches.length > 0) {
+      if (matches.every(cred => cred.namespace === matches[0].namespace)) {
+        return matches[0].namespace
+      } else {
+        throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
       }
     }
-    // No match or no '-' to begin with
-    return namespace
+  }
+  // No match or no '-' to begin with
+  return namespace
 }
 
 // Utility to parse the value of an --apihost flag, permitting certain abbreviations
-export function parseAPIHost (host: string|undefined): string|undefined {
+export function parseAPIHost(host: string|undefined): string|undefined {
   if (!host) {
     return undefined
   }
@@ -315,36 +325,36 @@ export function parseAPIHost (host: string|undefined): string|undefined {
   if (!host.startsWith('api')) {
     host = 'api' + host
   }
-  return 'https://' + host + ".nimbella.io"
+  return 'https://' + host + '.nimbella.io'
 }
 
 // Stuff the current namespace, API host, and AUTH key into the environment so that AIO does not look in .wskprops when invoked by nim
 function fixAioCredentials(logger: NimLogger, flags: any) {
-    if (flags && flags.apihost && flags.auth) {
-      // No need to fix credentials if complete creds are supplied on cmdline
-      return
-    }
-    let store = authPersister.loadCredentialStoreIfPresent()
-    let currentHost: string
-    let currentNamespace: string
-    let currentAuth: string
-    if (store) {
-        currentHost = store.currentHost
-        currentNamespace = store.currentNamespace
-    }
-    if (currentHost && currentNamespace) {
-        const creds = store.credentials[currentHost][currentNamespace]
-        if (creds) {
-            debug('have creds for current namespace')
-            currentAuth = creds.api_key
-        } else {
-            debug(`Error retrieving credentials for '${currentNamespace}' on host '${currentHost}'`)
-        }
+  if (flags && flags.apihost && flags.auth) {
+    // No need to fix credentials if complete creds are supplied on cmdline
+    return
+  }
+  const store = authPersister.loadCredentialStoreIfPresent()
+  let currentHost: string
+  let currentNamespace: string
+  let currentAuth: string
+  if (store) {
+    currentHost = store.currentHost
+    currentNamespace = store.currentNamespace
+  }
+  if (currentHost && currentNamespace) {
+    const creds = store.credentials[currentHost][currentNamespace]
+    if (creds) {
+      debug('have creds for current namespace')
+      currentAuth = creds.api_key
     } else {
-        logger.handleError("You do not have a current namespace.  Use 'nim auth login' to create a new one or 'nim auth switch' to use an existing one")
+      debug(`Error retrieving credentials for '${currentNamespace}' on host '${currentHost}'`)
     }
-    process.env.AIO_RUNTIME_APIHOST = currentHost
-    process.env.AIO_RUNTIME_AUTH = currentAuth
-    // Don't pass the namespace to AIO.  It causes some problems with CORS in the beta workbench.
-    //process.env.AIO_RUNTIME_NAMESPACE = currentNamespace
+  } else {
+    logger.handleError("You do not have a current namespace.  Use 'nim auth login' to create a new one or 'nim auth switch' to use an existing one")
+  }
+  process.env.AIO_RUNTIME_APIHOST = currentHost
+  process.env.AIO_RUNTIME_AUTH = currentAuth
+  // Don't pass the namespace to AIO.  It causes some problems with CORS in the beta workbench.
+  // process.env.AIO_RUNTIME_NAMESPACE = currentNamespace
 }

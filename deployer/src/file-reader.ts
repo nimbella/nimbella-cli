@@ -30,12 +30,12 @@ let fs_realpath: (path: fs.PathLike) => Promise<any>
 
 // Make
 export function makeFileReader(basepath: string): ProjectReader {
-    debug("making file reader on basepath '%s'", basepath)
-    fs_readdir = promisify(fs.readdir)
-    fs_readfile = promisify(fs.readFile)
-    fs_lstat = promisify(fs.lstat)
-    fs_realpath = promisify(fs.realpath)
-    return new FileProjectReader(basepath)
+  debug("making file reader on basepath '%s'", basepath)
+  fs_readdir = promisify(fs.readdir)
+  fs_readfile = promisify(fs.readFile)
+  fs_lstat = promisify(fs.lstat)
+  fs_realpath = promisify(fs.realpath)
+  return new FileProjectReader(basepath)
 }
 
 // Implementing class
@@ -44,67 +44,67 @@ class FileProjectReader implements ProjectReader {
     basepath: string
 
     constructor(basepath: string) {
-        this.basepath = basepath
+      this.basepath = basepath
     }
 
     // Retrieve the basepath
     getFSLocation(): string {
-        return this.basepath
+      return this.basepath
     }
 
     // File system implementation of readdir.
     async readdir(path: string): Promise<PathKind[]> {
-        debug("request to read directory '%s'", path)
-        path = Path.resolve(this.basepath, path)
-        path = await fs_realpath(path)
-        debug("resolved to directory '%s", path)
-        const entries = await fs_readdir(path, { withFileTypes: true })
-        const results = entries.map(async entry => {
-            let isFile: boolean, isDirectory: boolean
-            if (entry.isSymbolicLink()) {
-                const fullName = await fs_realpath(Path.resolve(path, entry.name))
-                const stat = await fs_lstat(fullName)
-                isFile = stat.isFile()
-                isDirectory = stat.isDirectory()
-            } else {
-                isFile = entry.isFile()
-                isDirectory = entry.isDirectory()
-            }
-            return { name: entry.name, isDirectory, isFile, mode: 0o666 }
-        })
-        return Promise.all(results)
+      debug("request to read directory '%s'", path)
+      path = Path.resolve(this.basepath, path)
+      path = await fs_realpath(path)
+      debug("resolved to directory '%s", path)
+      const entries = await fs_readdir(path, { withFileTypes: true })
+      const results = entries.map(async entry => {
+        let isFile: boolean, isDirectory: boolean
+        if (entry.isSymbolicLink()) {
+          const fullName = await fs_realpath(Path.resolve(path, entry.name))
+          const stat = await fs_lstat(fullName)
+          isFile = stat.isFile()
+          isDirectory = stat.isDirectory()
+        } else {
+          isFile = entry.isFile()
+          isDirectory = entry.isDirectory()
+        }
+        return { name: entry.name, isDirectory, isFile, mode: 0o666 }
+      })
+      return Promise.all(results)
     }
 
     // File system implementation of readFileContents
     async readFileContents(path: string): Promise<Buffer> {
-        path = Path.resolve(this.basepath, path)
-        path = await fs_realpath(path)
-        return fs_readfile(path)
+      path = Path.resolve(this.basepath, path)
+      path = await fs_realpath(path)
+      return fs_readfile(path)
     }
 
     // File system implementation of isExistingFile
     isExistingFile(path: string): Promise<boolean> {
-        debug("testing existence for file '%s'", path)
-        path = Path.resolve(this.basepath, path)
-        debug("resolved to file '%s", path)
-        return fs_lstat(path).then((stats: fs.Stats) => {
-            if (stats.isFile()) {
-                debug("file exists")
-                return true
-            }
-            debug("path exists but is not a file")
-            return false
-        }).catch(() => {
-            debug("lstat failed for path %s", path)
-            return false
-        })
+      debug("testing existence for file '%s'", path)
+      path = Path.resolve(this.basepath, path)
+      debug("resolved to file '%s", path)
+      return fs_lstat(path).then((stats: fs.Stats) => {
+        if (stats.isFile()) {
+          debug('file exists')
+          return true
+        }
+        debug('path exists but is not a file')
+        return false
+      }).catch(() => {
+        debug('lstat failed for path %s', path)
+        return false
+      })
     }
 
     // File system implementation  of getPathKind
     getPathKind(path: string): Promise<PathKind> {
-        path = Path.resolve(this.basepath, path)
-        return fs_lstat(path).then((stats: fs.Stats) => {
-            return { name: Path.basename(path), isFile: stats.isFile(), isDirectory: stats.isDirectory(), mode: stats.mode }
-        }).catch(() => undefined)
+      path = Path.resolve(this.basepath, path)
+      return fs_lstat(path).then((stats: fs.Stats) => {
+        return { name: Path.basename(path), isFile: stats.isFile(), isDirectory: stats.isDirectory(), mode: stats.mode }
+      }).catch(() => undefined)
     }
 }

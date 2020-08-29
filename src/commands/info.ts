@@ -12,9 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, parseAPIHost } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, wskRequest, RuntimeTable, inBrowser, authPersister, getCredentials } from 'nimbella-deployer'
 import { open } from '../ui'
-import { wskRequest, RuntimeTable, inBrowser, authPersister, getCredentials } from 'nimbella-deployer'
 
 export default class Info extends NimBaseCommand {
   static description = "Show information about this version of 'nim'"
@@ -65,28 +64,28 @@ export default class Info extends NimBaseCommand {
   // Display an HTML file in the default browser (these commands are disabled in the workbench, not because they couldn't work there but
   // because the information they display is either available in another form ('license') or is misleading ('changes'))
   async displayAncillary(topic: string, logger: NimLogger) {
-      try {
-        const html = require.resolve(`../../${topic}.html`)
-        await open(html)
-      } catch (err) {
-        logger.displayError('', err)
-        logger.log(`Packaging error: cannot locate ${topic}`)
-      }
+    try {
+      const html = require.resolve(`../../${topic}.html`)
+      await open(html)
+    } catch (err) {
+      logger.displayError('', err)
+      logger.log(`Packaging error: cannot locate ${topic}`)
+    }
   }
 
   // Display the runtimes in a vaguely tabular format
-  async displayRuntimes(sysinfo: object, logger: NimLogger) {
+  async displayRuntimes(sysinfo: Record<string, any>, logger: NimLogger) {
     // Organize the information for display
     const rawDisplay: string[][] = []
-    const runtimes = sysinfo['runtimes'] as RuntimeTable
+    const runtimes = sysinfo.runtimes as RuntimeTable
     for (const language in runtimes) {
       for (const entry of runtimes[language]) {
         rawDisplay.push([language, entry.kind, entry.default ? '(default)' : ''])
       }
     }
     // Format for display
-    let maxLanguage: number = rawDisplay.reduce((prev, curr) => curr[0].length > prev ? curr[0].length : prev, 0)
-    let maxKind = rawDisplay.reduce((prev, curr) => curr[1].length > prev ? curr[1].length: prev, 0)
+    const maxLanguage: number = rawDisplay.reduce((prev, curr) => curr[0].length > prev ? curr[0].length : prev, 0)
+    const maxKind = rawDisplay.reduce((prev, curr) => curr[1].length > prev ? curr[1].length : prev, 0)
     const display: string[] = rawDisplay.map(entry => entry[0].padEnd(maxLanguage + 1, ' ') +
       entry[1].padEnd(maxKind + 1, ' ') + entry[2])
     // Display
@@ -97,8 +96,8 @@ export default class Info extends NimBaseCommand {
   }
 
   // Display the limits with a heuristic for units (works for the moment)
-  async displayLimits(sysinfo: object, logger: NimLogger) {
-    const limits = sysinfo['limits']
+  async displayLimits(sysinfo: Record<string, any>, logger: NimLogger) {
+    const limits = sysinfo.limits
     for (const limit in limits) {
       logger.log(`${limit}: ${this.formatUnits(limit, limits[limit])}`)
     }
@@ -108,14 +107,14 @@ export default class Info extends NimBaseCommand {
   formatUnits(limitName: string, limitValue: number): string {
     if (limitName.includes('duration')) {
       if (limitValue > 1000) {
-        return (limitValue/1000) + ' seconds'
+        return (limitValue / 1000) + ' seconds'
       } else {
         return limitValue + ' ms'
       }
     } else if (limitName.includes('memory')) {
-      return (limitValue/(1024*1024)) + ' mb'
+      return (limitValue / (1024 * 1024)) + ' mb'
     } else if (limitName.includes('logs')) {
-      return (limitValue/1024 + ' kb')
+      return (limitValue / 1024 + ' kb')
     } else {
       return String(limitValue)
     }

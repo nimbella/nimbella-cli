@@ -208,7 +208,7 @@
     "prepack": "rm -rf lib && tsc -b && npm run minify && oclif-dev manifest && oclif-dev readme",
     "test": "echo NO TESTS",
     "version": "oclif-dev readme && git add README.md",
-    "lint": "eslint src/**/*.ts deployer/src/**/*.ts --ignore-pattern node_modules --fix",
+    "lint": "eslint src/**/*.ts deployer/src/**/*.ts --ignore-pattern node_modules",
     "minify": "test $NO_MINIFY || for i in `find lib -type f -name \\*.js`; do npx minify $i > minified; mv minified $i; done"
   },
   "types": "lib/index.d.ts"

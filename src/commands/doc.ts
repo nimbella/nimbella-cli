@@ -11,19 +11,19 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
+
 import { open } from '../ui'
 const PUBLIC_DOC = 'https://nimbella.io/downloads/nim/nim.html'
 
 export default class Doc extends NimBaseCommand {
-  static description = "Display the full documentation of this CLI"
+  static description = 'Display the full documentation of this CLI'
 
   static flags: typeof NimBaseCommand.flags = { ...NimBaseCommand.flags }
 
   static args = []
 
-  static aliases = [ 'docs' ]
+  static aliases = ['docs']
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
     try {
@@ -38,7 +38,7 @@ export default class Doc extends NimBaseCommand {
       }
     } catch (err) {
       logger.displayError('', err)
-      logger.log("Packaging error: cannot locate documentation")
+      logger.log('Packaging error: cannot locate documentation')
     }
- }
+  }
 }

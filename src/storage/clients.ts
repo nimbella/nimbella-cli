@@ -20,33 +20,32 @@ type StorageClientResponse = {
     client: Bucket,
     creds: Credentials
 }
-async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix: string = ''): Promise<StorageClientResponse> {
-    let namespace = flags.namespace
-    let creds: Credentials = undefined
-    let apiHost: string = flags.apihost;
-    let storageKey: {} = undefined;
-    if (!namespace) {
-        creds = await getCredentials(authPersister);
-        namespace = creds.namespace
-    }
-    else {
-        creds = await getCredentialsForNamespace(namespace, flags.apihost, authPersister);
-    }
-    apiHost = creds.ow.apihost;
-    storageKey = creds.storageKey;
-    const bucketName = computeBucketStorageName(apiHost, namespace);
-    if (!storageKey) {
-        return { bucketName, storage: undefined, client: undefined, creds: undefined };
-    }
-    const storage = new Storage(storageKey);
-    const client = storage.bucket(bucketPrefix + bucketName);
-    return { bucketName, storage, client, creds };
+async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix = ''): Promise<StorageClientResponse> {
+  let namespace = flags.namespace
+  let creds: Credentials
+  let apiHost: string = flags.apihost
+  let storageKey: {}
+  if (!namespace) {
+    creds = await getCredentials(authPersister)
+    namespace = creds.namespace
+  } else {
+    creds = await getCredentialsForNamespace(namespace, flags.apihost, authPersister)
+  }
+  apiHost = creds.ow.apihost
+  storageKey = creds.storageKey
+  const bucketName = computeBucketStorageName(apiHost, namespace)
+  if (!storageKey) {
+    return { bucketName, storage: undefined, client: undefined, creds: undefined }
+  }
+  const storage = new Storage(storageKey)
+  const client = storage.bucket(bucketPrefix + bucketName)
+  return { bucketName, storage, client, creds }
 }
 
 export async function getWebStorageClient(args: any, flags: any, authPersister: any) {
-    return await getStorageClient(args, flags, authPersister);
+  return await getStorageClient(args, flags, authPersister)
 }
 
 export async function getObjectStorageClient(args: any, flags: any, authPersister: any) {
-    return await getStorageClient(args, flags, authPersister, 'data-');
+  return await getStorageClient(args, flags, authPersister, 'data-')
 }

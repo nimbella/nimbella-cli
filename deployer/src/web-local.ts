@@ -11,48 +11,48 @@
  * governing permissions and limitations under the License.
  */
 
-import { WebResource, BucketSpec, VersionEntry, DeployResponse } from './deploy-struct';
+import { WebResource, BucketSpec, VersionEntry, DeployResponse } from './deploy-struct'
 import { wrapSuccess, wrapError } from './util'
 import * as fs from 'fs'
 import * as path from 'path'
 
 export function ensureWebLocal(webLocal: string): string {
-    if (fs.existsSync(webLocal)) {
-        if (fs.lstatSync(webLocal).isDirectory()) {
-            return webLocal
-        } else {
-            throw new Error(`'${webLocal}' exists and is not a directory`)
-        }
+  if (fs.existsSync(webLocal)) {
+    if (fs.lstatSync(webLocal).isDirectory()) {
+      return webLocal
+    } else {
+      throw new Error(`'${webLocal}' exists and is not a directory`)
     }
-    fs.mkdirSync(webLocal, { recursive: true })
-    return webLocal
+  }
+  fs.mkdirSync(webLocal, { recursive: true })
+  return webLocal
 }
 
 export function deployToWebLocal(resource: WebResource, webLocal: string, spec: BucketSpec): Promise<DeployResponse> {
-    let destination = resource.simpleName
-    // Do stripping
-    if (spec && spec.strip) {
-        let parts = destination.split(path.sep)
-        if (parts.length > spec.strip) {
-            parts = parts.slice(spec.strip)
-            destination = parts.join(path.sep)
-        }
+  let destination = resource.simpleName
+  // Do stripping
+  if (spec && spec.strip) {
+    let parts = destination.split(path.sep)
+    if (parts.length > spec.strip) {
+      parts = parts.slice(spec.strip)
+      destination = parts.join(path.sep)
     }
-    // Do prefixing
-    destination = (spec && spec.prefixPath) ? path.join(spec.prefixPath, destination) : destination
-    // Make relative to the webLocal directory
-    destination = path.resolve(webLocal, destination)
-    // Make sure that parent directories exist
-    const parent = path.dirname(destination)
-    if (!fs.existsSync(parent)) {
-        fs.mkdirSync(parent, { recursive: true })
-    }
-    // Copy
-    try {
-        fs.copyFileSync(resource.filePath, destination)
-        const response = wrapSuccess(destination, "web", false, undefined, {}, undefined)
-         return Promise.resolve(response)
-    } catch (err) {
-        return Promise.resolve(wrapError(err, `web resource '${resource.simpleName}'`))
-    }
+  }
+  // Do prefixing
+  destination = (spec && spec.prefixPath) ? path.join(spec.prefixPath, destination) : destination
+  // Make relative to the webLocal directory
+  destination = path.resolve(webLocal, destination)
+  // Make sure that parent directories exist
+  const parent = path.dirname(destination)
+  if (!fs.existsSync(parent)) {
+    fs.mkdirSync(parent, { recursive: true })
+  }
+  // Copy
+  try {
+    fs.copyFileSync(resource.filePath, destination)
+    const response = wrapSuccess(destination, 'web', false, undefined, {}, undefined)
+    return Promise.resolve(response)
+  } catch (err) {
+    return Promise.resolve(wrapError(err, `web resource '${resource.simpleName}'`))
+  }
 }
