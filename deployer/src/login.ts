@@ -48,7 +48,6 @@ interface NimUserData {
 
 // Non-exported constants
 const AUTHORIZE_URL_PATH = '/api/v1/web/nimbella/user/authorize.json'
-const NAMESPACE_URL_PATH = '/api/v1/namespaces'
 const DEFAULT_API_HOST = 'https://apigcp.nimbella.io'
 
 // Login with token.  Handles interaction with the Nimbella authorize action via the whisk REST API.
@@ -63,7 +62,7 @@ export async function doLogin(token: string, persister: Persister, host: string 
   const response: ExpectedResponse = rawResponse.body ? rawResponse.body : { error: 'unexpected response' }
   if (!response.status) {
     throw new Error('The response from the Nimbella service was ill-formed')
-  } else if (response.status == 'failed') {
+  } else if (response.status === 'failed') {
     throw new Error("The Nimbella Service responded '" + (response.error || 'unknown failure') + "'")
   } else {
     debug('authorize response: %O', response)

@@ -25,7 +25,7 @@ export default class Doc extends NimBaseCommand {
 
   static aliases = ['docs']
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     try {
       if (inBrowser) {
         logger.log('This displays the Nimbella CLI documentation')

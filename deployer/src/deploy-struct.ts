@@ -105,11 +105,11 @@ export interface Feedback {
 }
 
 export class DefaultFeedback implements Feedback {
-  warn(message?: any, ...optionalParams: any[]) {
+  warn(message?: any, ...optionalParams: any[]): void {
     console.warn(message, ...optionalParams)
   }
 
-  progress(message?: any, ...optionalParams: any[]) {
+  progress(message?: any, ...optionalParams: any[]): void {
     console.log(message, ...optionalParams)
   }
 }
@@ -267,7 +267,7 @@ export interface CredentialEntry {
     redis: boolean,
     project?: string,
     production?: boolean,
-    commander?: object
+    commander?: Record<string, unknown>
 }
 
 // Part of CredentialStore for the storage credentials.  THese are organized for convenience in initializing a Storage
@@ -285,7 +285,7 @@ export interface Credentials {
     redis: boolean,
     project?: string,
     production?: boolean,
-    commander?: object
+    commander?: Record<string, unknown>
 }
 
 // Compact and less complete information about a Credential suitable for listing and tabular display

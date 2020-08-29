@@ -53,8 +53,7 @@ export function getUserAgent(): string {
 
 // Deploy a disk-resident project given its path and options to pass to openwhisk.  The options are merged
 // with those in the config; the result must include api or apihost, and must include api_key.
-export function deployProject(path: string, owOptions: OWOptions, credentials: Credentials|undefined, persister: Persister,
-  flags: Flags, userAgent?: string, feedback?: Feedback): Promise<DeployResponse> {
+export function deployProject(path: string, owOptions: OWOptions, credentials: Credentials|undefined, persister: Persister, flags: Flags): Promise<DeployResponse> {
   debug('deployProject invoked with incremental %s', flags.incremental)
   return readPrepareAndBuild(path, owOptions, credentials, persister, flags).then(spec => {
     if (spec.error) {
@@ -205,7 +204,7 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
   debug('credentials.ow: %O', credentials.ow)
   // We have valid credentials but now we must check that we are allowed to deploy to the namespace according to the ownership rules.
   if (credentials.project) {
-    if (credentials.project != path.resolve(inputSpec.filePath)) {
+    if (credentials.project !== path.resolve(inputSpec.filePath)) {
       return errorStructure(new Error(`Deployment to namespace '${credentials.namespace}' must be from project '${credentials.project}'`))
     }
     if (isTest && credentials.production) {
@@ -273,8 +272,8 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
       const wrapPackage = inputSpec.actionWrapPackage
       return Promise.all(wrapping).then(wrapped => {
         // If wrapPackage is already in the inputSpec, add the new actions to it.  Otherwise, make a new PackageSpec
-        const existing: PackageSpec[] = packages.filter(pkg => pkg.name == wrapPackage)
-        if (existing.length == 0) {
+        const existing: PackageSpec[] = packages.filter(pkg => pkg.name === wrapPackage)
+        if (existing.length === 0) {
           packages.push({ name: wrapPackage, actions: wrapped, shared: false })
         } else {
           const modified = existing[0].actions.concat(wrapped)
@@ -308,7 +307,7 @@ export function getMessageFromError(err: any): string {
 }
 
 // Wipe a namespace of everything except its activations (the activations cannot be wiped via the public API)
-export async function wipeNamespace(host: string, auth: string) {
+export async function wipeNamespace(host: string, auth: string): Promise<void> {
   debug('Requested wipe-namespace function with host %s and auth %s', host, auth)
   const init: OWOptions = { apihost: host, api_key: auth }
   const client = openwhisk(init)

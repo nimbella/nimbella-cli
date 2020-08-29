@@ -42,7 +42,7 @@ export async function cleanOrLoadVersions(todeploy: DeployStructure): Promise<De
     // Incremental deployment requires the versions up front to have access to the form hashes
     todeploy.versions = loadVersions(todeploy.filePath, todeploy.credentials.namespace, todeploy.credentials.ow.apihost)
   } else {
-    if (todeploy.includer.isWebIncluded && (todeploy.cleanNamespace || todeploy.bucket && todeploy.bucket.clean)) {
+    if (todeploy.includer.isWebIncluded && (todeploy.cleanNamespace || (todeploy.bucket && todeploy.bucket.clean))) {
       if (todeploy.bucketClient) {
         const warn = await cleanBucket(todeploy.bucketClient, todeploy.bucket, todeploy.credentials.ow)
         if (warn) {
@@ -90,7 +90,7 @@ function cleanActionsAndPackages(todeploy: DeployStructure): Promise<DeployStruc
   }
   const promises: Promise<any>[] = []
   for (const pkg of todeploy.packages) {
-    const defaultPkg = pkg.name == 'default'
+    const defaultPkg = pkg.name === 'default'
     if (pkg.clean && !defaultPkg && todeploy.includer.isPackageIncluded(pkg.name)) {
       // We should have headed off 'clean' of the default package already.  The added test is just in case
       promises.push(cleanPackage(todeploy.owClient, pkg.name, todeploy.versions))
@@ -116,7 +116,7 @@ export async function cleanPackage(client: openwhisk.Client, name: string, versi
     if (!pkg) {
       return { name }
     }
-    if (!pkg.actions || pkg.actions.length == 0) {
+    if (!pkg.actions || pkg.actions.length === 0) {
       debug('No more actions, removing package')
       if (versions && versions.packageVersions) { delete versions.packageVersions[name] }
       return client.packages.delete({ name })
@@ -173,7 +173,7 @@ function main() {
 export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, deployerAnnot: DeployerAnnotation,
   projectParams: openwhisk.Dict, projectEnv: openwhisk.Dict, namespaceIsClean: boolean, versions: VersionEntry,
   reader: ProjectReader): Promise<DeployResponse> {
-  if (pkg.name == 'default') {
+  if (pkg.name === 'default') {
     return Promise.all(pkg.actions.map(action => deployAction(action, wsk, '', deployerAnnot, namespaceIsClean, versions, reader)))
       .then(combineResponses)
   }
@@ -236,7 +236,9 @@ function encodeParameters(normalParms: openwhisk.Dict, envParms: openwhisk.Dict)
   }
   if (envParms) {
     const envs = keyVal(envParms)
-    envs.forEach(env => env.init = true)
+    envs.forEach(env => {
+      env.init = true
+    })
     ans = ans.concat(envs)
   }
   return ans
@@ -267,7 +269,7 @@ async function deployActionFromCode(action: ActionSpec, prefix: string, code: st
   deployer.digest = digest.substring(0, 8)
   deployer.zipped = action.zipped
   annotations.deployer = deployer
-  if (action.web == true) {
+  if (action.web === true) {
     annotations['web-export'] = true
     annotations.final = true
     annotations['raw-http'] = false
@@ -275,7 +277,7 @@ async function deployActionFromCode(action: ActionSpec, prefix: string, code: st
     annotations['web-export'] = true
     annotations.final = true
     annotations['raw-http'] = true
-  } else if (action.web == false) {
+  } else if (action.web === false) {
     annotations['web-export'] = false
     annotations.final = false
     annotations['raw-http'] = false

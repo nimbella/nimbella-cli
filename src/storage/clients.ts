@@ -24,7 +24,6 @@ async function getStorageClient(args: any, flags: any, authPersister: any, bucke
   let namespace = flags.namespace
   let creds: Credentials
   let apiHost: string = flags.apihost
-  let storageKey: {}
   if (!namespace) {
     creds = await getCredentials(authPersister)
     namespace = creds.namespace
@@ -32,7 +31,7 @@ async function getStorageClient(args: any, flags: any, authPersister: any, bucke
     creds = await getCredentialsForNamespace(namespace, flags.apihost, authPersister)
   }
   apiHost = creds.ow.apihost
-  storageKey = creds.storageKey
+  const storageKey = creds.storageKey
   const bucketName = computeBucketStorageName(apiHost, namespace)
   if (!storageKey) {
     return { bucketName, storage: undefined, client: undefined, creds: undefined }
@@ -42,10 +41,10 @@ async function getStorageClient(args: any, flags: any, authPersister: any, bucke
   return { bucketName, storage, client, creds }
 }
 
-export async function getWebStorageClient(args: any, flags: any, authPersister: any) {
+export async function getWebStorageClient(args: any, flags: any, authPersister: any): Promise<StorageClientResponse> {
   return await getStorageClient(args, flags, authPersister)
 }
 
-export async function getObjectStorageClient(args: any, flags: any, authPersister: any) {
+export async function getObjectStorageClient(args: any, flags: any, authPersister: any): Promise<StorageClientResponse> {
   return await getStorageClient(args, flags, authPersister, 'data-')
 }

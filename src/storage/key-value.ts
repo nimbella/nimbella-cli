@@ -13,10 +13,10 @@
 
 import { getCredentials, getCredentialsForNamespace, Credentials } from 'nimbella-deployer'
 
-const openwhisk = require('openwhisk')
+import * as openwhisk from 'openwhisk'
 const systemNamespace = 'nimbella'
 
-export async function queryKVStore(query: string, args: any, flags: any, authPersister: any) {
+export async function queryKVStore(query: string, args: any, flags: any, authPersister: any): Promise<openwhisk.Dict> {
   let namespace = flags.namespace
   let creds: Credentials
   if (!namespace) {
@@ -28,5 +28,5 @@ export async function queryKVStore(query: string, args: any, flags: any, authPer
   if (!creds) { return }
   if (!creds.redis) { throw new Error('Key-Value Store not enabled for namespace: ' + namespace) }
   const ow = openwhisk(creds.ow)
-  return ow.actions.invoke({ actionName: `/${systemNamespace}/${query}`, blocking: true, result: true, params: args })
+  return ow.actions.invoke({ name: `/${systemNamespace}/${query}`, blocking: true, result: true, params: args })
 }

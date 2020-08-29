@@ -18,7 +18,7 @@ import { DeployStructure, PackageSpec, ActionSpec, extFromRuntime } from 'nimbel
 import { samples } from './samples'
 
 // Working function used by both create and update
-export async function createOrUpdateProject(updating: boolean, args: any, flags: any, logger: any) {
+export async function createOrUpdateProject(updating: boolean, args: any, flags: any, logger: any): Promise<void> {
   const { target, clean, config } = flags
   const { kind, sampleText } = languageToKindAndSample(flags.language, logger)
   let projectConfig: DeployStructure = config ? configTemplate() : (target || clean) ? {} : undefined

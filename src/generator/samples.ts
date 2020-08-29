@@ -45,7 +45,7 @@ const py = `def main(args):
 
 const swift = `func main(args: [String:Any]) -> [String:Any] {
       if let name = args["name"] as? String {
-          let greeting = "Hello \(name)!"
+          let greeting = "Hello \\(name)!"
           print(greeting)
           return [ "greeting" : greeting ]
       } else {

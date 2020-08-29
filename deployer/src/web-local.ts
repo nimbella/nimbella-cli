@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { WebResource, BucketSpec, VersionEntry, DeployResponse } from './deploy-struct'
+import { WebResource, BucketSpec, DeployResponse } from './deploy-struct'
 import { wrapSuccess, wrapError } from './util'
 import * as fs from 'fs'
 import * as path from 'path'

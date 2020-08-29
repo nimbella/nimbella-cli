@@ -40,7 +40,7 @@ class IncluderImpl implements Includer {
         this.startWithAllIncluded = true
       } else {
         for (let token of includes) {
-          if (token == 'web') {
+          if (token === 'web') {
             this.isWebIncluded = true
             continue
           }
@@ -57,7 +57,7 @@ class IncluderImpl implements Includer {
       }
       if (excludes) {
         for (let token of excludes) {
-          if (token == 'web') {
+          if (token === 'web') {
             this.isWebIncluded = false
             continue
           }
@@ -95,7 +95,7 @@ class IncluderImpl implements Includer {
 
     // Implement isIncludingEverything
     isIncludingEverything = () => {
-      return this.startWithAllIncluded && this.includedActions.size == 0 && this.includedPackages.size == 0
+      return this.startWithAllIncluded && this.includedActions.size === 0 && this.includedPackages.size === 0
     }
 
     // Utility to add an action to an action map

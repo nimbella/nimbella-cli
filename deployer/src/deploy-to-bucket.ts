@@ -12,7 +12,10 @@
  */
 
 import { Storage, Bucket } from '@google-cloud/storage'
-import { Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader, OWOptions } from './deploy-struct'
+import {
+  Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader,
+  CredentialStorageEntry, OWOptions
+} from './deploy-struct'
 import { wrapSuccess, wrapError, inBrowser } from './util'
 import axios from 'axios'
 import * as openwhisk from 'openwhisk'
@@ -52,7 +55,7 @@ function addWebMeta(bucket: Bucket, bucketSpec: BucketSpec): Promise<Bucket> {
 }
 
 // Make a Bucket (client to access a bucket)
-async function makeClient(bucketName: string, options: {}): Promise<Bucket> {
+async function makeClient(bucketName: string, options: CredentialStorageEntry): Promise<Bucket> {
   debug('entered makeClient')
   const storage = new Storage(options)
   debug('made Storage handle')

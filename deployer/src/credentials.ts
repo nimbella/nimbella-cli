@@ -25,13 +25,13 @@ const debug = createDebug('nimbella.cli')
 
 // Non-exported constants
 const CREDENTIAL_STORE_KEY = 'wb.credential-store'
-const HOME = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME']
+const HOME = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME']
 const NAMESPACE_URL_PATH = '/api/v1/namespaces'
 const NIMBELLA_DIR = '.nimbella'
 const WSK_PROPS = 'wskprops'
 const CREDENTIAL_STORE = 'credentials.json'
 // Function indirection needed for webpack
-export function nimbellaDir() {
+export function nimbellaDir(): string {
   const fromEnv = process.env.NIMBELLA_DIR
   if (fromEnv && fromEnv.length > 0) {
     return fromEnv
@@ -69,7 +69,7 @@ export const browserPersister: Persister = {
 // Not a constant so that it can be explicitly set in the workbench
 export let authPersister = inBrowser ? browserPersister : fileSystemPersister
 // For explicitly setting in workbench
-export function setInBrowser() {
+export function setInBrowser(): void {
   authPersister = browserPersister
 }
 
@@ -98,12 +98,14 @@ export async function forgetNamespace(namespace: string, apihost: string|undefin
   let undefinedWarning = false
   if (hostMap && hostMap[namespace]) {
     delete hostMap[namespace]
-    if (host == store.currentHost && store.currentNamespace == namespace) {
+    if (host === store.currentHost && store.currentNamespace === namespace) {
       store.currentNamespace = undefined
       undefinedWarning = true
       try {
         fs.unlinkSync(wskProps())
-      } catch {}
+      } catch {
+        // Do nothing
+      }
     }
     persister.saveCredentialStore(store)
     if (undefinedWarning) {
@@ -127,7 +129,7 @@ export async function switchNamespace(namespace: string, apihost: string|undefin
   const store = await persister.loadCredentialStore()
   const answer = getUniqueCredentials(namespace, apihost, store)
   const newHost = answer.ow.apihost
-  if (store.currentHost == newHost && store.currentNamespace == namespace) {
+  if (store.currentHost === newHost && store.currentNamespace === namespace) {
     debug('not an actual change')
     return answer
   }
@@ -199,7 +201,7 @@ export async function getCredentialDict(persister: Persister): Promise<{[host: s
   for (const apihost in store.credentials) {
     let rows: CredentialRow[] = []
     for (const namespace in store.credentials[apihost]) {
-      const current = apihost == store.currentHost && namespace == store.currentNamespace
+      const current = apihost === store.currentHost && namespace === store.currentNamespace
       const storage = !!store.credentials[apihost][namespace].storageKey
       const { redis, project, production } = store.credentials[apihost][namespace]
       rows.push({ namespace, current, storage, apihost, redis, project, production })
@@ -231,13 +233,13 @@ export async function getCurrentNamespace(persister: Persister): Promise<string|
 }
 
 // fileSystemPersister functions (indirectly exported)
-function saveCredentialStore(store: CredentialStore) {
+function saveCredentialStore(store: CredentialStore): void {
   const toWrite = JSON.stringify(store, null, 2)
   debug('writing credential store')
   fs.writeFileSync(credentialStore(), toWrite)
 }
 
-function saveLegacyInfo(apihost: string, auth: string) {
+function saveLegacyInfo(apihost: string, auth: string): void {
   saveWskProps(apihost, auth)
   debug('stored .wskprops with API host %s', apihost)
 }
@@ -279,12 +281,13 @@ function browserLoadCredentialStore(): Promise<CredentialStore> {
   return Promise.resolve(browserLoadCredentialStoreIfPresent())
 }
 
-function browserSaveCredentialStore(store: CredentialStore) {
+function browserSaveCredentialStore(store: CredentialStore): void {
   const storeString = JSON.stringify(store)
   window.localStorage.setItem(CREDENTIAL_STORE_KEY, storeString)
 }
 
-function browserSaveLegacyInfo(apihost: string, auth: string) {
+function browserSaveLegacyInfo(_apihost: string, _auth: string): void {
+  // No-op
 }
 
 // Utility functions (not exported)
@@ -309,10 +312,10 @@ function initialCredentialStore(): CredentialStore {
 // key of 'nimbella' which is first set with a low-level login.
 function wouldReplace(store: CredentialStore, apihost: string, namespace: string, auth: string): boolean {
   const existing = store.credentials[apihost] ? store.credentials[apihost][namespace] : undefined
-  if (!existing || !existing.storageKey && !existing.redis) {
+  if (!existing || (!existing.storageKey && !existing.redis)) {
     return false
   }
-  return auth == existing.api_key
+  return auth === existing.api_key
 }
 
 // Write ~/.nimbella/wskprops.  Used when the default api host or api key change (TODO: this never saves the 'insecure' flag; that should
@@ -344,9 +347,9 @@ function getUniqueCredentials(namespace: string, apihost: string|undefined, stor
     }
   } else {
     const pairs = Object.entries(possibles)
-    if (pairs.length == 1) {
+    if (pairs.length === 1) {
       [newHost, credentialEntry] = pairs[0]
-    } else if (pairs.length == 0) {
+    } else if (pairs.length === 0) {
       throw new Error(`No credentials found for namespace '${namespace}' on any API host`)
     } else {
       throw new Error(`The namespace '${namespace}' exists on more than one API host.  An '--apihost' argument is required`)
@@ -373,7 +376,7 @@ function parseStorageString(storage: string, namespace: string): CredentialStora
 
 // Add the commander data section to a namespace entry.  Returns Promise<true> on success and Promise<false> if the namespace
 // entry does not exist.
-export async function addCommanderData(apihost: string, namespace: string, data: object, persister: Persister): Promise<boolean> {
+export async function addCommanderData(apihost: string, namespace: string, data: Record<string, unknown>, persister: Persister): Promise<boolean> {
   const store = await persister.loadCredentialStore()
   const hostEntry = store.credentials[apihost]
   if (hostEntry && hostEntry[namespace]) {
@@ -400,7 +403,7 @@ export async function deleteGithubAccount(name: string, persister: Persister): P
   const store = await persister.loadCredentialStore()
   if (store.github && store.github[name]) {
     delete store.github[name]
-    if (name == store.currentGithub) {
+    if (name === store.currentGithub) {
       store.currentGithub = undefined
     }
     debug('Github deletion of account %s succeeded, with currentGithub=%s', name, store.currentGithub)
@@ -424,7 +427,7 @@ export async function switchGithubAccount(name: string, persister: Persister): P
 }
 
 // Add a github account
-export async function addGithubAccount(name: string, token: string, persister: Persister) {
+export async function addGithubAccount(name: string, token: string, persister: Persister): Promise<void> {
   const store = await persister.loadCredentialStore()
   if (!store.github) {
     store.github = {}
@@ -456,7 +459,7 @@ export async function deletePostmanKey(name: string, persister: Persister): Prom
   const store = await persister.loadCredentialStore()
   if (store.postman && store.postman[name]) {
     delete store.postman[name]
-    if (name == store.currentPostman) {
+    if (name === store.currentPostman) {
       store.currentPostman = undefined
     }
     debug('Postman deletion of key %s succeeded, with currentPostman=%s', name, store.currentPostman)
@@ -480,7 +483,7 @@ export async function switchPostmanKey(name: string, persister: Persister): Prom
 }
 
 // Add a postman key
-export async function addPostmanKey(name: string, token: string, persister: Persister) {
+export async function addPostmanKey(name: string, token: string, persister: Persister): Promise<void> {
   const store = await persister.loadCredentialStore()
   if (!store.postman) {
     store.postman = {}

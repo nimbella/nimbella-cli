@@ -25,7 +25,7 @@ import { authPersister } from './credentials'
 const rimraf = promisify(rimrafOrig)
 const debug = makeDebug('nim:deployer:github')
 
-const TEMP = process.platform == 'win32' ? process.env.TEMP : '/tmp'
+const TEMP = process.platform === 'win32' ? process.env.TEMP : '/tmp'
 const CACHE_DIR = 'deployer-git-cache'
 function cacheDir() {
   return Path.join(TEMP, CACHE_DIR)
@@ -45,7 +45,7 @@ export interface GithubDef {
 // Assign a name to the otherwise anonymous branch of the Ocktokit.ReposGetContentResponse union type
 export interface OctokitNonArrayResponse {
   // The actual type in Octokit has more fields but we don't bother since this is a workaround
-  content: string
+  content: string,
   encoding: BufferEncoding
 }
 
@@ -66,7 +66,7 @@ export function parseGithubRef(projectPath: string): GithubDef {
   let ref: string
   if (hashSplit.length > 2) {
     throw new Error('too many # characters in github reference')
-  } else if (hashSplit.length == 2) {
+  } else if (hashSplit.length === 2) {
     ref = hashSplit[1]
     projectPath = hashSplit[0]
   }
@@ -131,7 +131,7 @@ export async function readContents(client: Octokit, def: GithubDef, path: string
   debug('reading %O at %s', def, path)
   const { owner, repo, ref } = def
   type ResponseType = Octokit.Response<Octokit.ReposGetContentsResponse>
-  const contents: ResponseType  = await client.repos.getContents(ref ? { owner, repo, path, ref } : { owner, repo, path })
+  const contents: ResponseType = await client.repos.getContents(ref ? { owner, repo, path, ref } : { owner, repo, path })
   if (contents.status !== 200) {
     throw new Error(`Reading path '${path}' from ${def.owner}/${def.repo}' failed with status code ${contents.status}`)
   }
@@ -146,8 +146,8 @@ export function seemsToBeProject(data: Octokit.ReposGetContentsResponse): boolea
   if (Array.isArray(data)) {
     const items = data as Octokit.ReposGetContentsResponseItem[]
     for (const item of items) {
-      if (item.name == 'project.yml' && item.type == 'file') return true
-      if (['packages', 'web'].includes(item.name) && item.type == 'dir') return true
+      if (item.name === 'project.yml' && item.type === 'file') return true
+      if (['packages', 'web'].includes(item.name) && item.type === 'dir') return true
     }
   }
   return false
@@ -166,7 +166,7 @@ async function fetchDir(client: Octokit, def: GithubDef, path: string, location:
   let promise: Promise<any> = Promise.resolve(undefined)
   for (const item of contents as Octokit.ReposGetContentsResponseItem[]) {
     const target = Path.join(location, item.name)
-    if (item.type == 'dir') {
+    if (item.type === 'dir') {
       fs.mkdirSync(target)
       promise = promise.then(() => fetchDir(client, def, item.path, target, false))
     } else {

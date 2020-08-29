@@ -88,13 +88,13 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
         default:
           strays.push(item.name)
         }
-      } else if (!item.isDirectory && item.name == CONFIG_FILE) {
+      } else if (!item.isDirectory && item.name === CONFIG_FILE) {
         config = item.name
-      } else if (!item.isDirectory && item.name == LEGACY_CONFIG_FILE) {
+      } else if (!item.isDirectory && item.name === LEGACY_CONFIG_FILE) {
         legacyConfig = item.name
       } else if (!item.isDirectory && (item.name.endsWith('.yml') || item.name.endsWith('.yaml'))) {
         notconfig = item.name
-      } else if (!env && !item.isDirectory && item.name == ENV_FILE) {
+      } else if (!env && !item.isDirectory && item.name === ENV_FILE) {
         // Env file reading will not go through the reader so use a path that includes a path to the project
         env = path.join(filePath, item.name)
       } else {

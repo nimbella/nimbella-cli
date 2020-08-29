@@ -18,7 +18,7 @@ export {
   wipeNamespace, wipePackage, getUserAgent
 } from './api'
 export {
-  DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, Flags, PackageSpec, ActionSpec,
+  DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, CredentialStorageEntry, Flags, PackageSpec, ActionSpec,
   CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider
 } from './deploy-struct'
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'

@@ -47,7 +47,7 @@ export function getBuildForAction(filepath: string, reader: ProjectReader): Prom
 // any building occured, even if most things weren't subject to building.
 export function buildAllActions(pkgs: PackageSpec[], buildTable: BuildTable, flags: Flags, reader: ProjectReader,
   feedback: Feedback): Promise<PackageSpec[]> {
-  if (!pkgs || pkgs.length == 0) {
+  if (!pkgs || pkgs.length === 0) {
     return undefined
   }
   // If there are any packages, we are going to have to search through them but if none of them build anything we can punt
@@ -59,7 +59,7 @@ export function buildAllActions(pkgs: PackageSpec[], buildTable: BuildTable, fla
       promises.push(builtPackage)
     }
   }
-  if (promises.length == 0) {
+  if (promises.length === 0) {
     return undefined
   }
   return Promise.all(promises).then((newpkgs: PackageSpec[]) => {
@@ -154,7 +154,7 @@ async function processIncludeFileItems(items: string[], dirPath: string, reader:
   const complex: Promise<string[][]>[] = []
   const simple: string[][] = []
   for (const item of items) {
-    if (!item || item.length == 0) {
+    if (!item || item.length === 0) {
       continue
     }
     debug('processing include item %s', item)
@@ -203,7 +203,7 @@ async function identifyActionFiles(action: ActionSpec, incremental: boolean, ver
   if (await reader.isExistingFile(includesPath)) {
     // If there is .include or .source, it is canonical and all else is ignored
     return processInclude(includesPath, action.file, reader).then(pairs => {
-      if (pairs.length == 0) {
+      if (pairs.length === 0) {
         return Promise.reject(new Error(includesPath + ' is empty'))
       } else if (pairs.length > 1) {
         return autozipBuilder(pairs, action, incremental, verboseZip, reader, feedback)
@@ -215,9 +215,9 @@ async function identifyActionFiles(action: ActionSpec, incremental: boolean, ver
   return getIgnores(action.file, reader).then(ignore => {
     return promiseFilesAndFilterFiles(action.file, reader).then((items: string[]) => {
       items = applyIgnores(action.file, items, ignore)
-      if (items.length == 0) {
+      if (items.length === 0) {
         return Promise.reject(new Error(`Action '${action.name}' has no included files`))
-      } else if (items.length == 1) {
+      } else if (items.length === 1) {
         return singleFileBuilder(action, items[0])
       } else {
         const pairs = items.map(item => {
@@ -260,8 +260,8 @@ function outOfLineBuilder(filepath: string, displayPath: string, sharedBuilds: B
   isAction: boolean, flags: Flags, reader: ProjectReader, feedback: Feedback): Promise<any> {
   const buildPath = path.join(filepath, '.build')
   return readFileAsList(buildPath, reader).then(async contents => {
-    if (contents.length == 0 || contents.length > 1) {
-      return Promise.reject(buildPath + ' contains too many or too few lines')
+    if (contents.length === 0 || contents.length > 1) {
+      return Promise.reject(new Error(buildPath + ' contains too many or too few lines'))
     }
     const redirected = joinAndNormalize(filepath, contents[0])
     const stat: PathKind = await reader.getPathKind(redirected)
@@ -276,11 +276,12 @@ function outOfLineBuilder(filepath: string, displayPath: string, sharedBuilds: B
         const cwd = makeLocal(reader, redirected)
         switch (special) {
         case 'build.sh':
-        case 'build.cmd':
+        case 'build.cmd': {
           const script = makeLocal(reader, redirected, special)
           // Like the direct link case, just a different way of doing it
           build = () => scriptBuilder(script, cwd, displayPath, flags, feedback)
           break
+        }
         case 'package.json':
           build = () => npmBuilder(cwd, displayPath, flags, feedback)
           break
@@ -349,7 +350,7 @@ function outOfLineBuilder(filepath: string, displayPath: string, sharedBuilds: B
 function isSharedBuild(items: PathKind[]): boolean {
   let shared = false
   items.forEach(item => {
-    if (!item.isDirectory && item.name == '.shared') {
+    if (!item.isDirectory && item.name === '.shared') {
       shared = true
     }
   })
@@ -437,7 +438,7 @@ function agreeOnRuntime(items: string[]): string {
   items.forEach(item => {
     const { runtime } = actionFileToParts(item)
     if (runtime) {
-      if (agreedRuntime && runtime != agreedRuntime) {
+      if (agreedRuntime && runtime !== agreedRuntime) {
         return undefined
       }
       agreedRuntime = runtime
@@ -459,17 +460,17 @@ function findSpecialFile(items: PathKind[], filepath: string, isAction: boolean)
   const files = items.filter(item => !item.isDirectory)
   let buildDotSh = false; let buildDotCmd = false; let npm = false; let include = false; let dotBuild = false; let ignore = false
   for (const file of files) {
-    if (file.name == 'build.sh') {
+    if (file.name === 'build.sh') {
       buildDotSh = true
-    } else if (file.name == 'build.cmd') {
+    } else if (file.name === 'build.cmd') {
       buildDotCmd = true
-    } else if (file.name == 'package.json') {
+    } else if (file.name === 'package.json') {
       npm = true
-    } else if (file.name == '.include' || file.name == '.source') {
+    } else if (file.name === '.include' || file.name === '.source') {
       include = true
-    } else if (file.name == '.ignore') {
+    } else if (file.name === '.ignore') {
       ignore = true
-    } else if (file.name == '.build') {
+    } else if (file.name === '.build') {
       dotBuild = true
     }
   }
@@ -478,10 +479,10 @@ function findSpecialFile(items: PathKind[], filepath: string, isAction: boolean)
     throw new Error(`In ${filepath}: '.build' should not be present alongside 'build.sh' or 'build.cmd'`)
   } else if (include && ignore) {
     throw new Error(`In ${filepath}: '.include' (or '.source') and '.ignore' may not both be present`)
-  } else if (isAction && (files.length == 0 || ignore && files.length == 1)) {
+  } else if (isAction && (files.length === 0 || (ignore && files.length === 1))) {
     throw new Error(`Action directory ${filepath} has no files`)
   }
-  if (process.platform == 'win32') {
+  if (process.platform === 'win32') {
     if (buildDotSh && !buildDotCmd) {
       throw new Error(`In ${filepath}: 'build.sh' won't run on this platform and no 'build.cmd' is provided`)
     }
@@ -597,7 +598,7 @@ async function autozipBuilder(pairs: string[][], action: ActionSpec, incremental
     if (inMemory) {
       const code = (output as memoryStreams.WritableStream).toBuffer().toString('base64')
       if (!code) {
-        return Promise.reject('An error occurred in in-memory zipping')
+        return Promise.reject(new Error('An error occurred in in-memory zipping'))
       }
       zipDebug('in memory zipping complete with code of length %d', code.length)
       action.code = code as string
@@ -612,29 +613,28 @@ async function autozipBuilder(pairs: string[][], action: ActionSpec, incremental
 function build(cmd: string, args: string[], realPath: string, displayPath: string, infoMsg: string,
   errorTag: string, verbose: boolean, feedback: Feedback): Promise<any> {
   debug('building with realPath=%s and displayPath=%s', realPath, displayPath)
+  let result = ''
+  const time = Date.now()
+  function statusUpdate(data: { toString: () => string }) {
+    result += data.toString()
+    const newTime = Date.now()
+    if ((newTime - time) > 5000) {
+      feedback.progress('Still running', infoMsg, 'in', displayPath)
+    }
+  }
   return new Promise(function(resolve, reject) {
     feedback.progress('Started running', infoMsg, 'in', displayPath)
-    const shell = process.platform == 'win32' ? true : process.env.shell || '/bin/bash'
+    const shell = process.platform === 'win32' ? true : process.env.shell || '/bin/bash'
     const child = spawn(cmd, args, { cwd: realPath, shell })
-    let result = ''
     if (verbose) {
       child.stdout.on('data', (data) => feedback.progress(String(data)))
       child.stderr.on('data', (data) => feedback.warn(String(data)))
     } else {
-      let time = Date.now()
-      function statusUpdate(data: { toString: () => string }) {
-        result += data.toString()
-        const newTime = Date.now()
-        if ((newTime - time) > 5000) {
-          feedback.progress('Still running', infoMsg, 'in', displayPath)
-          time = newTime
-        }
-      }
       child.stdout.on('data', statusUpdate)
       child.stderr.on('data', statusUpdate)
     }
     child.on('close', (code) => {
-      if (code != 0) {
+      if (code !== 0) {
         if (!verbose) {
           feedback.warn('Output of failed build in %s', realPath)
           if (isGithubRef(displayPath)) {
@@ -642,7 +642,7 @@ function build(cmd: string, args: string[], realPath: string, displayPath: strin
           }
           feedback.warn(result)
         }
-        reject(`'${errorTag}' exited with code ${code}`)
+        reject(new Error(`'${errorTag}' exited with code ${code}`))
       } else {
         feedback.progress('Finished running', infoMsg, 'in', displayPath)
         resolve(undefined)

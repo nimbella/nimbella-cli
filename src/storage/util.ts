@@ -21,14 +21,14 @@ const LIST_SHORT_HEADER = 'Name'
 const LIST_LONG_HEADER = `Size${' '.repeat(SIZE_LEN - 4)} Updated${' '.repeat(17)} Name`
 const MAYBE = '-?-'
 
-export async function fileMetaShort(files: any, client: Bucket, logger: NimLogger) {
+export async function fileMetaShort(files: any, client: Bucket, logger: NimLogger): Promise<void> {
   logger.log(bold(LIST_SHORT_HEADER))
   for (const file of files) {
     logger.log(`${file.name}`)
   }
 }
 
-export async function fileMetaLong(files: any, client: Bucket, logger: NimLogger) {
+export async function fileMetaLong(files: any, client: Bucket, logger: NimLogger): Promise<void> {
   logger.log(bold(LIST_LONG_HEADER))
   for (const file of files) {
     await client.file(file.name).getMetadata().then(function(data) {
@@ -45,7 +45,7 @@ export async function fileMetaLong(files: any, client: Bucket, logger: NimLogger
   }
 }
 
-export function humanFileSize(bytes: number | undefined, si: boolean | undefined = undefined) {
+export function humanFileSize(bytes: number | undefined, si: boolean | undefined = undefined): string {
   if (!bytes) return
   const thresh = si ? 1000 : 1024
   if (Math.abs(bytes) < thresh) {
@@ -62,7 +62,7 @@ export function humanFileSize(bytes: number | undefined, si: boolean | undefined
   return bytes.toFixed(1) + ' ' + units[u]
 }
 
-export function errorHandler(err: any, logger: NimLogger, fileName: string) {
+export function errorHandler(err: any, logger: NimLogger, fileName: string): void {
   if (err.code === 'CONTENT_DOWNLOAD_MISMATCH') {
     logger.log(`${fileName} content is not printable on prompt.`)
   } else if (err.code === 404) {

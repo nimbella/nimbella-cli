@@ -29,7 +29,7 @@ export default class Info extends NimBaseCommand {
 
   static args = []
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     if (flags.license && !inBrowser) {
       await this.displayAncillary('license', logger)
     } else if (flags.changes && !inBrowser) {
@@ -63,7 +63,7 @@ export default class Info extends NimBaseCommand {
 
   // Display an HTML file in the default browser (these commands are disabled in the workbench, not because they couldn't work there but
   // because the information they display is either available in another form ('license') or is misleading ('changes'))
-  async displayAncillary(topic: string, logger: NimLogger) {
+  async displayAncillary(topic: string, logger: NimLogger): Promise<void> {
     try {
       const html = require.resolve(`../../${topic}.html`)
       await open(html)
@@ -74,7 +74,7 @@ export default class Info extends NimBaseCommand {
   }
 
   // Display the runtimes in a vaguely tabular format
-  async displayRuntimes(sysinfo: Record<string, any>, logger: NimLogger) {
+  async displayRuntimes(sysinfo: Record<string, any>, logger: NimLogger): Promise<void> {
     // Organize the information for display
     const rawDisplay: string[][] = []
     const runtimes = sysinfo.runtimes as RuntimeTable
@@ -96,7 +96,7 @@ export default class Info extends NimBaseCommand {
   }
 
   // Display the limits with a heuristic for units (works for the moment)
-  async displayLimits(sysinfo: Record<string, any>, logger: NimLogger) {
+  async displayLimits(sysinfo: Record<string, any>, logger: NimLogger): Promise<void> {
     const limits = sysinfo.limits
     for (const limit in limits) {
       logger.log(`${limit}: ${this.formatUnits(limit, limits[limit])}`)
@@ -120,7 +120,7 @@ export default class Info extends NimBaseCommand {
     }
   }
 
-  async getSystemInfo(apihost: string, logger: NimLogger) {
+  async getSystemInfo(apihost: string, logger: NimLogger): Promise<any> {
     if (apihost) {
       apihost = parseAPIHost(apihost)
     } else {

@@ -40,10 +40,10 @@ const debug = createDebug('nim:base')
 const verboseError = createDebug('nim:error')
 
 // A place where workbench can store its help helper
-let helpHelper: (usage: {}) => never
+let helpHelper: (usage: Record<string, any>) => never
 
 // Called from workbench init
-export function setHelpHelper(helper: (usage: {}) => never) {
+export function setHelpHelper(helper: (usage: Record<string, any>) => never): void {
   helpHelper = helper
 }
 
@@ -64,11 +64,11 @@ export class NimFeedback implements Feedback {
     this.logger = logger
   }
 
-  warn(msg?: any, ...args: any[]) {
+  warn(msg?: any, ...args: any[]): void {
     this.logger.log(String(msg), ...args)
   }
 
-  progress(msg?: any, ...args: any[]) {
+  progress(msg?: any, ...args: any[]): void {
     this.logger.log(String(msg), ...args)
   }
 }
@@ -76,10 +76,10 @@ export class NimFeedback implements Feedback {
 // An alternative NimLogger when not using the oclif stack
 export class CaptureLogger implements NimLogger {
     command: string[] // The oclif command sequence being captured (aio only)
-    table: object[] // The output table (array of entity) if that kind of output was produced
+    table: Record<string, unknown>[] // The output table (array of entity) if that kind of output was produced
     captured: string[] = [] // Captured line by line output (flowing via Logger.log)
-    entity: object // An output entity if that kind of output was produced
-    log(msg = '', ...args: any[]) {
+    entity: Record<string, unknown> // An output entity if that kind of output was produced
+    log(msg = '', ...args: any[]): void {
       const msgs = String(msg).split('\n')
       for (const msg of msgs) {
         this.captured.push(format(msg, ...args))
@@ -92,12 +92,12 @@ export class CaptureLogger implements NimLogger {
       throw new Error(msg)
     }
 
-    displayError(msg: string, err?: Error) {
+    displayError(msg: string, err?: Error): void {
       msg = improveErrorMsg(msg, err)
       this.log('Error: %s', msg)
     }
 
-    exit(code: number) {
+    exit(_code: number): void {
       // a no-op here
     }
 }
@@ -123,10 +123,10 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   command: string[]
 
   // Usage model for when running with kui
-  usage: {}
+  usage: Record<string, any>
 
   // A general way of running help from a cammand.  Use _help in oclif and helpHelper in kui
-  doHelp() {
+  doHelp(): void {
     if (helpHelper && this.usage) {
       helpHelper(this.usage)
     } else {
@@ -135,7 +135,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   }
 
   // Generic oclif run() implementation.   Parses and then invokes the abstract runCommand method
-  async run() {
+  async run(): Promise<void> {
     const { argv, args, flags } = this.parse(this.constructor as typeof NimBaseCommand)
     debug('run with rawArgv: %O, argv: %O, args: %O, flags: %O', this.argv, argv, args, flags)
     const bad = argv.find(arg => arg.startsWith('-'))
@@ -155,10 +155,10 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   // When running under node / normal oclif, this just uses the normal run(argv) method.  But, when running under
   // kui in a browser, it takes steps to avoid a second real parse and also captures all output.  The
   // logger argument is a CaptureLogger in fact.
-  async runAio(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger, aioClass: typeof RuntimeBaseCommand) {
+  async runAio(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger, AioClass: typeof RuntimeBaseCommand): Promise<void> {
     debug('runAio with rawArgv: %O, argv: %O, args: %O, flags: %O', rawArgv, argv, args, flags)
     fixAioCredentials(logger, flags)
-    const cmd = new aioClass(rawArgv, {})
+    const cmd = new AioClass(rawArgv, {})
     if (flags.verbose) {
       debug('verbose flag intercepted')
       flags.verbose = false
@@ -183,13 +183,13 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   }
 
   // Replacement for logJSON function in RuntimeBaseCommand when running with capture
-  logJSON = (logger: CaptureLogger) => (ignored: string, entity: object) => {
+  logJSON = (logger: CaptureLogger) => (_ignored: string, entity: Record<string, unknown>): void => {
     logger.entity = entity
   }
 
   // Replacement for table function in RuntimeBaseCommand when running with capture
   // TODO this will not work for namespace get, which produces multiple tables.  Should generalize to a list.
-  saveTable = (logger: CaptureLogger) => (data: object[], columns: object, options: object = {}) => {
+  saveTable = (logger: CaptureLogger) => (data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}): void => {
     debug('Call to saveTable with %O', data)
     logger.table = data
   }
@@ -224,7 +224,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   }
 
   // Do oclif initialization (only used when invoked via the oclif dispatcher)
-  async init() {
+  async init(): Promise<void> {
     const { flags } = this.parse(this.constructor as typeof NimBaseCommand)
 
     // See https://www.npmjs.com/package/debug for usage in commands
@@ -238,7 +238,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
 
   // Error handling.  This is for oclif; the CaptureLogger has a more generic implementation suitable for kui inclusion
   // Includes logic copied from Adobe I/O runtime plugin.
-  handleError(msg: string, err?: any) {
+  handleError(msg: string, err?: any): never {
     this.parse(this.constructor as typeof NimBaseCommand)
     msg = improveErrorMsg(msg, err)
     verboseError(err)
@@ -246,7 +246,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   }
 
   // For non-terminal errors.  The CaptureLogger has a simpler equivalent.
-  displayError(msg: string, err?: any) {
+  displayError(msg: string, err?: any): void {
     this.parse(this.constructor as typeof NimBaseCommand)
     msg = improveErrorMsg(msg, err)
     verboseError(err)

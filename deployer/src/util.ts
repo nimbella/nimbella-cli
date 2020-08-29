@@ -13,7 +13,7 @@
 
 import {
   DeployStructure, DeployResponse, DeploySuccess, DeployKind, ActionSpec, PackageSpec, Feedback,
-  DeployerAnnotation, WebResource, VersionMap, VersionEntry, BucketSpec, Includer, PathKind, ProjectReader, KeyVal
+  DeployerAnnotation, WebResource, VersionMap, VersionEntry, BucketSpec, PathKind, ProjectReader, KeyVal
 } from './deploy-struct'
 import { getUserAgent } from './api'
 import { XMLHttpRequest } from 'xmlhttprequest'
@@ -46,14 +46,14 @@ export function loadProjectConfig(configFile: string, envPath: string, filePath:
   return reader.readFileContents(configFile).then(async data => {
     try {
       const content = substituteFromEnvAndFiles(String(data), envPath, filePath, feedback)
-      let config: {}
+      let config: Record<string, any>
       if (configFile.endsWith('.json')) {
         config = JSON.parse(content)
       } else {
         if (content.includes('\t')) {
           throw new Error('YAML configuration may not contain tabs')
         } else {
-          config = yaml.safeLoad(content)
+          config = yaml.safeLoad(content) as Record<string, any>
         }
       }
       const configError = validateDeployConfig(config)
@@ -63,18 +63,16 @@ export function loadProjectConfig(configFile: string, envPath: string, filePath:
         removeEmptyStringMembers(config)
         return config
       }
-    } catch (error) {
-      if (error.message) {
-        // Attempt to remove crufty overhead from js-yaml
-        error = new Error(error.message)
-      }
+    } catch (err) {
+      // Attempt to remove crufty overhead from js-yaml
+      const error = err.message ? new Error(err.message) : err
       return errorStructure(error)
     }
   })
 }
 
 // Determine if a project requires building by examining its web and actions right after project reading
-export function needsBuilding(todeploy: DeployStructure) {
+export function needsBuilding(todeploy: DeployStructure): boolean {
   const isRealBuild = (buildField: string) => {
     return buildField && buildField !== 'identify' && buildField !== '.include'
   }
@@ -98,10 +96,10 @@ export function needsBuilding(todeploy: DeployStructure) {
 // In project config we permit many optional string-valued members to be set to '' to remind users that they are available
 // without actually setting a value.  Here we delete those members to simplify subsequent handling.
 function removeEmptyStringMembers(config: DeployStructure) {
-  if (config.targetNamespace && config.targetNamespace == '') {
+  if (config.targetNamespace && config.targetNamespace === '') {
     delete config.targetNamespace
   }
-  if (config.actionWrapPackage && config.actionWrapPackage == '') {
+  if (config.actionWrapPackage && config.actionWrapPackage === '') {
     delete config.targetNamespace
   }
   removeEmptyStringMembersFromBucket(config.bucket)
@@ -111,13 +109,13 @@ function removeEmptyStringMembers(config: DeployStructure) {
 // Remove empty optional string-valued members from a bucket spec
 function removeEmptyStringMembersFromBucket(bucket: BucketSpec) {
   if (!bucket) return
-  if (bucket.mainPageSuffix && bucket.mainPageSuffix == '') {
+  if (bucket.mainPageSuffix && bucket.mainPageSuffix === '') {
     delete bucket.mainPageSuffix
   }
-  if (bucket.notFoundPage && bucket.notFoundPage == '') {
+  if (bucket.notFoundPage && bucket.notFoundPage === '') {
     delete bucket.notFoundPage
   }
-  if (bucket.prefixPath && bucket.prefixPath == '') {
+  if (bucket.prefixPath && bucket.prefixPath === '') {
     delete bucket.prefixPath
   }
 }
@@ -128,10 +126,10 @@ function removeEmptyStringMembersFromPackages(packages: PackageSpec[]) {
   for (const pkg of packages) {
     if (pkg.actions) {
       for (const action of pkg.actions) {
-        if (action.main && action.main == '') {
+        if (action.main && action.main === '') {
           delete action.main
         }
-        if (action.runtime && action.runtime == '') {
+        if (action.runtime && action.runtime === '') {
           delete action.runtime
         }
       }
@@ -147,7 +145,7 @@ export function validateDeployConfig(arg: any): string {
     if (!arg[item]) continue
     switch (item) {
     case 'cleanNamespace':
-      if (!(typeof (arg[item] == 'boolean'))) {
+      if (!(typeof arg[item] === 'boolean')) {
         return `${item} must be a boolean`
       }
       break
@@ -224,7 +222,7 @@ function isValidOwnership(item: any): boolean {
 }
 
 // Validator for BucketSpec
-function validateBucketSpec(arg: {}): string {
+function validateBucketSpec(arg: Record<string, any>): string {
   for (const item in arg) {
     switch (item) {
     case 'prefixPath':
@@ -253,7 +251,7 @@ function validateBucketSpec(arg: {}): string {
 }
 
 // Validator for a WebResource
-function validateWebResource(arg: {}): string {
+function validateWebResource(arg: Record<string, any>): string {
   for (const item in arg) {
     switch (item) {
     case 'simpleName':
@@ -274,11 +272,11 @@ function validatePackageSpec(arg: Record<string, any>): string {
   const isDefault = arg.name === 'default'
   for (const item in arg) {
     if (!arg[item]) continue
-    if (item == 'name') {
+    if (item === 'name') {
       if (!(typeof arg[item] === 'string')) {
         return `'${item}' member of a 'package' must be a string`
       }
-    } else if (item == 'actions') {
+    } else if (item === 'actions') {
       if (!Array.isArray(arg[item])) {
         return "actions member of a 'package' must be an array"
       }
@@ -288,22 +286,22 @@ function validatePackageSpec(arg: Record<string, any>): string {
           return actionError
         }
       }
-    } else if (item == 'shared' || item == 'clean') {
+    } else if (item === 'shared' || item === 'clean') {
       if (!(typeof arg[item] === 'boolean')) {
         return `'${item}' member of a 'package' must be a boolean`
       } else if (isDefault && arg[item]) {
         return `'${item}' must be absent or false for the default package`
       }
-    } else if (item == 'web') {
+    } else if (item === 'web') {
       if (!(typeof arg[item] === 'boolean' || arg[item] === 'raw')) {
         return `${item} member of an 'package' must be a boolean or the string 'raw'`
       }
-    } else if (item == 'environment') {
+    } else if (item === 'environment') {
       const envErr = validateEnvironment(arg[item])
       if (envErr) {
         return envErr
       }
-    } else if (item == 'parameters' || item == 'annotations') {
+    } else if (item === 'parameters' || item === 'annotations') {
       if (!isDictionary(arg[item])) {
         return `${item} must be a dictionary`
       }
@@ -318,7 +316,7 @@ function validatePackageSpec(arg: Record<string, any>): string {
 }
 
 // Validator for ActionSpec
-function validateActionSpec(arg: {}): string {
+function validateActionSpec(arg: Record<string, any>): string {
   for (const item in arg) {
     if (!arg[item]) continue
     switch (item) {
@@ -349,23 +347,26 @@ function validateActionSpec(arg: {}): string {
         return `'${item}' member of an 'action' must be a boolean or a string`
       }
       break
-    case 'environment':
+    case 'environment': {
       const envError = validateEnvironment(arg[item])
       if (envError) {
         return envError
       }
+    }
+    // falls through
     case 'annotations':
     case 'parameters':
       if (!isDictionary(arg[item])) {
         return `${item} must be a dictionary`
       }
       break
-    case 'limits':
+    case 'limits': {
       const limitsError = validateLimits(arg[item])
       if (limitsError) {
         return limitsError
       }
       break
+    }
     default:
       return `Invalid key '${item}' found in 'action' clause in project.yml`
     }
@@ -442,7 +443,7 @@ export function emptyResponse(): DeployResponse {
 
 // Combine multiple DeployResponses into a single DeployResponse
 export function combineResponses(responses: DeployResponse[]): DeployResponse {
-  if (responses.length == 0) {
+  if (responses.length === 0) {
     return emptyResponse()
   }
   const combinedSuccesses: DeploySuccess[][] = responses.map(response => response.successes)
@@ -491,7 +492,7 @@ export function wrapError(err: any, context: string): DeployResponse {
 // Check whether the namespace for an OW client's current auth matches a desired target
 export function isTargetNamespaceValid(client: openwhisk.Client, namespace: string): Promise<boolean> {
   return getTargetNamespace(client).then(ns => {
-    if (ns == namespace) {
+    if (ns === namespace) {
       return Promise.resolve(true)
     } else {
       throw new Error(`Supplied credentials do not match target namespace '${namespace}'; deployment aborted`)
@@ -515,9 +516,9 @@ export function actionFileToParts(fileName: string): { name: string, binary: boo
     const parts = name.split('.')
     const ext = parts[parts.length - 1]
     let mid: string
-    if (parts.length == 2) {
+    if (parts.length === 2) {
       name = parts[0]
-    } else if (ext == 'zip') {
+    } else if (ext === 'zip') {
       mid = parts[parts.length - 2]
       name = parts.slice(0, parts.length - 2).join('.')
     } else {
@@ -525,7 +526,7 @@ export function actionFileToParts(fileName: string): { name: string, binary: boo
     }
     runtime = mid ? runtimeFromZipMid(mid) : runtimeFromExt(ext)
     binary = binaryFromExt(ext)
-    zipped = ext == 'zip'
+    zipped = ext === 'zip'
   }
   const z = zipped ? '' : 'not '
   debug(`action ${name} is ${z}zipped`)
@@ -752,7 +753,7 @@ function findNextSymbol(input: string): { index: number, terminator: string } {
 
 // Get one or more substitutions in the form of a dictionary, given one or more tokens separated by whitespace.
 // Each token is a symbol to be looked up in the process environment or env file
-function getDictionarySubstitution(tokens: string, props: object, badVars: string[]): string {
+function getDictionarySubstitution(tokens: string, props: Record<string, unknown>, badVars: string[]): string {
   debug('dictionary substitution with %s', tokens)
   const ans = {}
   for (const tok of tokens.split(/\s+/)) {
@@ -781,14 +782,16 @@ function getSubstituteFromFile(path: string): string {
 
 // Get properties from a file, which may be a properties file or JSON
 // This function does not use the project reader because the environment file is specified separately
-function getPropsFromFile(filePath: string): object {
+function getPropsFromFile(filePath: string): Record<string, string> {
   if (!fs.existsSync(filePath)) {
     return {}
   }
   const contents = fs.readFileSync(filePath)
   try {
     return JSON.parse(String(contents))
-  } catch {}
+  } catch {
+    // Do nothing
+  }
   // It's not JSON, so see if it's a properties file
   const propParser = require('dotenv')
   // The dotenv parser doesn't throw but returns the empty object if malformed
@@ -894,7 +897,7 @@ function deployerAnnotationFromGithub(githubPath: string): DeployerAnnotation {
 }
 
 // Wipe all the entities from the namespace referred to by an OW client handle
-export async function wipe(client: openwhisk.Client) {
+export async function wipe(client: openwhisk.Client): Promise<void> {
   await wipeAll(client.actions, 'Action')
   debug('Actions wiped')
   await wipeAll(client.rules, 'Rule')
@@ -910,7 +913,7 @@ export async function wipe(client: openwhisk.Client) {
 async function wipeAll(handle: any, kind: string) {
   while (true) {
     const entities = await handle.list({ limit: 200 })
-    if (entities.length == 0) {
+    if (entities.length === 0) {
       return
     }
     for (const entity of entities) {
@@ -952,7 +955,7 @@ export function saveUsFromOurselves(namespace: string, apihost: string): boolean
 function isProductionProject(apihost: string, productionProjects: string[]): boolean {
   const url = new URL(apihost)
   const domain = url.hostname.split('.')[0]
-  if (domain == 'api') {
+  if (domain === 'api') {
     return true
   }
   const project = domain.replace('api', 'nim')
@@ -976,7 +979,7 @@ function digestBoolean(hash: crypto.Hash, toDigest: boolean) {
   hash.update(String(!!toDigest))
 }
 
-function digestDictionary(hash: crypto.Hash, toDigest: {}) {
+function digestDictionary(hash: crypto.Hash, toDigest: Record<string, any>) {
   if (toDigest) {
     const keys = Object.keys(toDigest).sort()
     for (const key of keys) {
@@ -1029,7 +1032,7 @@ export function digestAction(action: ActionSpec, code: string): string {
 export function writeProjectStatus(project: string, results: DeployResponse, replace: boolean): string {
   debug('writing project status with %O', results)
   const { apihost, namespace, packageVersions, actionVersions, webHashes } = results
-  if (Object.keys(actionVersions).length == 0 && Object.keys(packageVersions).length == 0 && Object.keys(webHashes).length == 0) {
+  if (Object.keys(actionVersions).length === 0 && Object.keys(packageVersions).length === 0 && Object.keys(webHashes).length === 0) {
     debug('there is no meaningful project status to write')
     return ''
   }
@@ -1050,7 +1053,7 @@ export function writeProjectStatus(project: string, results: DeployResponse, rep
     } // Otherwise (not array) it is the legacy format and cannot be added to so we just overwrite
   }
   const versionInfo: VersionEntry = { apihost, namespace, packageVersions, actionVersions, webHashes }
-  const oldEntry: VersionEntry = versionList.find(entry => entry.apihost == apihost && entry.namespace == namespace)
+  const oldEntry: VersionEntry = versionList.find(entry => entry.apihost === apihost && entry.namespace === namespace)
   if (!oldEntry) {
     debug('new entry pushed to version list')
     versionList.push(versionInfo)
@@ -1082,7 +1085,7 @@ export function loadVersions(projectPath: string, namespace: string, apihost: st
   if (fs.existsSync(versionFile)) {
     const allEntries = JSON.parse(String(fs.readFileSync(versionFile)))
     for (const entry of allEntries) {
-      if (namespace == entry.namespace && apihost == entry.apihost) {
+      if (namespace === entry.namespace && apihost === entry.apihost) {
         return entry
       }
     }
@@ -1110,7 +1113,7 @@ export function wskRequest(url: string, auth: string = undefined): Promise<any> 
     }
     xhr.onerror = function() {
       debug('network error')
-      reject({ statusText: 'Network error' })
+      reject(new Error('Network error'))
     }
     if (auth) {
       debug('Setting basic authorization header')
