@@ -15,9 +15,9 @@ import { Storage, Bucket } from '@google-cloud/storage'
 import { getCredentials, getCredentialsForNamespace, computeBucketStorageName, Credentials } from 'nimbella-deployer'
 
 type StorageClientResponse = {
-    bucketName: string,
-    storage: Storage,
-    client: Bucket,
+    bucketName: string
+    storage: Storage
+    client: Bucket
     creds: Credentials
 }
 async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix = ''): Promise<StorageClientResponse> {

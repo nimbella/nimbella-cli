@@ -49,9 +49,9 @@ function credentialStore() {
 
 // The type of a persistance manager, which will differ between cloud and local
 export interface Persister {
-    loadCredentialStoreIfPresent: () => CredentialStore,
-    loadCredentialStore: () => Promise<CredentialStore>,
-    saveCredentialStore: (store: CredentialStore) => void,
+    loadCredentialStoreIfPresent: () => CredentialStore
+    loadCredentialStore: () => Promise<CredentialStore>
+    saveCredentialStore: (store: CredentialStore) => void
     saveLegacyInfo: (apihost: string, auth: string) => void
 }
 

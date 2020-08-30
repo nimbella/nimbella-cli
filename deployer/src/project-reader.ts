@@ -28,15 +28,15 @@ const ENV_FILE = '.env'
 
 // Read the top level files and dirs of the project.  Only one file and two dirs are legal at this level; everything else is a 'stray'
 interface TopLevel {
-    web: string,
-    packages: string,
-    config?: string,
-    env?: string,
-    strays: string[],
-    filePath: string,
-    githubPath: string,
-    includer: Includer,
-    reader: ProjectReader,
+    web: string
+    packages: string
+    config?: string
+    env?: string
+    strays: string[]
+    filePath: string
+    githubPath: string
+    includer: Includer
+    reader: ProjectReader
     feedback: Feedback
 }
 export async function readTopLevel(filePath: string, env: string, includer: Includer, mustBeLocal: boolean, feedback: Feedback): Promise<TopLevel> {

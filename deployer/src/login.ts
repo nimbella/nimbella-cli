@@ -27,22 +27,22 @@ const debug = createDebug('nimbella.cli')
 // If status is failed then only error will be present.
 type Status = 'created' | 'success' | 'failed'
 interface ExpectedResponse {
-    status: Status,
-    apihost?: string,
-    error?: string,
-    uuid?: string,
-    key?: string,
-    storage?: string,
-    redis?: boolean,
+    status: Status
+    apihost?: string
+    error?: string
+    uuid?: string
+    key?: string
+    storage?: string
+    redis?: boolean
     namespace?: string
 }
 
 // Format of input piped to stdin from `nim user get`
 interface NimUserData {
-    namespace?: string,
-    uuid?: string,
-    key?: string,
-    storage?: string,
+    namespace?: string
+    uuid?: string
+    key?: string
+    storage?: string
     redis?: string
 }
 

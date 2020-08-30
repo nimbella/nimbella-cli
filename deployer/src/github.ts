@@ -35,17 +35,17 @@ const prefixes = ['github:', 'https://github.com/', 'git@github.com:']
 
 // Github coordinate definition structure
 export interface GithubDef {
-    owner: string,
-    repo: string,
-    path: string,
-    auth?: string,
+    owner: string
+    repo: string
+    path: string
+    auth?: string
     ref?: string
 }
 
 // Assign a name to the otherwise anonymous branch of the Ocktokit.ReposGetContentResponse union type
 export interface OctokitNonArrayResponse {
   // The actual type in Octokit has more fields but we don't bother since this is a workaround
-  content: string,
+  content: string
   encoding: BufferEncoding
 }
 

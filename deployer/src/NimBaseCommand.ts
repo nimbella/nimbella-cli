@@ -51,9 +51,9 @@ export function setHelpHelper(helper: (usage: Record<string, any>) => never): vo
 // oclif.Command.  The NimBaseCommand class implements this interface using its own
 // methods
 export interface NimLogger {
-  log: (msg: string, ...args: any[]) => void,
-  handleError: (msg: string, err?: Error) => never,
-  exit: (code: number) => void, // don't use 'never' here because 'exit' doesn't always exit
+  log: (msg: string, ...args: any[]) => void
+  handleError: (msg: string, err?: Error) => never
+  exit: (code: number) => void // don't use 'never' here because 'exit' doesn't always exit
   displayError: (msg: string, err?: Error) => void
 }
 
@@ -104,7 +104,7 @@ export class CaptureLogger implements NimLogger {
 
 // Test if a supplied logger is a CaptureLogger
 function isCaptureLogger(logger: NimLogger): logger is CaptureLogger {
-  return !!('captured' in logger)
+  return 'captured' in logger
 }
 
 // The base for all our commands, including the ones that delegate to aio.  There are methods designed to be called from the
