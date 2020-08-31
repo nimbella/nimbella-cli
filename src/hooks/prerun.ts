@@ -11,15 +11,14 @@
  * governing permissions and limitations under the License.
  */
 
-
- import { Hook, IConfig } from '@oclif/config'
- type Options = { Command: any; argv: string[]; } & { config: IConfig; }
- import * as createDebug from 'debug'
+import { Hook, IConfig } from '@oclif/config'
+import * as createDebug from 'debug'
+ type Options = { Command: any, argv: string[] } & { config: IConfig }
 
 const debug = createDebug('nimbella-prerun')
 
- const hook: Hook.Prerun = async function (opts: Options) {
-    debug('Prerun: %O', opts)
+const hook: Hook.Prerun = async function(opts: Options) {
+  debug('Prerun: %O', opts)
 }
 
 export default hook

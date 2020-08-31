@@ -17,59 +17,55 @@ import { bold } from 'chalk'
 
 // Constants used in formatting the file list
 const SIZE_LEN = 10
-const LIST_SHORT_HEADER = `Name`
+const LIST_SHORT_HEADER = 'Name'
 const LIST_LONG_HEADER = `Size${' '.repeat(SIZE_LEN - 4)} Updated${' '.repeat(17)} Name`
 const MAYBE = '-?-'
 
-
-export async function fileMetaShort(files: any, client: Bucket, logger: NimLogger) {
-    logger.log(bold(LIST_SHORT_HEADER))
-    for (const file of files) {
-        logger.log(`${file.name}`);
-    }
+export async function fileMetaShort(files: any, client: Bucket, logger: NimLogger): Promise<void> {
+  logger.log(bold(LIST_SHORT_HEADER))
+  for (const file of files) {
+    logger.log(`${file.name}`)
+  }
 }
 
-export async function fileMetaLong(files: any, client: Bucket, logger: NimLogger) {
-    logger.log(bold(LIST_LONG_HEADER));
-    for (const file of files) {
-        await client.file(file.name).getMetadata().then(function (data) {
-            const meta = data[0];
-            let fileName = meta.name;
-            let sizePad = '';
-            const size = humanFileSize(meta.size);
-            if (size.length < SIZE_LEN) {
-                sizePad = ' '.repeat(SIZE_LEN - size.length)
-            }
-            const updated = meta.updated || MAYBE
-            logger.log(`${size}${sizePad} ${updated} ${fileName}`)
-        });
-    }
+export async function fileMetaLong(files: any, client: Bucket, logger: NimLogger): Promise<void> {
+  logger.log(bold(LIST_LONG_HEADER))
+  for (const file of files) {
+    await client.file(file.name).getMetadata().then(function(data) {
+      const meta = data[0]
+      const fileName = meta.name
+      let sizePad = ''
+      const size = humanFileSize(meta.size)
+      if (size.length < SIZE_LEN) {
+        sizePad = ' '.repeat(SIZE_LEN - size.length)
+      }
+      const updated = meta.updated || MAYBE
+      logger.log(`${size}${sizePad} ${updated} ${fileName}`)
+    })
+  }
 }
 
-export function humanFileSize(bytes: number | undefined, si: boolean | undefined = undefined) {
-    if (!bytes) return;
-    var thresh = si ? 1000 : 1024;
-    if (Math.abs(bytes) < thresh) {
-        return bytes + ' B';
-    }
-    var units = si
-        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-    var u = -1;
-    do {
-        bytes /= thresh;
-        ++u;
-    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-    return bytes.toFixed(1) + ' ' + units[u];
+export function humanFileSize(bytes: number | undefined, si: boolean | undefined = undefined): string {
+  if (!bytes) return
+  const thresh = si ? 1000 : 1024
+  if (Math.abs(bytes) < thresh) {
+    return bytes + ' B'
+  }
+  const units = si
+    ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+  let u = -1
+  do {
+    bytes /= thresh
+    ++u
+  } while (Math.abs(bytes) >= thresh && u < units.length - 1)
+  return bytes.toFixed(1) + ' ' + units[u]
 }
 
-export function errorHandler(err: any, logger: NimLogger, fileName: string) {
-    if (err.code === 'CONTENT_DOWNLOAD_MISMATCH') {
-        logger.log(`${fileName} content is not printable on prompt.`)
-    }
-    else if (err.code === 404) {
-        logger.log(`${fileName} is not available.`)
-    }
-    else
-        logger.handleError(err.message);
+export function errorHandler(err: any, logger: NimLogger, fileName: string): void {
+  if (err.code === 'CONTENT_DOWNLOAD_MISMATCH') {
+    logger.log(`${fileName} content is not printable on prompt.`)
+  } else if (err.code === 404) {
+    logger.log(`${fileName} is not available.`)
+  } else { logger.handleError(err.message) }
 }

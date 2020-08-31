@@ -15,38 +15,36 @@ import { Storage, Bucket } from '@google-cloud/storage'
 import { getCredentials, getCredentialsForNamespace, computeBucketStorageName, Credentials } from 'nimbella-deployer'
 
 type StorageClientResponse = {
-    bucketName: string,
-    storage: Storage,
-    client: Bucket,
+    bucketName: string
+    storage: Storage
+    client: Bucket
     creds: Credentials
 }
-async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix: string = ''): Promise<StorageClientResponse> {
-    let namespace = flags.namespace
-    let creds: Credentials = undefined
-    let apiHost: string = flags.apihost;
-    let storageKey: {} = undefined;
-    if (!namespace) {
-        creds = await getCredentials(authPersister);
-        namespace = creds.namespace
-    }
-    else {
-        creds = await getCredentialsForNamespace(namespace, flags.apihost, authPersister);
-    }
-    apiHost = creds.ow.apihost;
-    storageKey = creds.storageKey;
-    const bucketName = computeBucketStorageName(apiHost, namespace);
-    if (!storageKey) {
-        return { bucketName, storage: undefined, client: undefined, creds: undefined };
-    }
-    const storage = new Storage(storageKey);
-    const client = storage.bucket(bucketPrefix + bucketName);
-    return { bucketName, storage, client, creds };
+async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix = ''): Promise<StorageClientResponse> {
+  let namespace = flags.namespace
+  let creds: Credentials
+  let apiHost: string = flags.apihost
+  if (!namespace) {
+    creds = await getCredentials(authPersister)
+    namespace = creds.namespace
+  } else {
+    creds = await getCredentialsForNamespace(namespace, flags.apihost, authPersister)
+  }
+  apiHost = creds.ow.apihost
+  const storageKey = creds.storageKey
+  const bucketName = computeBucketStorageName(apiHost, namespace)
+  if (!storageKey) {
+    return { bucketName, storage: undefined, client: undefined, creds: undefined }
+  }
+  const storage = new Storage(storageKey)
+  const client = storage.bucket(bucketPrefix + bucketName)
+  return { bucketName, storage, client, creds }
 }
 
-export async function getWebStorageClient(args: any, flags: any, authPersister: any) {
-    return await getStorageClient(args, flags, authPersister);
+export async function getWebStorageClient(args: any, flags: any, authPersister: any): Promise<StorageClientResponse> {
+  return await getStorageClient(args, flags, authPersister)
 }
 
-export async function getObjectStorageClient(args: any, flags: any, authPersister: any) {
-    return await getStorageClient(args, flags, authPersister, 'data-');
+export async function getObjectStorageClient(args: any, flags: any, authPersister: any): Promise<StorageClientResponse> {
+  return await getStorageClient(args, flags, authPersister, 'data-')
 }

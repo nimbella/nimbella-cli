@@ -11,18 +11,23 @@
  * governing permissions and limitations under the License.
  */
 
- // Gather together the major deployer exports for convenient import in other packages
+// Gather together the major deployer exports for convenient import in other packages
 
-export { initializeAPI, deployProject, readPrepareAndBuild, readAndPrepare, deploy, readProject, buildProject, prepareToDeploy,
-    wipeNamespace, wipePackage, getUserAgent } from './api'
-export { DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, Flags, PackageSpec, ActionSpec,
-    CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider } from './deploy-struct'
+export {
+  initializeAPI, deployProject, readPrepareAndBuild, readAndPrepare, deploy, readProject, buildProject, prepareToDeploy,
+  wipeNamespace, wipePackage, getUserAgent
+} from './api'
+export {
+  DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, CredentialStorageEntry, Flags, PackageSpec, ActionSpec,
+  CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider
+} from './deploy-struct'
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'
-export { addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace, getCurrentNamespace,
-    Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
-    switchGithubAccount, getPostmanKeys, deletePostmanKey, switchPostmanKey, addPostmanKey, getPostmanCurrentKey, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser } from './credentials'
+export {
+  addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace, getCurrentNamespace,
+  Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
+  switchGithubAccount, getPostmanKeys, deletePostmanKey, switchPostmanKey, addPostmanKey, getPostmanCurrentKey, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser
+} from './credentials'
 export { computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page } from './deploy-to-bucket'
 export { extFromRuntime, wskRequest, inBrowser, RuntimeTable } from './util'
 export { GithubDef, isGithubRef, parseGithubRef, fetchProject } from './github'
 export { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger } from './NimBaseCommand'
-

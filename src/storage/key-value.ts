@@ -13,22 +13,20 @@
 
 import { getCredentials, getCredentialsForNamespace, Credentials } from 'nimbella-deployer'
 
+import * as openwhisk from 'openwhisk'
+const systemNamespace = 'nimbella'
 
-const openwhisk = require('openwhisk');
-const systemNamespace = 'nimbella';
-
-export async function queryKVStore(query: string, args: any, flags: any, authPersister: any) {
-    let namespace = flags.namespace;
-    let creds: Credentials = undefined;
-    if (!namespace) {
-        creds = await getCredentials(authPersister);
-        namespace = creds.namespace;
-    }
-    else {
-        creds = await getCredentialsForNamespace(namespace, flags.apihost, authPersister);
-    }
-    if (!creds) { return; }
-    if (!creds.redis) { throw new Error('Key-Value Store not enabled for namespace: ' + namespace); }
-    const ow = openwhisk(creds.ow);
-    return ow.actions.invoke({ actionName: `/${systemNamespace}/${query}`, blocking: true, result: true, params: args });
+export async function queryKVStore(query: string, args: any, flags: any, authPersister: any): Promise<openwhisk.Dict> {
+  let namespace = flags.namespace
+  let creds: Credentials
+  if (!namespace) {
+    creds = await getCredentials(authPersister)
+    namespace = creds.namespace
+  } else {
+    creds = await getCredentialsForNamespace(namespace, flags.apihost, authPersister)
+  }
+  if (!creds) { return }
+  if (!creds.redis) { throw new Error('Key-Value Store not enabled for namespace: ' + namespace) }
+  const ow = openwhisk(creds.ow)
+  return ow.actions.invoke({ name: `/${systemNamespace}/${query}`, blocking: true, result: true, params: args })
 }

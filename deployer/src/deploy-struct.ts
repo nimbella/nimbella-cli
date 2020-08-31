@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { Dict, Client, Limits } from 'openwhisk'
+import { Dict, Client, Limits, KeyVal as OWKeyVal } from 'openwhisk'
 import { Bucket } from '@google-cloud/storage'
 
 // Contains the primary type definition for the deployer structure.
@@ -36,13 +36,13 @@ export interface WebResource {
 
 // Describes one package containing zero or more actions
 export interface PackageSpec {
-    name: string  // The 'default' package is used to hold actions with no package.  Only the 'actions' member is processed then.
+    name: string // The 'default' package is used to hold actions with no package.  Only the 'actions' member is processed then.
     actions?: ActionSpec[]
     shared: boolean // Indicates that the package is intended to be shared (public)
     annotations?: Dict // package annotations
     parameters?: Dict // Bound parameters for all actions in the package, passed in the usual way
     environment?: Dict // Bound parameters for all actions in the package, destined to go in the environment of each action
-    clean?: boolean   // Indicates that the package is to be deleted (with its contained actions) before deployment
+    clean?: boolean // Indicates that the package is to be deleted (with its contained actions) before deployment
     web?: any // like 'web' on an action but affects all actions of the package that don't redeclare the flag
 }
 
@@ -52,7 +52,7 @@ export interface ActionSpec {
     // The following are used to assemble 'exec'.  Currently, you can't specify exec directly
     file?: string // The path to the file comprising the action (possibly a zip file)
     displayFile?: string // The file path but in github when applicable, otherwise undefined
-    code?: string  // The code of the action (bypasses file reading; used internally; not specifiable in the config)
+    code?: string // The code of the action (bypasses file reading; used internally; not specifiable in the config)
     runtime?: string // The runtime to use for the action
     main?: string // The 'main' directive if needed
     binary?: boolean // Indicates the need for base64 encoding
@@ -63,7 +63,7 @@ export interface ActionSpec {
     annotations?: Dict // 'web' and 'webSecure' are merged with what's here iff present
     parameters?: Dict // Bound parameters for the action passed in the usual way
     environment?: Dict // Bound parameters for the action destined to go in the environment
-    limits?: Limits    // Action limits (time, memory, logs)
+    limits?: Limits // Action limits (time, memory, logs)
     clean?: boolean // Indicates that an old copy of the action should be removed before deployment
     // Build information (not specifiable in the config)
     build?: string
@@ -105,41 +105,42 @@ export interface Feedback {
 }
 
 export class DefaultFeedback implements Feedback {
-    warn(message?: any, ...optionalParams: any[]) {
-        console.warn(message, ...optionalParams)
-    }
-    progress(message?: any, ...optionalParams: any[]) {
-        console.log(message, ...optionalParams)
-    }
+  warn(message?: any, ...optionalParams: any[]): void {
+    console.warn(message, ...optionalParams)
+  }
+
+  progress(message?: any, ...optionalParams: any[]): void {
+    console.log(message, ...optionalParams)
+  }
 }
 
 // The top-level deploy structure.  Nothing is required.  If the structure is vacuous, nothing is deployed.   This interface
 // describes the syntax of project.yml and also the structure of a project on disk (where 'web' and 'packages') are
 // subdirectories of the project).   The two sources of information are merged.
-export  interface DeployStructure {
-    web?: WebResource[]              // Resources found in the web directory
-    packages?: PackageSpec[]         // The packages found in the package directory
-    targetNamespace?: string | Ownership  // The namespace to which we are deploying.  An 'Ownership' implies ownership by the project
-    cleanNamespace?: boolean         // Clears entire namespace prior to deploying
-    bucket?:  BucketSpec             // Information guiding deployment of web resources into an s3 (or s3-like) object store bucket
-    actionWrapPackage?: string       // The name of a package into which web resources will be action-wrapped.
-    parameters?: Dict                // Parameters to apply to all packages in the project
-    environment?: Dict               // Environment to apply to all packages in the project
+export interface DeployStructure {
+    web?: WebResource[] // Resources found in the web directory
+    packages?: PackageSpec[] // The packages found in the package directory
+    targetNamespace?: string | Ownership // The namespace to which we are deploying.  An 'Ownership' implies ownership by the project
+    cleanNamespace?: boolean // Clears entire namespace prior to deploying
+    bucket?: BucketSpec // Information guiding deployment of web resources into an s3 (or s3-like) object store bucket
+    actionWrapPackage?: string // The name of a package into which web resources will be action-wrapped.
+    parameters?: Dict // Parameters to apply to all packages in the project
+    environment?: Dict // Environment to apply to all packages in the project
     // The following fields are not permitted in project.yml but are filled in internally
-    credentials?: Credentials         // The full credentials for the deployment (consistent with targetNamespace if one was specified)
-    flags? : Flags                   // options typically specified on the command line
-    webBuild?: string                // Type of build (build.sh or package.json) to apply to the web directory
-    sharedBuilds?: BuildTable        // The build table for this project, populated as shared builds are initiated
-    strays?: string[]                // files or directories found in the project that don't fit the model, not necessarily an error
-    filePath?: string                // The location of the project on disk
-    githubPath?: string              // The original github path specified, if deploying from github
-    owClient?: Client                // The openwhisk client for deploying actions and packages
-    bucketClient?: Bucket            // The gcloud storage client for deploying to a bucket
-    includer?: Includer              // The 'includer' for deciding which packages, actions, web are included in the deploy
-    reader?: ProjectReader           // The project reader to use
-    versions?: VersionEntry          // The VersionEntry for credentials.namespace on the selected API host if available
-    feedback?: Feedback              // The object to use for immediate communication to the user (e.g. for warnings and progress reports)
-    error?: Error                    // Records an error in reading, preparing, or building; the structure should not be used
+    credentials?: Credentials // The full credentials for the deployment (consistent with targetNamespace if one was specified)
+    flags? : Flags // options typically specified on the command line
+    webBuild?: string // Type of build (build.sh or package.json) to apply to the web directory
+    sharedBuilds?: BuildTable // The build table for this project, populated as shared builds are initiated
+    strays?: string[] // files or directories found in the project that don't fit the model, not necessarily an error
+    filePath?: string // The location of the project on disk
+    githubPath?: string // The original github path specified, if deploying from github
+    owClient?: Client // The openwhisk client for deploying actions and packages
+    bucketClient?: Bucket // The gcloud storage client for deploying to a bucket
+    includer?: Includer // The 'includer' for deciding which packages, actions, web are included in the deploy
+    reader?: ProjectReader // The project reader to use
+    versions?: VersionEntry // The VersionEntry for credentials.namespace on the selected API host if available
+    feedback?: Feedback // The object to use for immediate communication to the user (e.g. for warnings and progress reports)
+    error?: Error // Records an error in reading, preparing, or building; the structure should not be used
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)
@@ -151,15 +152,15 @@ export interface Ownership {
 
 // The specification of information guiding bucket deployment of web resources if that feature is to be employed
 export interface BucketSpec {
-    prefixPath?: string      // A directory prefix used in front of every resource when deploying (if absent, / is assumed)
-    strip?: number           // The number of path segments to strip from every resource when deploying (before adding prefix path, if any)
-    mainPageSuffix?: string  // The suffix to append to any directory URL (including the bucket root) to form the URL of a web page (defaults to 'index.html')
-    notFoundPage?: string    // The name of a page (relative to the root) to show on 404 errors.
-    clean?: boolean          // Deletes existing content starting at prefixPath (or the root if no prefixPath) before deploying new content
-    useCache?: boolean        // If true, default caching (one hour) is enabled.  Otherwise a Cache-Control header of `no-cache` is set
+    prefixPath?: string // A directory prefix used in front of every resource when deploying (if absent, / is assumed)
+    strip?: number // The number of path segments to strip from every resource when deploying (before adding prefix path, if any)
+    mainPageSuffix?: string // The suffix to append to any directory URL (including the bucket root) to form the URL of a web page (defaults to 'index.html')
+    notFoundPage?: string // The name of a page (relative to the root) to show on 404 errors.
+    clean?: boolean // Deletes existing content starting at prefixPath (or the root if no prefixPath) before deploying new content
+    useCache?: boolean // If true, default caching (one hour) is enabled.  Otherwise a Cache-Control header of `no-cache` is set
  }
 
- // Types used in the DeployResponse
+// Types used in the DeployResponse
 export interface VersionInfo {
     version: string
     digest: string
@@ -168,7 +169,7 @@ export interface VersionMap {
     [key: string]: VersionInfo
 }
 
-export type DeployKind = "web" | "action"
+export type DeployKind = 'web' | 'action'
 
 export interface DeploySuccess {
     name: string
@@ -220,19 +221,19 @@ export interface OWOptions {
 // These types duplicate declarations in main/deployable/login, except that Credentials is renamed to FullCredentials
 // to avoid confusing it with the Credentials type used through nim.
 export type IdProvider = {
-    provider: string,
-    name: string,
+    provider: string
+    name: string
     key: string
 }
 
 export type FullCredentials = {
-    status: string,
-    apihost: string,
-    namespace: string,
-    uuid: string,
-    key: string,
-    redis: boolean,
-    storage?: string,
+    status: string
+    apihost: string
+    namespace: string
+    uuid: string
+    key: string
+    redis: boolean
+    storage?: string
     externalId?: IdProvider
 }
 
@@ -248,7 +249,7 @@ export interface CredentialStore {
 }
 
 export interface CredentialHostMap {
-    [ key: string ]: CredentialNSMap  // Keyed by API host
+    [ key: string ]: CredentialNSMap // Keyed by API host
 }
 
 // Part of CredentialStore for a single API host
@@ -266,7 +267,7 @@ export interface CredentialEntry {
     redis: boolean
     project?: string
     production?: boolean
-    commander?: object
+    commander?: Record<string, unknown>
 }
 
 // Part of CredentialStore for the storage credentials.  THese are organized for convenience in initializing a Storage
@@ -284,7 +285,7 @@ export interface Credentials {
     redis: boolean
     project?: string
     production?: boolean
-    commander?: object
+    commander?: Record<string, unknown>
 }
 
 // Compact and less complete information about a Credential suitable for listing and tabular display
@@ -298,8 +299,8 @@ export interface CredentialRow {
     apihost: string
 }
 
- // The Includer object is used during project reading and deployment to screen web, packages, and actions to be included
- export interface Includer {
+// The Includer object is used during project reading and deployment to screen web, packages, and actions to be included
+export interface Includer {
     isWebIncluded: boolean
     isPackageIncluded: (pkg: string) => boolean
     isActionIncluded: (pkg: string, action: string) => boolean
@@ -327,4 +328,9 @@ export interface ProjectReader {
     getPathKind: (path: string) => Promise<PathKind>
     // Get the location of the project in a real file system (returns null for github)
     getFSLocation: () => string|null
+}
+
+// Define KeyVal for our purposes, supporting the `init` option for parameters
+export interface KeyVal extends OWKeyVal {
+    init?: boolean
 }
