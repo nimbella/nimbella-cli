@@ -22,30 +22,20 @@ All such contributions should be in the form of pull requests.  The exact format
 
 - _motivation_: what problem the contribution is trying to solve and why it should be regarded as helpful
 - _externals_: what visible changes to the behavior of `nim` will occur if the pull request is merged
-- _internals_: (if a reading of the code is likely to raise questions) anything that will help orient a reviewer to reading the code.
+- (optionally) _internals_: anything that will help orient a reviewer in reading the code.
 
 By opening a pull request
 
 - You agree that your contributions will be licensed under the [Apache 2.0 License](LICENSE).
 - When you open a pull request with your contributions, **you are certifying that you wrote the code** in the corresponding patch pursuant to the [Developer Certificate of Origin](#developer-certificate-of-origin) included below for your reference.
 - You must conform to our style guidelines.  Issue `npm run lint` and fix any errors or warnings before submitting.
-- If you're contributing a new `nim` subcommand, you must follow the [guide below](#creating-a-new-subcommand).
+- If you're contributing a new `nim` subcommand, please read [our command authoring guide](commandAuthoringGuide.md) and follow its guidance.
 
 ---
 
 ### Contact us.
 
 We're always happy to help you with any issues you encounter. You may want to [join our Slack community](https://nimbella-community.slack.com/) to engage with us for a more rapid response.
-
----
-
-### Creating a new `nim` subcommand
-
-The Nimbella CLI is built on the [oclif framework](https://oclif.io/docs/commands).  But, `nim` adds a layer to `oclif` to facilitate embedding `nim` subcommands in browser-based environments such as our workbench.  Having familiarized yourself with writing `oclif` commands, consider the following additional rules.
-
-1.  By convention, the "topic" tree in `nim` has limited depth.  You can have a command called `nim shop meat` but not `nim shop groceries meat`.
-2. Every topic (like `shop` in the above example) _must_ be listed in `oclif.topics` in `package.json`.  This is optional for `oclif` but required for `nim`.
-3. All `nim` commands must inherit from 
 
 ---
 
