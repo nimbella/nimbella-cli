@@ -11,7 +11,7 @@ This document outlines the process for contributing to `nim`. It also provides s
 The easiest way to contribute is to open an issue with a bug report or a suggestion for improvement.   We do not have a prescriptive issue template.  We merely request that you take the time to communicate clearly so that we can understand what is being requested and respond appropriately.
 
 - For bug reports, give as much detail as you can about exactly what you were doing when the problem occurred and use transcripts or screen shots to show the problematic behavior.
-- For enhancement requests, give the context.  Ideally, explain why the Nimbella community would be interested in the improvement.  Then, be as explicit as you can about how you see the change working, down to a proposed syntax.
+- For enhancement requests, give the context.  Ideally, explain why the Nimbella community would be interested in the improvement.  Then, be as explicit as you can about how you see the change looking and behaving.
 - Check other open issues and add comments to existing issues rather than creating duplicates.
 
 ---
