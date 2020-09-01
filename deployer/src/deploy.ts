@@ -13,7 +13,7 @@
 
 import {
   DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, DeployerAnnotation, VersionEntry,
-  ProjectReader, OWOptions, KeyVal
+  ProjectReader, OWOptions, KeyVal, SliceResponse
 } from './deploy-struct'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse,
@@ -42,7 +42,7 @@ export async function cleanOrLoadVersions(todeploy: DeployStructure): Promise<De
     // Incremental deployment requires the versions up front to have access to the form hashes
     todeploy.versions = loadVersions(todeploy.filePath, todeploy.credentials.namespace, todeploy.credentials.ow.apihost)
   } else {
-    if (todeploy.includer.isWebIncluded && (todeploy.cleanNamespace || (todeploy.bucket && todeploy.bucket.clean))) {
+    if (todeploy.includer.isWebIncluded && !todeploy.webBuildResult && (todeploy.cleanNamespace || (todeploy.bucket && todeploy.bucket.clean))) {
       if (todeploy.bucketClient) {
         const warn = await cleanBucket(todeploy.bucketClient, todeploy.bucket, todeploy.credentials.ow)
         if (warn) {
@@ -67,8 +67,14 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   if (todeploy.flags.webLocal) {
     webLocal = ensureWebLocal(todeploy.flags.webLocal)
   }
-  const webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
-    todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
+  let webPromises: Promise<DeployResponse>[]
+  const remoteResult = todeploy.webBuildResult
+  if (remoteResult) {
+    webPromises = [processRemoteResponse(remoteResult)]
+  } else {
+    webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
+      todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
+  }
   return getDeployerAnnotation(todeploy.filePath, todeploy.githubPath).then(deployerAnnot => {
     const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy.owClient, deployerAnnot, todeploy.parameters,
       todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader))
@@ -81,6 +87,16 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
       return response
     })
   })
+}
+
+// Process the remote result when something has been built remotely
+async function processRemoteResponse(remoteResult: Promise<SliceResponse>): Promise<DeployResponse> {
+  const result = await remoteResult
+  if (result.exitCode !== 0) {
+    return wrapError(new Error(`Remote error:\n${result.stderr}`), 'building and deploying remotely')
+  } else {
+    return JSON.parse(result.stdout)
+  }
 }
 
 // Look for 'clean' flags in the actions and packages and perform the cleaning.
@@ -97,7 +113,7 @@ function cleanActionsAndPackages(todeploy: DeployStructure): Promise<DeployStruc
     } else if (pkg.actions) {
       const prefix = defaultPkg ? '' : pkg.name + '/'
       for (const action of pkg.actions) {
-        if (action.clean && todeploy.includer.isActionIncluded(pkg.name, action.name)) {
+        if (action.clean && todeploy.includer.isActionIncluded(pkg.name, action.name) && !action.buildResult) {
           delete todeploy.versions.actionVersions[action.name]
           promises.push(todeploy.owClient.actions.delete(prefix + action.name).catch(() => undefined))
         }
@@ -218,6 +234,9 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
 // Deploy an action
 function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
   actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader): Promise<DeployResponse> {
+  if (action.buildResult) {
+    return processRemoteResponse(action.buildResult)
+  }
   if (action.code) {
     return deployActionFromCode(action, prefix, action.code, wsk, deplAnnot, actionIsClean, versions)
   }

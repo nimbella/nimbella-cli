@@ -33,6 +33,7 @@ export class ProjectDeploy extends NimBaseCommand {
     'web-local': flags.string({ description: 'A local directory to receive web deploy, instead of uploading'}),
     include: flags.string({ description: 'Project portions to include' }),
     exclude: flags.string({ description: 'Project portions to exclude' }),
+    'remote-build': flags.boolean({ description: 'Run builds remotely'}),
     incremental: flags.boolean({ description: 'Deploy only changes since last deploy' }),
     'anon-github': flags.boolean({ description: 'Attempt GitHub deploys anonymously'} ),
     ...NimBaseCommand.flags
@@ -59,7 +60,7 @@ export class ProjectDeploy extends NimBaseCommand {
       logger.handleError(`you don't have GitHub authorization.  Use 'nim auth github --initial' to activate it.`)
     }
     const cmdFlags: Flags = { verboseBuild: flags['verbose-build'], verboseZip: flags['verbose-zip'], production, incremental, env, yarn,
-      webLocal: flags['web-local'], include, exclude }
+      webLocal: flags['web-local'], include, exclude, remoteBuild: flags['remote-build'] }
     this.debug('cmdFlags', cmdFlags)
     const { creds, owOptions } = await processCredentials(insecure, apihost, auth, target, logger)
     this.debug('creds', creds)
@@ -115,7 +116,7 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
       logger.displayError('', todeploy.error)
       return false
   }
-  if (!watching) {
+  if (!watching && !todeploy.slice) {
     displayHeader(project, todeploy.credentials, logger)
   }
   todeploy = await buildProject(todeploy)
@@ -124,6 +125,9 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
       return false
   }
   const result: DeployResponse = await deploy(todeploy)
+  if (todeploy.slice) {
+    return displaySliceResult(result, logger)
+  }
   return displayResult(result, watching, cmdFlags.webLocal, logger)
 }
 
@@ -139,6 +143,14 @@ function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
   }
   const projectPath = isGithubRef(project) ? project : path.resolve(project)
   logger.log(`Deploying project '${projectPath}'${namespaceClause}${hostClause}`)
+}
+
+// Display the result of a successful run when deploying a slice
+// The only output should be the DeployResponse as JSON
+function displaySliceResult(result: DeployResponse, logger: NimLogger): boolean {
+  const toDisplay = JSON.stringify(result, null, 2)
+  logger.log(toDisplay)
+  return result.failures.length === 0
 }
 
 // Display the result of a successful run
