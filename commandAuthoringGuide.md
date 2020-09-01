@@ -4,6 +4,8 @@ The Nimbella CLI is built on the [oclif framework](https://oclif.io/docs/introdu
 
 The Nimbella CLI includes the [plugins plugin](https://github.com/oclif/plugin-plugins).  So, you have a choice.  You can package additional subcommands in a plugin, or you can submit a PR to modify `nim` itself.  The choice should depend on the general applicability of the subcommand.  If the potential usage community for your new command is narrow, consider using a plugin.
 
+Regardless of which you choose, we expect all contributions to conform to our [code of conduct](CODE_OF_CONDUCT.md).
+
 If you do use a plugin,
 
 - you will need to publish it to an `npm` repository or disseminate github coordinates
