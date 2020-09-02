@@ -12,14 +12,16 @@
  */
 
 import { spawn } from 'child_process'
-import { ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback } from './deploy-struct'
+import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback, SliceResponse, OWOptions } from './deploy-struct'
 import {
   FILES_TO_SKIP, actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
   promiseFilesAndFilterFiles
 } from './util'
 import * as path from 'path'
 import * as fs from 'fs'
+import * as yaml from 'js-yaml'
 import ignore from 'ignore'
+import axios from 'axios'
 import * as archiver from 'archiver'
 import * as touch from 'touch'
 import * as makeDebug from 'debug'
@@ -45,17 +47,17 @@ export function getBuildForAction(filepath: string, reader: ProjectReader): Prom
 // Build all the actions in an array of PackageSpecs, returning a new array of PackageSpecs.  We try to return
 // undefined for the case where no building occurred at all, since we are obligated to return a full array if
 // any building occured, even if most things weren't subject to building.
-export function buildAllActions(pkgs: PackageSpec[], buildTable: BuildTable, flags: Flags, reader: ProjectReader,
-  feedback: Feedback): Promise<PackageSpec[]> {
-  if (!pkgs || pkgs.length === 0) {
+export function buildAllActions(spec: DeployStructure): Promise<PackageSpec[]> {
+  const packages = spec.packages
+  if (!packages || packages.length === 0) {
     return undefined
   }
   // If there are any packages, we are going to have to search through them but if none of them build anything we can punt
-  const pkgMap = mapPackages(pkgs)
+  const pkgMap = mapPackages(packages)
   const promises: Promise<PackageSpec>[] = []
-  for (const pkg of pkgs) {
+  for (const pkg of packages) {
     if (pkg.actions && pkg.actions.length > 0) {
-      const builtPackage = buildActionsOfPackage(pkg, buildTable, flags, reader, feedback)
+      const builtPackage = buildActionsOfPackage(pkg, spec)
       promises.push(builtPackage)
     }
   }
@@ -73,14 +75,13 @@ export function buildAllActions(pkgs: PackageSpec[], buildTable: BuildTable, fla
 }
 
 // Build the actions of a package, returning an updated PackageSpec or undefined if nothing got built
-async function buildActionsOfPackage(pkg: PackageSpec, buildTable: BuildTable, flags: Flags, reader: ProjectReader,
-  feedback: Feedback): Promise<PackageSpec> {
+async function buildActionsOfPackage(pkg: PackageSpec, spec: DeployStructure): Promise<PackageSpec> {
   const actionMap = mapActions(pkg.actions)
   let nobuilds = true
   for (const action of pkg.actions) {
     if (action.build) {
       nobuilds = false
-      const builtAction = await buildAction(action, buildTable, flags, reader, feedback)
+      const builtAction = await buildAction(action, spec)
       actionMap[action.name] = builtAction
     }
   }
@@ -92,12 +93,13 @@ async function buildActionsOfPackage(pkg: PackageSpec, buildTable: BuildTable, f
 }
 
 // Perform the build defined for an action or just return the action if there is no build step
-function buildAction(action: ActionSpec, buildTable: BuildTable, flags: Flags, reader: ProjectReader, feedback: Feedback): Promise<ActionSpec> {
+function buildAction(action: ActionSpec, spec: DeployStructure): Promise<ActionSpec> {
   if (!action.build) {
     return Promise.resolve(action)
   }
   debug('building action %O', action)
   let actionDir
+  const { reader, flags, feedback, sharedBuilds } = spec
   switch (action.build) {
   case 'build.sh':
     actionDir = makeLocal(reader, action.file)
@@ -109,7 +111,7 @@ function buildAction(action: ActionSpec, buildTable: BuildTable, flags: Flags, r
       flags.incremental, flags.verboseZip, reader, feedback))
   case '.build':
     actionDir = makeLocal(reader, action.file)
-    return outOfLineBuilder(actionDir, action.displayFile, buildTable, true, flags, reader, feedback).then(() => identifyActionFiles(action,
+    return outOfLineBuilder(actionDir, action.displayFile, sharedBuilds, true, flags, reader, feedback).then(() => identifyActionFiles(action,
       flags.incremental, flags.verboseZip, reader, feedback))
   case 'package.json':
     actionDir = makeLocal(reader, action.file)
@@ -119,6 +121,9 @@ function buildAction(action: ActionSpec, buildTable: BuildTable, flags: Flags, r
   case 'identify':
     return identifyActionFiles(action,
       flags.incremental, flags.verboseZip, reader, feedback)
+  case 'remote':
+    checkBuiltLocally(path.join(spec.filePath, action.file))
+    return doRemoteActionBuild(action, spec)
   default:
     throw new Error('Unknown build type in ActionSpec: ' + action.build)
   }
@@ -365,31 +370,49 @@ export function getBuildForWeb(filepath: string, reader: ProjectReader): Promise
   return readDirectory(filepath, reader).then(items => findSpecialFile(items, filepath, false))
 }
 
-// Build the web directory
-export function buildWeb(build: string, sharedBuilds: BuildTable, filepath: string, displayPath: string,
-  flags: Flags, reader: ProjectReader, feedback: Feedback): Promise<WebResource[]> {
+export function buildWeb(spec: DeployStructure): Promise<WebResource[]> {
   debug('Performing Web build')
   let scriptPath
-  switch (build) {
+  const displayPath = path.join(spec.githubPath || spec.filePath, 'web')
+  const { reader, flags, feedback, sharedBuilds, webBuild } = spec
+  switch (webBuild) {
   case 'build.sh':
-    scriptPath = makeLocal(reader, filepath)
-    return scriptBuilder('./build.sh', scriptPath, displayPath, flags, feedback).then(() => identifyWebFiles(filepath, reader))
+    scriptPath = makeLocal(reader, 'web')
+    return scriptBuilder('./build.sh', scriptPath, displayPath, flags, feedback).then(() => identifyWebFiles('web', reader))
   case 'build.cmd':
-    debug('cwd for windows build is %s', filepath)
-    scriptPath = makeLocal(reader, filepath)
-    return scriptBuilder('build.cmd', scriptPath, displayPath, flags, feedback).then(() => identifyWebFiles(filepath, reader))
+    debug('cwd for windows build is %s', 'web')
+    scriptPath = makeLocal(reader, 'web')
+    return scriptBuilder('build.cmd', scriptPath, displayPath, flags, feedback).then(() => identifyWebFiles('web', reader))
   case '.build':
     // Does its own localizing
-    return outOfLineBuilder(filepath, displayPath, sharedBuilds, false, flags, reader, feedback).then(() => identifyWebFiles(filepath, reader))
+    return outOfLineBuilder('web', displayPath, sharedBuilds, false, flags, reader, feedback).then(() => identifyWebFiles('web', reader))
   case 'package.json':
-    scriptPath = makeLocal(reader, filepath)
-    return npmBuilder(scriptPath, displayPath, flags, feedback).then(() => identifyWebFiles(filepath, reader))
+    scriptPath = makeLocal(reader, 'web')
+    return npmBuilder(scriptPath, displayPath, flags, feedback).then(() => identifyWebFiles('web', reader))
   case '.include':
   case 'identify':
-    return identifyWebFiles(filepath, reader)
+    return identifyWebFiles('web', reader)
+  case 'remote':
+    checkBuiltLocally(path.join(spec.filePath, 'web'))
+    return doRemoteWebBuild(spec)
   default:
     throw new Error('Unknown build type for web directory: ' + build)
   }
+}
+
+// Check whether path seems to denote a directory that is already built (heuristic).  Throws if case detected
+function checkBuiltLocally(filepath: string) {
+  debug('checking for local build artifacts in %s when remote build requested', filepath)
+  if (fs.existsSync(filepath) && fs.lstatSync(filepath).isDirectory()) {
+    debug('%s exists and is a directory', filepath)
+    const zipped = path.join(filepath, ZIP_TARGET)
+    const dotBuilt = path.join(filepath, '.built')
+    if (fs.existsSync(zipped) || fs.existsSync(dotBuilt)) {
+      throw new Error(`Remote build is requested for '${filepath}' but it appears to have been built locally.  Remove derived artifacts first.`)
+    }
+    debug('did not find %s or %s', zipped, dotBuilt)
+  }
+  debug('check passed')
 }
 
 // Identify the files constituting web content.  Similar to its action counterpart but not identical (e.g. there is no zipping)
@@ -424,6 +447,176 @@ function checkForNodeModules(items: string[]) {
       throw new Error('Deploying \'node_modules\' to the web, which is probably an error.  Use \'.include\' or \'.ignore\' to avoid this problem.')
     }
   })
+}
+
+// Initiate request to builder for building an action
+async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure): Promise<ActionSpec> {
+  // Get the zipper
+  const { zip, output, outputPromise } = makeProjectSliceZip()
+  // Get the project slice in convenient form
+  const { spec, pkgName } = makeConfigFromActionSpec(action, project)
+  // Zip the actionPath
+  debug('zipping action path %s for project slice', action.file)
+  await appendToZip(zip, action.file, project.reader)
+  // Add the project.yml
+  debug('converting slice spec to YAML: %O', spec)
+  const config = yaml.safeDump(spec)
+  zip.append(config, { name: 'project.yml' })
+  debug('finalizing zip for project slice')
+  zip.finalize()
+  debug('zip finalized for project slice of action %s', action.name)
+  await outputPromise
+  debug('outputPromise settled for project slice of action %s', action.name)
+  const toSend = (output as memoryStreams.WritableStream).toBuffer()
+  const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
+  debug('sending the remote build request for project %s and action %s', project.filePath, actionName)
+  action.buildResult = invokeRemoteBuilder(toSend, project.credentials.ow, action.runtime, actionName)
+  return action
+}
+
+// Zip a file or directory for a remote build slice
+async function appendToZip(zip: archiver.Archiver, path: string, reader: ProjectReader) {
+  const kind = await reader.getPathKind(path)
+  if (kind.isFile) {
+    await appendAndCheck(zip, path, path, reader)
+  } else if (kind.isDirectory) {
+    zipDebug('getting contents of directory %s for remote build slice', path)
+    const files = await promiseFilesAndFilterFiles(path, reader)
+    for (const file of files) {
+      await appendAndCheck(zip, file, path, reader)
+    }
+  }
+}
+
+// Append a path known to be a file to the in-memory zip, checking for excessive size and issuing debug if requested.
+async function appendAndCheck(zip: archiver.Archiver, file: string, actionPath: string, reader: ProjectReader) {
+  const contents = await reader.readFileContents(file)
+  zip.append(contents, { name: file })
+  const size = zip.pointer()
+  if (size > 512 * 1024) {
+    throw new Error(`'Remote build upload for '${actionPath}' exceeds 512K.  Make sure the directory is free of derived artifacts`)
+  }
+  zipDebug("zipped '%s' for remote build slice, emitted %d", file, size)
+}
+
+// Initiate request to builder for building web content
+async function doRemoteWebBuild(project: DeployStructure) {
+  // Get the zipper
+  const { zip, output, outputPromise } = makeProjectSliceZip()
+  // Get the project slice in convenient form
+  const spec = makeConfigFromWebSpec(project)
+  // Zip the web path
+  await appendToZip(zip, 'web', project.reader)
+  // Add the project.yml
+  const config = yaml.safeDump(spec)
+  zip.append(config, { name: 'project.yml' })
+  zip.finalize()
+  await outputPromise
+  const toSend = (output as memoryStreams.WritableStream).toBuffer()
+  project.webBuildResult = invokeRemoteBuilder(toSend, project.credentials.ow, '', '')
+  return [] // An array of WebResource is expected but since no deployment will be done locally an empty one suffices
+}
+
+// Slice the project to contain only one ActionSpec and no web folder; return a DeployStructure that can be written
+// out as a project.yml and also the path to the action file or directory, for zipping.
+function makeConfigFromActionSpec(action: ActionSpec, spec: DeployStructure): { spec: DeployStructure, pkgName: string } {
+  debug('converting action spec to sliced project.yml: %O', action)
+  const { targetNamespace, cleanNamespace, parameters, credentials, flags } = spec
+  flags.remoteBuild = false
+  const { name, runtime, main, binary, zipped, web, webSecure, annotations, environment, limits, clean } = action
+  const newSpec = { targetNamespace, cleanNamespace, parameters, credentials, flags, slice: true } as DeployStructure
+  const newAction = {
+    name,
+    runtime,
+    main,
+    binary,
+    zipped,
+    web,
+    webSecure,
+    annotations,
+    parameters: action.parameters,
+    environment,
+    limits,
+    clean
+  } as ActionSpec
+  removeUndefined(newSpec)
+  removeUndefined(newAction)
+  const pkgName = path.basename(path.dirname(action.file))
+  const pkg = spec.packages.find(pkg => pkg.name === pkgName)
+  pkg.actions = [newAction]
+  newSpec.packages = [pkg]
+  return { spec: newSpec, pkgName }
+}
+
+// Slice the project to contain only components relevant ot web deploy.  This does not include 'web' itself since that will be
+// included in the project slice separately
+function makeConfigFromWebSpec(project: DeployStructure): DeployStructure {
+  debug('converting project spec to sliced project.yml for web building')
+  const { targetNamespace, cleanNamespace, bucket, credentials, flags } = project
+  flags.remoteBuild = false
+  return removeUndefined({ targetNamespace, cleanNamespace, bucket, credentials, flags, slice: true })
+}
+
+// Remove undefined fields from object (mutates object but returns it as well)
+function removeUndefined(obj: Record<string, any>): Record<string, any> {
+  for (const item in obj) {
+    if (!obj[item]) {
+      delete obj[item]
+    } else if (typeof obj[item] === 'object') {
+      obj[item] = removeUndefined(obj[item])
+    }
+  }
+  return obj
+}
+
+// Create an in-memory zip for storing a project slice.  Note: code here duplicates code in autozipBuilder.  Refactoring
+// to avoid duplication might be delicate and is deferred for now.
+interface ProjectSliceZip {
+    output: Writable
+    zip: archiver.Archiver
+    outputPromise: Promise<any>
+}
+function makeProjectSliceZip(): ProjectSliceZip {
+  const output: Writable = new memoryStreams.WritableStream()
+  const zip = archiver('zip')
+  const outputPromise = new Promise(function(resolve, reject) {
+    zip.on('error', err => {
+      debug('zip error occurred: %O', err)
+      reject(err)
+    })
+    output.on('close', () => {
+      debug('zipfile successfully closed')
+      resolve(undefined)
+    })
+    output.on('finish', () => {
+      debug('zipfile successfully finished')
+      resolve(undefined)
+    })
+    output.on('end', () => {
+      debug('zipfile data has been drained')
+    })
+    zip.on('warning', err => {
+      debug('warning issued from archiver %O', err)
+      if (err.code !== 'ENOENT') {
+        reject(err)
+      }
+    })
+  })
+  zip.pipe(output)
+  return { output, zip, outputPromise }
+}
+
+// This function should be replaced by a send to the builder, returning a handle for fetching the result
+async function invokeRemoteBuilder(zipped: Buffer, ow: OWOptions, kind: string, action: string): Promise<SliceResponse> {
+  const code = zipped.toString('base64')
+  const value = { auth: ow.api_key, code, binary: true, main: '', kind, action, extra: '' }
+  const url = `${ow.apihost}/api/v1/builder`
+  const result = await axios.post(url, { value })
+  debug('remote builder returned %O', result)
+  if (result.status !== 200) {
+    throw new Error('Bad response [$result.status}] from remote build service')
+  }
+  return result.data as SliceResponse
 }
 
 // Read a directory and filter the result
