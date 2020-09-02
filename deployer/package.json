@@ -11,7 +11,6 @@
   "author": "Joshua Auerbach",
   "license": "Apache-2.0",
   "dependencies": {
-    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#389dac2382dabd8e9425696f33a07a241472024c",
     "@google-cloud/storage": "^3.2.1",
     "@oclif/command": "^1",
     "@octokit/rest": "16.36.0",

@@ -29,7 +29,6 @@ governing permissions and limitations under the License.
 import { Command, flags } from '@oclif/command'
 import { IConfig } from '@oclif/config'
 import { IArg } from '@oclif/parser/lib/args'
-import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
 import { format } from 'util'
 import { STATUS_CODES } from 'http'
 import { authPersister, getCredentialList } from './credentials'
@@ -107,6 +106,19 @@ function isCaptureLogger(logger: NimLogger): logger is CaptureLogger {
   return 'captured' in logger
 }
 
+// Dummy stand-in for RuntimeBaseClass in aio (having an aio dependency here causes various problems with building and testing)
+// This is used just as a type for type checking and is not itself instantiated (we are passed real aio classes at runtime)
+class AioCommand extends Command {
+  constructor(rawArgv: string[], config?: IConfig) {
+    super(rawArgv, config)
+  }
+  handleError(_msg?: string, _err?: any) {}
+  parsed: { argv: string[], args: string[], flags: any }
+  logJSON(_hdr: string, _entity: Record<string, unknown>) {}
+  table(data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}) {}
+  async run(_argv?: string[]) {}
+}
+
 // The base for all our commands, including the ones that delegate to aio.  There are methods designed to be called from the
 // kui repl as well as ones that implement the oclif command model.
 export abstract class NimBaseCommand extends Command implements NimLogger {
@@ -155,10 +167,10 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   // When running under node / normal oclif, this just uses the normal run(argv) method.  But, when running under
   // kui in a browser, it takes steps to avoid a second real parse and also captures all output.  The
   // logger argument is a CaptureLogger in fact.
-  async runAio(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger, AioClass: typeof RuntimeBaseCommand): Promise<void> {
+  async runAio(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger, AioClass: typeof AioCommand): Promise<void> {
     debug('runAio with rawArgv: %O, argv: %O, args: %O, flags: %O', rawArgv, argv, args, flags)
     fixAioCredentials(logger, flags)
-    const cmd = new AioClass(rawArgv, {})
+    const cmd = new AioClass(rawArgv, {} as IConfig)
     if (flags.verbose) {
       debug('verbose flag intercepted')
       flags.verbose = false
