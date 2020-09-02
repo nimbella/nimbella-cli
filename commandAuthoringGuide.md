@@ -9,6 +9,7 @@ Regardless of which you choose, we expect all contributions to conform to our [c
 If you do use a plugin,
 
 - you will need to publish it to an `npm` repository or disseminate github coordinates
+- you should choose a name for the plugin that starts with `nim-plugin-`
 - `nim` users will be able to install it with
 
 ```
@@ -19,10 +20,10 @@ nim plugin install <your-plugin>
 
 If your command is broadly applicable, consider submitting a PR to add the command directly to `nim`.  
 
-- If we accept the submission, Nimbella will then take responsibility for servicing users of the command
-- If appropriate (no local file system access) the subcommand may run in the Nimbella workbench
-- But, in this case the additional guidelines shown below must be followed.
+- The additional guidelines shown below must be followed.
 - Look at the source of an existing subcommand for examples of correct usage.
+- If we accept the submission, Nimbella will then take responsibility for servicing users of the command
+- If appropriate (no local file system access) we may choose to provide subcommand in the Nimbella workbench
 
 ---
 
@@ -74,6 +75,9 @@ The first two of these duplicate methods provided by `oclif`'s `Command` and sho
 
 - you can use `chalk` sparingly for decoration and contrast
 - Do not directly use `cli-ux`: it breaks the Nimbella workbench
-- The supplied utilities in [ui.ts](https://github.com/nimbella/nimbella-cli/blob/master/src/ui.ts) abstract some common user interactions such as prompting and spinners.  These may use `cli-ux` internally but demand-load it to ensure it is not used in the workbench.
+- The supplied utilities in [ui.ts](https://github.com/nimbella/nimbella-cli/blob/master/src/ui.ts) abstract some common user interactions such as prompting and spinners.
+   - always use these utilities in preference to alternatives when you can
+   - if you have a user interaction need that isn't covered by `ui.ts` then add that interaction to `ui.ts` as part of your PR and we will review it accordingly
+	- note that `ui.ts` uses `cli-ux` internally but demand-loads it when safe and provide alternatives when running in a web browser.  
 
 
