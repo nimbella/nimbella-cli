@@ -18,7 +18,7 @@ import { DeployStructure, DeployResponse, PackageSpec, OWOptions, WebResource, C
 import { readTopLevel, buildStructureParts, assembleInitialStructure } from './project-reader'
 import {
   isTargetNamespaceValid, wrapError, wipe, saveUsFromOurselves, writeProjectStatus, getTargetNamespace,
-  needsBuilding, errorStructure, getBestProjectName, inBrowser
+  checkBuildingRequirements, errorStructure, getBestProjectName, inBrowser
 } from './util'
 import { openBucketClient } from './deploy-to-bucket'
 import { buildAllActions, buildWeb } from './finder-builder'
@@ -57,7 +57,7 @@ export function deployProject(path: string, owOptions: OWOptions, credentials: C
   debug('deployProject invoked with incremental %s', flags.incremental)
   return readPrepareAndBuild(path, owOptions, credentials, persister, flags).then(spec => {
     if (spec.error) {
-      debug('An error was caught prior to deployment: %O', spec.error)
+      debug('An error was caught prior to %O:', spec.error)
       return Promise.resolve(wrapError(spec.error, undefined))
     }
     return deploy(spec)
@@ -75,7 +75,7 @@ export function readPrepareAndBuild(path: string, owOptions: OWOptions, credenti
 export function readAndPrepare(path: string, owOptions: OWOptions, credentials: Credentials, persister: Persister,
   flags: Flags, userAgent?: string, feedback?: Feedback): Promise<DeployStructure> {
   const includer = makeIncluder(flags.include, flags.exclude)
-  return readProject(path, flags.env, includer, feedback).then(spec => spec.error ? spec
+  return readProject(path, flags.env, includer, flags.remoteBuild, feedback).then(spec => spec.error ? spec
     : prepareToDeploy(spec, owOptions, credentials, persister, flags))
 }
 
@@ -97,14 +97,20 @@ export function deploy(todeploy: DeployStructure): Promise<DeployResponse> {
 }
 
 // Read the information contained in the project, initializing the DeployStructure
-export async function readProject(projectPath: string, envPath: string, includer: Includer,
+export async function readProject(projectPath: string, envPath: string, includer: Includer, requestRemote: boolean,
   feedback: Feedback = new DefaultFeedback()): Promise<DeployStructure> {
   debug('Starting readProject, projectPath=%s, envPath=%s', projectPath, envPath)
   const ans = await readTopLevel(projectPath, envPath, includer, false, feedback).then(buildStructureParts).then(assembleInitialStructure)
     .catch((err) => { return errorStructure(err) })
   debug('evaluating the just-read project: %O', ans)
-  if (needsBuilding(ans) && ans.reader.getFSLocation() === null) {
-    debug("project '%s' will be re-read and cached because it's a github project that needs building", projectPath)
+  let needsLocalBuilds: boolean
+  try {
+    needsLocalBuilds = checkBuildingRequirements(ans, requestRemote)
+  } catch (err) {
+    return errorStructure(err)
+  }
+  if (needsLocalBuilds && ans.reader.getFSLocation() === null) {
+    debug("project '%s' will be re-read and cached because it's a github project that needs local building", projectPath)
     if (inBrowser) {
       return errorStructure(new Error(`Project '${projectPath}' cannot be deployed from the cloud because it requires building`))
     }
@@ -121,11 +127,9 @@ export function buildProject(project: DeployStructure): Promise<DeployStructure>
   let webPromise: Promise<WebResource[]>
   project.sharedBuilds = { }
   if (project.webBuild) {
-    const displayPath = project.githubPath || project.filePath
-    webPromise = buildWeb(project.webBuild, project.sharedBuilds, 'web', path.join(displayPath, 'web'),
-      project.flags, project.reader, project.feedback)
+    webPromise = buildWeb(project)
   }
-  const actionPromise: Promise<PackageSpec[]> = buildAllActions(project.packages, project.sharedBuilds, project.flags, project.reader, project.feedback)
+  const actionPromise: Promise<PackageSpec[]> = buildAllActions(project)
   if (webPromise) {
     if (actionPromise) {
       return Promise.all([webPromise, actionPromise]).then(result => {

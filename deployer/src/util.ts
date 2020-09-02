@@ -72,25 +72,54 @@ export function loadProjectConfig(configFile: string, envPath: string, filePath:
 }
 
 // Determine if a project requires building by examining its web and actions right after project reading
-export function needsBuilding(todeploy: DeployStructure): boolean {
-  const isRealBuild = (buildField: string) => {
-    return buildField && buildField !== 'identify' && buildField !== '.include'
+export function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): boolean {
+  const locateBuild = (buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) => {
+    if (!buildField || buildField === 'identify' || buildField === '.include' || buildField === '.build') {
+      return buildField
+    }
+    if (inBrowser || remoteRequired || (remoteRequested && !localRequired)) {
+      return 'remote'
+    }
+    return buildField
   }
-  if (isRealBuild(todeploy.webBuild)) {
-    return true
+  const checkConflicts = (buildField: string, remote: boolean, local: boolean, tag: string) => {
+    if (remote && local) {
+      throw new Error(`Local and remote building cannot both be required (${tag})`)
+    }
+    if (remote && buildField === '.build') {
+      throw new Error(`Remote building cannot be required when using a '.build' directive (${tag})`)
+    }
+    if (local && inBrowser) {
+      throw new Error(`Local building required but cannot occur in the workbench; use the CLI (${tag})`)
+    }
+  }
+  if (todeploy.bucket) {
+    checkConflicts(todeploy.webBuild, todeploy.bucket.remoteBuild, todeploy.bucket.localBuild, 'web')
   }
   if (todeploy.packages) {
     for (const pkg of todeploy.packages) {
       if (pkg.actions) {
         for (const action of pkg.actions) {
-          if (isRealBuild(action.build)) {
-            return true
-          }
+          checkConflicts(action.build, action.remoteBuild, action.localBuild, `action ${action.name}`)
         }
       }
     }
   }
-  return false
+  let needsLocal = false
+  const webRequiresLocal = (todeploy.bucket && todeploy.bucket.localBuild) || !!todeploy.actionWrapPackage
+  todeploy.webBuild = locateBuild(todeploy.webBuild, requestRemote, todeploy.bucket && todeploy.bucket.remoteBuild, webRequiresLocal)
+  needsLocal = needsLocal || todeploy.webBuild !== 'remote'
+  if (todeploy.packages) {
+    for (const pkg of todeploy.packages) {
+      if (pkg.actions) {
+        for (const action of pkg.actions) {
+          action.build = locateBuild(action.build, requestRemote, action.remoteBuild, action.localBuild)
+          needsLocal = needsLocal || action.build !== 'remote'
+        }
+      }
+    }
+  }
+  return needsLocal
 }
 
 // In project config we permit many optional string-valued members to be set to '' to remind users that they are available
@@ -141,9 +170,12 @@ function removeEmptyStringMembersFromPackages(packages: PackageSpec[]) {
 // is not expected in this context.  TODO return a list of errors not just the first error.
 export function validateDeployConfig(arg: any): string {
   let haveActionWrap = false; let haveBucket = false
+  const slice = !!arg.slice
   for (const item in arg) {
     if (!arg[item]) continue
     switch (item) {
+    case 'slice':
+      continue
     case 'cleanNamespace':
       if (!(typeof arg[item] === 'boolean')) {
         return `${item} must be a boolean`
@@ -201,6 +233,11 @@ export function validateDeployConfig(arg: any): string {
       }
       break
     }
+    case 'credentials':
+    case 'flags':
+      if (slice) continue
+      // In a slice we accept credentials and flags without further validation; otherwise, they are illegal
+      // Otherwise, fall through
     default:
       return `Invalid key '${item}' found in project.yml`
     }
@@ -239,6 +276,8 @@ function validateBucketSpec(arg: Record<string, any>): string {
       break
     case 'clean':
     case 'useCache':
+    case 'remoteBuild':
+    case 'localBuild':
       if (!(typeof arg[item] === 'boolean')) {
         return `'${item}' member of 'bucket' must be a boolean`
       }
@@ -333,6 +372,8 @@ function validateActionSpec(arg: Record<string, any>): string {
       break
     case 'binary':
     case 'clean':
+    case 'remoteBuild':
+    case 'localBuild':
       if (!(typeof arg[item] === 'boolean')) {
         return `'${item}' member of an 'action' must be a boolean`
       }
