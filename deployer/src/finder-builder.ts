@@ -12,7 +12,7 @@
  */
 
 import { spawn } from 'child_process'
-import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback, SliceResponse, OWOptions } from './deploy-struct'
+import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback, Credentials } from './deploy-struct'
 import {
   FILES_TO_SKIP, actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
   promiseFilesAndFilterFiles
@@ -28,6 +28,7 @@ import * as makeDebug from 'debug'
 import { isGithubRef } from './github'
 import { Writable } from 'stream'
 import * as memoryStreams from 'memory-streams'
+import { openBucketClient } from './deploy-to-bucket'
 
 const debug = makeDebug('nim:deployer:finder-builder')
 const zipDebug = makeDebug('nim:deployer:zip')
@@ -38,6 +39,7 @@ interface Ignore {
 }
 
 const ZIP_TARGET = '__deployer__.zip'
+const BUILDER_PREFIX = '.nimbella/builds'
 
 // Determine the build type for an action that is defined as a directory
 export function getBuildForAction(filepath: string, reader: ProjectReader): Promise<string> {
@@ -470,7 +472,7 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   const toSend = (output as memoryStreams.WritableStream).toBuffer()
   const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
   debug('sending the remote build request for project %s and action %s', project.filePath, actionName)
-  action.buildResult = invokeRemoteBuilder(toSend, project.credentials.ow, action.runtime, actionName)
+  action.buildResult = invokeRemoteBuilder(toSend, project.credentials, pkgName, action)
   return action
 }
 
@@ -513,7 +515,7 @@ async function doRemoteWebBuild(project: DeployStructure) {
   zip.finalize()
   await outputPromise
   const toSend = (output as memoryStreams.WritableStream).toBuffer()
-  project.webBuildResult = invokeRemoteBuilder(toSend, project.credentials.ow, '', '')
+  project.webBuildResult = invokeRemoteBuilder(toSend, project.credentials)
   return [] // An array of WebResource is expected but since no deployment will be done locally an empty one suffices
 }
 
@@ -606,17 +608,33 @@ function makeProjectSliceZip(): ProjectSliceZip {
   return { output, zip, outputPromise }
 }
 
-// This function should be replaced by a send to the builder, returning a handle for fetching the result
-async function invokeRemoteBuilder(zipped: Buffer, ow: OWOptions, kind: string, action: string): Promise<SliceResponse> {
+// Invoke the remote builder, return the response.   Last two arguments omitted for web builds.
+// TODO this function uploads to the client's data bucket but does not cause an actual build, so it can't yet succeed
+async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, pkgName?: string, action?: ActionSpec): Promise<Buffer> {
+  const bucketClient = await openBucketClient(credentials, 'data')
   const code = zipped.toString('base64')
-  const value = { auth: ow.api_key, code, binary: true, main: '', kind, action, extra: '' }
-  const url = `${ow.apihost}/api/v1/builder`
-  const result = await axios.post(url, { value })
-  debug('remote builder returned %O', result)
-  if (result.status !== 200) {
-    throw new Error('Bad response [$result.status}] from remote build service')
+  const remoteName = (pkgName && action) ? `${BUILDER_PREFIX}/${pkgName}/${action.name}` : `${BUILDER_PREFIX}/_web_`
+  const remoteFile = bucketClient.file(remoteName)
+  const expiration = 5 * 60 * 1000 // 5 minutes
+  const putOptions = {
+    version: 'v4' as 'v2' | 'v4',
+    action: 'write' as 'read' | 'write' | 'delete' | 'resumable',
+    expires: Date.now() + expiration
   }
-  return result.data as SliceResponse
+  const [url] = await remoteFile.getSignedUrl(putOptions)
+  const result = await axios.put(url, code)
+  if (result.status !== 200) {
+    throw new Error(`Bad response [$result.status}] when uploading '${remoteName}' for remote build`)
+  }
+  // Here we must invoke the remote builder, either by directly calling the pre-compile service in the target runtime or by
+  // intermediating through an action.  It remains to be seen whether we need such an action.  From a security perspective,
+  // we will invoke the pre-compile using the customer identity.  From a credential adequacy perspective, the customer's
+  // open-whisk credentials are already there since they were used to invoke.   The project slice also contains full
+  // credentials (really only the storage key is needed).   We should consider whether it's a security exposure to send a
+  // customer secret over https to the customer's own bucket, but I think it should be ok.  Based on these considerations, perhaps
+  // everything can be done in the target runtime under the auspices of its pre-compiler service.
+  // For now:
+  return undefined
 }
 
 // Read a directory and filter the result

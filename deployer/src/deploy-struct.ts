@@ -70,7 +70,7 @@ export interface ActionSpec {
     // Build information (not specifiable in the config)
     build?: string
     wrapping?: string
-    buildResult?: Promise<SliceResponse> // The result of the remote build
+    buildResult?: Promise<Buffer> // The result of the remote build
 }
 
 // Information of various kinds typically specified on the command line
@@ -148,7 +148,7 @@ export interface DeployStructure {
     versions?: VersionEntry // The VersionEntry for credentials.namespace on the selected API host if available
     feedback?: Feedback // The object to use for immediate communication to the user (e.g. for warnings and progress reports)
     error?: Error // Records an error in reading, preparing, or building; the structure should not be used
-    webBuildResult?: Promise<SliceResponse> // Result of remote build
+    webBuildResult?: Promise<Buffer> // Result of remote build
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)
@@ -198,13 +198,6 @@ export interface DeployResponse {
     actionVersions: VersionMap
     apihost?: string
     webHashes?: { [key: string]: string }
-}
-
-// Response expected back from remote builder.  This is post-processed to align with the DeployResponses from other components
-export interface SliceResponse {
-    exitCode: number
-    stdout?: string
-    stderr?: string
 }
 
 // Structure sent to the remote builder

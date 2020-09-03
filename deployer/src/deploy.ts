@@ -13,7 +13,7 @@
 
 import {
   DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, DeployerAnnotation, VersionEntry,
-  ProjectReader, OWOptions, KeyVal, SliceResponse
+  ProjectReader, OWOptions, KeyVal
 } from './deploy-struct'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse,
@@ -90,12 +90,13 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
 }
 
 // Process the remote result when something has been built remotely
-async function processRemoteResponse(remoteResult: Promise<SliceResponse>): Promise<DeployResponse> {
+async function processRemoteResponse(remoteResult: Promise<Buffer>): Promise<DeployResponse> {
   const result = await remoteResult
-  if (result.exitCode !== 0) {
-    return wrapError(new Error(`Remote error:\n${result.stderr}`), 'building and deploying remotely')
+  if (!result) {
+    return wrapError(new Error(`Remote building is not fully implemented yet`), 'doing remote build')
   } else {
-    return JSON.parse(result.stdout)
+    // TODO this can't happen yet since we don't have the round-trip flow in place
+    return JSON.parse(String(result))
   }
 }
 

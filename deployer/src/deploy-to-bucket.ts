@@ -26,14 +26,23 @@ import * as URL from 'url-parse'
 import * as makeDebug from 'debug'
 const debug = makeDebug('nim:deployer:deploy-to-bucket')
 
-// Open a "bucket client" (object of type Bucket) to use in deploying web resources to the bucket associated with the
-// InitOptions.  The InitOptions should have been checked for sufficient information already.
-export async function openBucketClient(credentials: Credentials, bucketSpec: BucketSpec): Promise<Bucket> {
+// Open a "bucket client" (object of type Bucket) to use in deploying web resources or object resources
+// to the bucket associated with the credentials.  Assumes credentials have sufficient information.
+type BucketClientOptions = BucketSpec | 'data'
+export async function openBucketClient(credentials: Credentials, options: BucketClientOptions): Promise<Bucket> {
+  let bucketSpec: BucketSpec
+  let namePrefix = 'data-'
+  if (options !== 'data') {
+    bucketSpec = options as BucketSpec
+    namePrefix = ''
+  }
   debug('bucket client open')
-  const bucketName = computeBucketStorageName(credentials.ow.apihost, credentials.namespace)
+  const bucketName = namePrefix + computeBucketStorageName(credentials.ow.apihost, credentials.namespace)
   debug('computed bucket name %s', bucketName)
   const bucket = await makeClient(bucketName, credentials.storageKey)
-  await addWebMeta(bucket, bucketSpec)
+  if (bucketSpec) {
+    await addWebMeta(bucket, bucketSpec)
+  }
   return bucket
 }
 
