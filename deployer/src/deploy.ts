@@ -70,7 +70,7 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   let webPromises: Promise<DeployResponse>[]
   const remoteResult = todeploy.webBuildResult
   if (remoteResult) {
-    webPromises = [processRemoteResponse(remoteResult)]
+    webPromises = [processRemoteResponse(remoteResult, 'web content')]
   } else {
     webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
       todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
@@ -90,10 +90,10 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
 }
 
 // Process the remote result when something has been built remotely
-async function processRemoteResponse(remoteResult: Promise<Buffer>): Promise<DeployResponse> {
+async function processRemoteResponse(remoteResult: Promise<Buffer>, context: string): Promise<DeployResponse> {
   const result = await remoteResult
   if (!result) {
-    return wrapError(new Error(`Remote building is not fully implemented yet`), 'doing remote build')
+    return wrapError(new Error(`Remote building is not fully implemented`), context)
   } else {
     // TODO this can't happen yet since we don't have the round-trip flow in place
     return JSON.parse(String(result))
@@ -236,7 +236,7 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
 function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
   actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader): Promise<DeployResponse> {
   if (action.buildResult) {
-    return processRemoteResponse(action.buildResult)
+    return processRemoteResponse(action.buildResult, action.name)
   }
   if (action.code) {
     return deployActionFromCode(action, prefix, action.code, wsk, deplAnnot, actionIsClean, versions)

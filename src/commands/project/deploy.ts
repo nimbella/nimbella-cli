@@ -215,9 +215,10 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
               success = false
               const context = (err as any)['context']
               if (context) {
-                  logger.displayError(`While deploying ${context}:`, err)
+                  logger.displayError(`While deploying ${context}`, err)
+              } else {
+                logger.displayError('', err)
               }
-              logger.displayError('', err)
           }
       }
   }
