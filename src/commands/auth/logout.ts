@@ -13,7 +13,7 @@
 
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
-import { getCredentials, forgetNamespace, getCredentialList, authPersister } from 'nimbella-deployer'
+import { getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts } from 'nimbella-deployer'
 import { prompt } from '../../ui'
 
 export default class AuthLogout extends NimBaseCommand {
@@ -31,8 +31,8 @@ export default class AuthLogout extends NimBaseCommand {
   static aliases = ['logout']
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-    if (flags.all && argv.length > 0) {
-      logger.handleError(`Cannot combine the '--all' flag with explicit namespace names`)
+    if (flags.all && flags.apihost && argv.length > 0) {
+      logger.handleError(`Cannot combine '--all' and '--apihost' with explicit namespace names`)
     }
     let host = parseAPIHost(flags.apihost)
     if (host && argv.length === 0 && !flags.all) {
@@ -40,8 +40,8 @@ export default class AuthLogout extends NimBaseCommand {
       logger.handleError(`Cannot specify an API host without also specifying the namespace or the '--all' flag.`)
     }
 
-    // Process the --all case
-    if (flags.all) {
+    // Process the --all case without namespace names
+    if (flags.all && argv.length == 0) {
       return this.logoutAll(host, logger)
     }
 
@@ -57,10 +57,18 @@ export default class AuthLogout extends NimBaseCommand {
       }
     }
 
-    // Individual logout for one or more namespaces by name
+    // Individual logout for one or more namespaces by name, possibly looping over apihosts if --all is specified
     for (const ns of argv) {
-      const namespace = await disambiguateNamespace(ns, host).catch(err => logger.handleError('', err))
-      await this.doLogout(namespace, host, logger)
+      if (flags.all) {
+        const allHosts = await getApiHosts(authPersister)
+        for (const onehost of allHosts) {
+          const namespace = await disambiguateNamespace(ns, onehost).catch(err => logger.handleError('', err))
+          await this.doLogout(namespace, onehost, logger)
+        }
+      } else {
+        const namespace = await disambiguateNamespace(ns, host).catch(err => logger.handleError('', err))
+        await this.doLogout(namespace, host, logger)
+      }
     }
   }
 

@@ -212,6 +212,12 @@ export async function getCredentialDict(persister: Persister): Promise<{[host: s
   return result
 }
 
+// Get the list of apihosts from the credential store
+export async function getApiHosts(persister: Persister): Promise<string[]> {
+  const store = await persister.loadCredentialStore()
+  return Object.keys(store.credentials)
+}
+
 // Flat (single array) version of getCredentialDict
 export async function getCredentialList(persister: Persister): Promise<CredentialRow[]> {
   const dict = await getCredentialDict(persister)

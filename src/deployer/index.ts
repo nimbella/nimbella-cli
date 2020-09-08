@@ -20,7 +20,7 @@ export {
   CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider, // from './deploy-struct'
   doLogin, doAdminLogin, doInteractiveLogin, // from './login'
   addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace,
-  Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
+  getApiHosts, Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
   switchGithubAccount, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser, // from './credentials'
   computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page, // from './deploy-to-bucket'
   extFromRuntime, wskRequest, inBrowser, RuntimeTable, // from './util'
