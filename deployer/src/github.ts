@@ -130,15 +130,26 @@ export function makeClient(def: GithubDef, userAgent: string): Octokit {
 export async function readContents(client: Octokit, def: GithubDef, path: string): Promise<Octokit.ReposGetContentsResponse> {
   debug('reading %O at %s', def, path)
   const { owner, repo, ref } = def
-  type ResponseType = Octokit.Response<Octokit.ReposGetContentsResponse>
-  const contents: ResponseType = await client.repos.getContents(ref ? { owner, repo, path, ref } : { owner, repo, path })
-  if (contents.status !== 200) {
-    throw new Error(`Reading path '${path}' from ${def.owner}/${def.repo}' failed with status code ${contents.status}`)
-  }
-  if (!contents.data) {
-    throw new Error(`Reading path '${path}' from ${def.owner}/${def.repo}' succeeded but provided no data`)
-  }
-  return contents.data
+    type ResponseType = Octokit.Response<Octokit.ReposGetContentsResponse>
+    let contents: ResponseType
+    try {
+      contents = await client.repos.getContents(ref ? { owner, repo, path, ref } : { owner, repo, path })
+    } catch (err) {
+      if (err.status === 404) {
+        // Common user error
+        throw new Error(`The repository path '${formatGithubDef(def)}' is not recognized by github`)
+      } else {
+        throw err
+      }
+    }
+    // Usually, Octokit throws on error cases ... this is just to catch exceptions to that rule
+    if (contents.status !== 200) {
+      throw new Error(`Reading path '${path}' from ${def.owner}/${def.repo}' failed with status code ${contents.status}`)
+    }
+    if (!contents.data) {
+      throw new Error(`Reading path '${path}' from ${def.owner}/${def.repo}' succeeded but provided no data`)
+    }
+    return contents.data
 }
 
 // Test whether the 'data' array of a repo read response implies that the contents are a project
@@ -151,6 +162,17 @@ export function seemsToBeProject(data: Octokit.ReposGetContentsResponse): boolea
     }
   }
   return false
+}
+
+function formatGithubDef(def: GithubDef): string {
+  let ans = `${def.owner}/${def.repo}`
+  if (def.path) {
+    ans += '/' + def.path
+  }
+  if (def.ref) {
+    ans += '#' + def.ref
+  }
+  return ans
 }
 
 // Fetch a directory into a cache location.
