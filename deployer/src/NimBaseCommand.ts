@@ -112,11 +112,12 @@ class AioCommand extends Command {
   constructor(rawArgv: string[], config?: IConfig) {
     super(rawArgv, config)
   }
-  handleError(_msg?: string, _err?: any) {}
+
+  handleError(_msg?: string, _err?: any) { /* no-op */ }
   parsed: { argv: string[], args: string[], flags: any }
-  logJSON(_hdr: string, _entity: Record<string, unknown>) {}
-  table(data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}) {}
-  async run(_argv?: string[]) {}
+  logJSON(_hdr: string, _entity: Record<string, unknown>) { /* no-op */ }
+  table(data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}) { /* no-op */ }
+  async run(_argv?: string[]) { /* no-op */ }
 }
 
 // The base for all our commands, including the ones that delegate to aio.  There are methods designed to be called from the
