@@ -8,7 +8,7 @@
     "url": "https://github.com//nimbella-corp/nimbella-cli.git"
   },
   "keywords": [],
-  "author": "Joshua Auerbach",
+  "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "dependencies": {
     "@google-cloud/storage": "^3.2.1",

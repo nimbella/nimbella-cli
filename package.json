@@ -11,7 +11,7 @@
     "nim": "./bin/run"
   },
   "keywords": [],
-  "author": "Joshua Auerbach",
+  "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "dependencies": {
     "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#496184218766bca209b5fbc8d90119027dbe88fc",
