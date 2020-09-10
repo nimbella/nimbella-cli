@@ -70,7 +70,7 @@ export interface ActionSpec {
     // Build information (not specifiable in the config)
     build?: string
     wrapping?: string
-    buildResult?: Promise<Buffer> // The result of the remote build
+    buildResult?: string // The activation id of the remote build
 }
 
 // Information of various kinds typically specified on the command line
@@ -148,7 +148,7 @@ export interface DeployStructure {
     versions?: VersionEntry // The VersionEntry for credentials.namespace on the selected API host if available
     feedback?: Feedback // The object to use for immediate communication to the user (e.g. for warnings and progress reports)
     error?: Error // Records an error in reading, preparing, or building; the structure should not be used
-    webBuildResult?: Promise<Buffer> // Result of remote build
+    webBuildResult?: string // activation id of remote build
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)

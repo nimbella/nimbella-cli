@@ -17,7 +17,7 @@ import {
 } from './deploy-struct'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse,
-  getDeployerAnnotation, straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions
+  getDeployerAnnotation, straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions, waitForActivation
 } from './util'
 import * as openwhisk from 'openwhisk'
 import { Bucket } from '@google-cloud/storage'
@@ -70,7 +70,7 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   let webPromises: Promise<DeployResponse>[]
   const remoteResult = todeploy.webBuildResult
   if (remoteResult) {
-    webPromises = [processRemoteResponse(remoteResult, 'web content')]
+    webPromises = [processRemoteResponse(remoteResult, todeploy.owClient, 'web content')]
   } else {
     webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
       todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
@@ -90,14 +90,11 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
 }
 
 // Process the remote result when something has been built remotely
-async function processRemoteResponse(remoteResult: Promise<Buffer>, context: string): Promise<DeployResponse> {
-  const result = await remoteResult
-  if (!result) {
-    return wrapError(new Error(`Remote building is not fully implemented`), context)
-  } else {
-    // TODO this can't happen yet since we don't have the round-trip flow in place
-    return JSON.parse(String(result))
-  }
+async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string): Promise<DeployResponse> {
+  const activation = waitForActivation(activationId, owClient)
+  // TODO finish the implementation here
+  debug('Remote build response was %O', activation)
+  return wrapError(new Error('Remote response processing is not yet implemented'), context)
 }
 
 // Look for 'clean' flags in the actions and packages and perform the cleaning.
@@ -236,7 +233,7 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
 function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
   actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader): Promise<DeployResponse> {
   if (action.buildResult) {
-    return processRemoteResponse(action.buildResult, action.name)
+    return processRemoteResponse(action.buildResult, wsk, action.name)
   }
   if (action.code) {
     return deployActionFromCode(action, prefix, action.code, wsk, deplAnnot, actionIsClean, versions)

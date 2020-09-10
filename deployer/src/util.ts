@@ -17,7 +17,7 @@ import {
 } from './deploy-struct'
 import { getUserAgent } from './api'
 import { XMLHttpRequest } from 'xmlhttprequest'
-import * as openwhisk from 'openwhisk'
+import { Client, Dict, Activation } from 'openwhisk'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
@@ -449,7 +449,7 @@ function validateLimits(arg: any): string {
 }
 
 // Convert convenient "Dict" to the less convenient "KeyVal[]" required in an action object
-export function keyVal(from: openwhisk.Dict): KeyVal[] {
+export function keyVal(from: Dict): KeyVal[] {
   if (!from) {
     return undefined
   }
@@ -457,8 +457,8 @@ export function keyVal(from: openwhisk.Dict): KeyVal[] {
 }
 
 // Make an openwhisk KeyVal into an openwhisk Dict (the former appears in Action and Package, the latter in ActionSpec and PackageSpec)
-export function makeDict(keyVal: KeyVal[]): openwhisk.Dict {
-  const ans: openwhisk.Dict = {}
+export function makeDict(keyVal: KeyVal[]): Dict {
+  const ans: Dict = {}
   keyVal.forEach(pair => {
     ans[pair.key] = pair.value
   })
@@ -531,7 +531,7 @@ export function wrapError(err: any, context: string): DeployResponse {
 }
 
 // Check whether the namespace for an OW client's current auth matches a desired target
-export function isTargetNamespaceValid(client: openwhisk.Client, namespace: string): Promise<boolean> {
+export function isTargetNamespaceValid(client: Client, namespace: string): Promise<boolean> {
   return getTargetNamespace(client).then(ns => {
     if (ns === namespace) {
       return Promise.resolve(true)
@@ -542,7 +542,7 @@ export function isTargetNamespaceValid(client: openwhisk.Client, namespace: stri
 }
 
 // Get the target namespace
-export function getTargetNamespace(client: openwhisk.Client): Promise<string> {
+export function getTargetNamespace(client: Client): Promise<string> {
   return client.namespaces.list().then(ns => ns[0])
 }
 
@@ -610,6 +610,9 @@ const extBinaryTable: ExtensionToBinary = {
 type RuntimeToExtensions = { [ key: string]: string[] }
 const validRuntimes: RuntimeToExtensions = { }
 
+// A map from unqualified runtime name to the default kind for that runtime name
+const defaultTable: Record<string, string> = { }
+
 // Provide information from runtimes.json, reading it at most once
 let runtimesRead = false
 type ExtensionDetail = { binary: boolean }
@@ -629,6 +632,7 @@ function initRuntimes() {
           // TODO we do not yet support per-kind extensions but assume that the extension of a default kind applies to the entire
           // runtime class
           validRuntimes[runtime + ':default'] = extensionNames
+          defaultTable[runtime] = entry.kind
           for (const ext of extensionNames) {
             extTable[ext] = runtime
             extBinaryTable[ext] = entry.extensions[ext].binary
@@ -682,6 +686,15 @@ function validateRuntime(kind: string): string {
     return kind
   }
   return undefined
+}
+
+// Convert a runtime name that might end in :default to a semantically identical name that does not
+export function canonicalRuntime(runtime: string): string {
+  if (runtime.endsWith(':default')) {
+    runtime = runtime.split(':')[0]
+    return defaultTable[runtime]
+  }
+  return runtime
 }
 
 // Determine whether a given extension implies binary data
@@ -958,7 +971,7 @@ function deployerAnnotationFromGithub(githubPath: string): DeployerAnnotation {
 }
 
 // Wipe all the entities from the namespace referred to by an OW client handle
-export async function wipe(client: openwhisk.Client): Promise<void> {
+export async function wipe(client: Client): Promise<void> {
   await wipeAll(client.actions, 'Action')
   debug('Actions wiped')
   await wipeAll(client.rules, 'Rule')
@@ -1152,6 +1165,24 @@ export function loadVersions(projectPath: string, namespace: string, apihost: st
     }
   }
   return { namespace, apihost, packageVersions: {}, actionVersions: {}, webHashes: {} }
+}
+
+// Introduce small delay
+export function delay(millis: number): Promise<void> {
+  return new Promise(function(resolve) {
+    setTimeout(() => resolve(), millis)
+  })
+}
+
+// Await the completion of an action invoke (similar to kui's await)
+export async function waitForActivation(id: string, wsk: Client): Promise<Activation<Dict>> {
+  while (true) {
+    const activation = await wsk.activations.get(id)
+    if (activation.end || activation.response.status) {
+      return activation
+    }
+    await delay(1000)
+  }
 }
 
 // Subroutine to invoke OW with a GET and return the response.  Bypasses the OW client.  Used

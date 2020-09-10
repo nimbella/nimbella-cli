@@ -15,7 +15,8 @@ import { spawn } from 'child_process'
 import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback, Credentials } from './deploy-struct'
 import {
   FILES_TO_SKIP, actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
-  promiseFilesAndFilterFiles
+  promiseFilesAndFilterFiles,
+  canonicalRuntime
 } from './util'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -29,6 +30,7 @@ import { isGithubRef } from './github'
 import { Writable } from 'stream'
 import * as memoryStreams from 'memory-streams'
 import { openBucketClient } from './deploy-to-bucket'
+import openwhisk = require('openwhisk')
 
 const debug = makeDebug('nim:deployer:finder-builder')
 const zipDebug = makeDebug('nim:deployer:zip')
@@ -40,6 +42,7 @@ interface Ignore {
 
 const ZIP_TARGET = '__deployer__.zip'
 const BUILDER_PREFIX = '.nimbella/builds'
+const BUILDER_ACTION_STEM = '/nimbella/builder/build_'
 
 // Determine the build type for an action that is defined as a directory
 export function getBuildForAction(filepath: string, reader: ProjectReader): Promise<string> {
@@ -457,9 +460,17 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   const { zip, output, outputPromise } = makeProjectSliceZip()
   // Get the project slice in convenient form
   const { spec, pkgName } = makeConfigFromActionSpec(action, project)
-  // Zip the actionPath
+  const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
+  // Zip the actionPath, also determining runtime if the action spec doesn't already have one
   debug('zipping action path %s for project slice', action.file)
-  await appendToZip(zip, action.file, project.reader)
+  const runtime = await appendToZip(zip, action.file, project.reader)
+  if (!action.runtime) {
+    if (!runtime) {
+      throw new Error(`Could not determine runtime for remote build of '${actionName}'.  You may need to specify it in 'project.yml'`)
+    }
+    debug('Setting runtime to %s for remote build', runtime)
+    action.runtime = runtime
+  }
   // Add the project.yml
   debug('converting slice spec to YAML: %O', spec)
   const config = yaml.safeDump(spec)
@@ -470,24 +481,28 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   await outputPromise
   debug('outputPromise settled for project slice of action %s', action.name)
   const toSend = (output as memoryStreams.WritableStream).toBuffer()
-  const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
   debug('sending the remote build request for project %s and action %s', project.filePath, actionName)
-  action.buildResult = invokeRemoteBuilder(toSend, project.credentials, pkgName, action)
+  action.buildResult = await invokeRemoteBuilder(toSend, project.credentials, project.owClient, action)
   return action
 }
 
-// Zip a file or directory for a remote build slice
-async function appendToZip(zip: archiver.Archiver, path: string, reader: ProjectReader) {
+// Zip a file or directory for a remote build slice.  For actions, also attempts to determine a runtime
+// For web builds, the returned 'runtime' is irrelevant and can be ignored
+async function appendToZip(zip: archiver.Archiver, path: string, reader: ProjectReader): Promise<string> {
   const kind = await reader.getPathKind(path)
+  let analyzeForRuntime: string[]
   if (kind.isFile) {
     await appendAndCheck(zip, path, path, reader)
+    analyzeForRuntime = [path]
   } else if (kind.isDirectory) {
     zipDebug('getting contents of directory %s for remote build slice', path)
     const files = await promiseFilesAndFilterFiles(path, reader)
+    analyzeForRuntime = files
     for (const file of files) {
       await appendAndCheck(zip, file, path, reader)
     }
   }
+  return agreeOnRuntime(analyzeForRuntime)
 }
 
 // Append a path known to be a file to the in-memory zip, checking for excessive size and issuing debug if requested.
@@ -515,7 +530,7 @@ async function doRemoteWebBuild(project: DeployStructure) {
   zip.finalize()
   await outputPromise
   const toSend = (output as memoryStreams.WritableStream).toBuffer()
-  project.webBuildResult = invokeRemoteBuilder(toSend, project.credentials)
+  project.webBuildResult = await invokeRemoteBuilder(toSend, project.credentials, project.owClient)
   return [] // An array of WebResource is expected but since no deployment will be done locally an empty one suffices
 }
 
@@ -610,10 +625,11 @@ function makeProjectSliceZip(): ProjectSliceZip {
 
 // Invoke the remote builder, return the response.   Last two arguments omitted for web builds.
 // TODO this function uploads to the client's data bucket but does not cause an actual build, so it can't yet succeed
-async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, pkgName?: string, action?: ActionSpec): Promise<Buffer> {
+async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owClient: openwhisk.Client, action?: ActionSpec): Promise<string> {
   const bucketClient = await openBucketClient(credentials, 'data')
   const code = zipped.toString('base64')
-  const remoteName = (pkgName && action) ? `${BUILDER_PREFIX}/${pkgName}/${action.name}` : `${BUILDER_PREFIX}/_web_`
+  const buildName = new Date().toISOString().replace(/:/g, '-')
+  const remoteName = `${BUILDER_PREFIX}/${buildName}`
   const remoteFile = bucketClient.file(remoteName)
   const expiration = 5 * 60 * 1000 // 5 minutes
   const putOptions = {
@@ -626,15 +642,14 @@ async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, pkg
   if (result.status !== 200) {
     throw new Error(`Bad response [$result.status}] when uploading '${remoteName}' for remote build`)
   }
-  // Here we must invoke the remote builder, either by directly calling the pre-compile service in the target runtime or by
-  // intermediating through an action.  It remains to be seen whether we need such an action.  From a security perspective,
-  // we will invoke the pre-compile using the customer identity.  From a credential adequacy perspective, the customer's
-  // open-whisk credentials are already there since they were used to invoke.   The project slice also contains full
-  // credentials (really only the storage key is needed).   We should consider whether it's a security exposure to send a
-  // customer secret over https to the customer's own bucket, but I think it should be ok.  Based on these considerations, perhaps
-  // everything can be done in the target runtime under the auspices of its pre-compiler service.
-  // For now:
-  return undefined
+  // Invoke the remote builder action.  The action name incorporates the runtime 'kind'.
+  // That action will re-invoke the nim deployer in the target runtime.
+  const kind = action ? action.runtime : 'nodejs:default'
+  const runtime = canonicalRuntime(kind).replace(':', '_')
+  const buildActionName = `${BUILDER_ACTION_STEM}${runtime}`
+  debug(`Invoking remote build action '${buildActionName}' for build '${buildName} of action '${action.name}'`)
+  const invoked = await owClient.actions.invoke({ name: buildActionName, params: { toBuild: buildName } })
+  return invoked.activationId
 }
 
 // Read a directory and filter the result
@@ -643,7 +658,7 @@ function readDirectory(filepath: string, reader: ProjectReader): Promise<PathKin
 }
 
 // Check whether a list of names that are candidates for zipping can agree on a runtime.  This is called only when the
-// config doesn't already provide a runtime.
+// config doesn't already provide a runtime or on the raw material in the case of remote builds.
 function agreeOnRuntime(items: string[]): string {
   let agreedRuntime: string
   items.forEach(item => {
