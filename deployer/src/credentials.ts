@@ -394,12 +394,12 @@ export async function addCommanderData(apihost: string, namespace: string, data:
   return true
 }
 
-// Github credentials section
+// GitHub credentials section
 
 // Retrieve a list of locally known github accounts
 export async function getGithubAccounts(persister: Persister): Promise<{[key: string]: string}> {
   const store = await persister.loadCredentialStore()
-  debug('Github accounts requested, returning %O', store.github)
+  debug('GitHub accounts requested, returning %O', store.github)
   return store.github || {}
 }
 
@@ -412,7 +412,7 @@ export async function deleteGithubAccount(name: string, persister: Persister): P
     if (name === store.currentGithub) {
       store.currentGithub = undefined
     }
-    debug('Github deletion of account %s succeeded, with currentGithub=%s', name, store.currentGithub)
+    debug('GitHub deletion of account %s succeeded, with currentGithub=%s', name, store.currentGithub)
     persister.saveCredentialStore(store)
     return store.currentGithub ? 'DeletedOk' : 'DeletedDangling'
   } else {

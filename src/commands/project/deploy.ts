@@ -34,7 +34,7 @@ export class ProjectDeploy extends NimBaseCommand {
     include: flags.string({ description: 'Project portions to include' }),
     exclude: flags.string({ description: 'Project portions to exclude' }),
     incremental: flags.boolean({ description: 'Deploy only changes since last deploy' }),
-    'anon-github': flags.boolean({ description: 'Attempt github deploys anonymously'} ),
+    'anon-github': flags.boolean({ description: 'Attempt GitHub deploys anonymously'} ),
     ...NimBaseCommand.flags
   }
 
@@ -50,13 +50,13 @@ export class ProjectDeploy extends NimBaseCommand {
     const isGithub = argv.some(project => isGithubRef(project))
     const { target, env, apihost, auth, insecure, production, yarn, incremental, include, exclude } = flags
     if (incremental && isGithub) {
-      logger.handleError(`'--incremental' may not be used with github projects`)
+      logger.handleError(`'--incremental' may not be used with GitHub projects`)
     }
     if (inBrowser && !isGithub) {
-      logger.handleError(`only github projects are deployable from the cloud`)
+      logger.handleError(`only GitHub projects are deployable from the cloud`)
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
-      logger.handleError(`you don't have github authorization.  Use 'nim auth github --initial' to activate it`)
+      logger.handleError(`you don't have GitHub authorization.  Use 'nim auth github --initial' to activate it.`)
     }
     const cmdFlags: Flags = { verboseBuild: flags['verbose-build'], verboseZip: flags['verbose-zip'], production, incremental, env, yarn,
       webLocal: flags['web-local'], include, exclude }

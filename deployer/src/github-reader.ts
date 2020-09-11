@@ -61,7 +61,7 @@ class GithubProjectReader implements ProjectReader {
       path = this.fixPathArgument(path)
       debug('reading directory %s', path)
       if (Path.isAbsolute(path)) {
-        throw new Error('Deploying from github does not support absolute paths')
+        throw new Error('Deploying from GitHub does not support absolute paths')
       }
       const contents = await this.retrieve(path)
       if (!Array.isArray(contents)) {
@@ -69,7 +69,7 @@ class GithubProjectReader implements ProjectReader {
         throw new Error(`Path '${path} should be a directory but is not`)
       }
       if (path === this.def.path && !seemsToBeProject(contents)) {
-        throw new Error('Github location does not contain a \'nim\' project')
+        throw new Error('GitHub location does not contain a \'nim\' project')
       }
       return contents.map(this.toPathKind)
     }

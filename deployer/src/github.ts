@@ -33,7 +33,7 @@ function cacheDir() {
 
 const prefixes = ['github:', 'https://github.com/', 'git@github.com:']
 
-// Github coordinate definition structure
+// GitHub coordinate definition structure
 export interface GithubDef {
     owner: string
     repo: string
@@ -65,7 +65,7 @@ export function parseGithubRef(projectPath: string): GithubDef {
   const hashSplit = projectPath.split('#')
   let ref: string
   if (hashSplit.length > 2) {
-    throw new Error('too many # characters in github reference')
+    throw new Error('too many # characters in GitHub reference')
   } else if (hashSplit.length === 2) {
     ref = hashSplit[1]
     projectPath = hashSplit[0]
@@ -89,7 +89,7 @@ export function parseGithubRef(projectPath: string): GithubDef {
   // Now parse the unprefixed project path into owner/repo/[path]
   const slashSplit = toParse.split('/')
   if (slashSplit.length < 2) {
-    throw new Error('too few / characters in github reference; at least <owner>/<repo> is required')
+    throw new Error('too few / characters in GitHub reference; at least <owner>/<repo> is required')
   }
   const owner = slashSplit[0]
   let repo = slashSplit[1]
@@ -133,9 +133,9 @@ export async function readContents(client: Octokit, def: GithubDef, path: string
     } catch (err) {
       if (err.status === 404) {
         // Common user error
-        throw new Error(`The repository path '${formatGithubDef(def)}' is not recognized by github`)
+        throw new Error(`The repository path '${formatGithubDef(def)}' is not recognized by GitHub`)
       } else if (err.status === 403 && err.message.includes('rate limit exceeded')) {
-        throw new Error(`You can't deploy '${formatGithubDef(def)}' without authenticating to github (requires too high an access rate).`)
+        throw new Error(`You can't deploy '${formatGithubDef(def)}' without authenticating to GitHub (requires too high an access rate).`)
       } else {
         debug('Error detected in readContents: %O', err)
         throw err
@@ -182,7 +182,7 @@ async function fetchDir(client: Octokit, def: GithubDef, path: string, location:
     throw new Error(`Path '${path} should be a directory but is not`)
   }
   if (validate && !seemsToBeProject(contents)) {
-    throw new Error('Github location does not contain a \'nim\' project')
+    throw new Error('GitHub location does not contain a \'nim\' project')
   }
   let promise: Promise<any> = Promise.resolve(undefined)
   for (const item of contents as Octokit.ReposGetContentsResponseItem[]) {

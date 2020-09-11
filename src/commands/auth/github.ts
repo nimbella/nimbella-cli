@@ -20,17 +20,17 @@ import { prompt } from '../../ui'
 let cli
 
 export default class AuthGithub extends NimBaseCommand {
-  static description = 'Manage github accounts'
+  static description = 'Manage GitHub accounts'
 
   static flags = {
-    add: flags.boolean({ char: 'a', description: 'Add a second or subsequent github account interactively' }),
-    delete: flags.string({ char: 'd', description: 'Forget a previously added github account' }),
-    initial: flags.boolean({ char: 'i', description: "Add an initial github account interactively" }),
-    list: flags.boolean({ char: 'l', description: 'List previously added github accounts'}),
+    add: flags.boolean({ char: 'a', description: 'Add a second or subsequent GitHub account interactively' }),
+    delete: flags.string({ char: 'd', description: 'Forget a previously added GitHub account' }),
+    initial: flags.boolean({ char: 'i', description: "Add an initial GitHub account interactively" }),
+    list: flags.boolean({ char: 'l', description: 'List previously added GitHub accounts'}),
     show: flags.string({ description: 'Show the access token currently associated with a username' }),
-    switch: flags.string({ char: 's', description: 'Switch to using a particular previously added github account' }),
-    token: flags.string({ description: 'The github token when adding an account manually' }),
-    username: flags.string({ description: 'The github username when adding an account manually' }),
+    switch: flags.string({ char: 's', description: 'Switch to using a particular previously added GitHub account' }),
+    token: flags.string({ description: 'The GitHub token when adding an account manually' }),
+    username: flags.string({ description: 'The GitHub username when adding an account manually' }),
     ...NimBaseCommand.flags
   }
 
@@ -71,7 +71,7 @@ export default class AuthGithub extends NimBaseCommand {
       const existing = await getGithubAccounts(authPersister)
       if (isInitial && Object.keys(existing).length > 0) {
         const list = Object.keys(existing).join(', ')
-        logger.log(`you already have github credentials: ${list}`)
+        logger.log(`you already have GitHub credentials: ${list}`)
         logger.log("Doing nothing.  Use '--add' if you really want to add more accounts")
         return
       } else {
@@ -85,22 +85,22 @@ export default class AuthGithub extends NimBaseCommand {
           }
         } else if (authResponse === true) {
           // We assume this happens only in the workbench; prompt should appear as placeholder text in the CLI pane
-          await prompt(`Workbench will restart with added github credentials (please wait)`)
+          await prompt(`Workbench will restart with added GitHub credentials (please wait)`)
           return
         } else {
-          logger.handleError(`github authentication failed, response was '${authResponse}'`)
+          logger.handleError(`GitHub authentication failed, response was '${authResponse}'`)
         }
       }
     }
-    logger.log(`the github account of user name '${name}' was added and is now current`)
+    logger.log(`the GitHub account of user name '${name}' was added and is now current`)
   }
 
   async doSwitch(name: string, logger: NimLogger) {
     const status = await switchGithubAccount(name, authPersister)
     if (status) {
-        logger.log(`the github account of user name '${name}' is now current`)
+        logger.log(`the GitHub account of user name '${name}' is now current`)
     } else {
-        logger.handleError(`${name} is not a previously added github account`)
+        logger.handleError(`${name} is not a previously added GitHub account`)
     }
   }
 
@@ -111,9 +111,9 @@ export default class AuthGithub extends NimBaseCommand {
     this.debug('accountNames: %O', accountNames)
     if (accountNames.length > 0) {
         const list = accountNames.join(', ')
-        logger.log(`previously added github accounts: ${list}`)
+        logger.log(`previously added GitHub accounts: ${list}`)
     } else {
-        logger.log(`no previously added github accounts`)
+        logger.log(`no previously added GitHub accounts`)
     }
   }
 
@@ -122,7 +122,7 @@ export default class AuthGithub extends NimBaseCommand {
     if (accounts[name]) {
         logger.log(accounts[name])
     } else {
-        logger.handleError(`${name} is not a previously added github account`)
+        logger.handleError(`${name} is not a previously added GitHub account`)
     }
   }
 
@@ -130,14 +130,14 @@ export default class AuthGithub extends NimBaseCommand {
     const status = await deleteGithubAccount(name, authPersister)
     switch (status) {
       case "DeletedOk":
-        logger.log(`the github account of user name '${name}' is removed from the credential store`)
+        logger.log(`the GitHub account of user name '${name}' is removed from the credential store`)
         break
       case "DeletedDangling":
-        logger.log(`the github account of user name '${name}' is removed from the credential store`)
+        logger.log(`the GitHub account of user name '${name}' is removed from the credential store`)
         logger.log(`'${name}' was the current account; use 'nim auth github [ --add | --switch ] to establish a new one`)
         break
       case "NotExists":
-        logger.handleError(`${name} does not denote a previously added github account`)
+        logger.handleError(`${name} does not denote a previously added GitHub account`)
         break
     }
   }

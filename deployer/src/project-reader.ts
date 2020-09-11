@@ -50,7 +50,7 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
   if (isGithubRef(filePath)) {
     const github = parseGithubRef(filePath)
     if (!github.auth) {
-      feedback.warn('Warning: access to github will be un-authenticated; rate will be severely limited')
+      feedback.warn('Warning: access to GitHub will be un-authenticated; rate will be severely limited')
     }
     githubPath = filePath
     if (mustBeLocal) {
