@@ -12,9 +12,9 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, parseGithubRef } from 'nimbella-deployer'
 import { readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
-    computeBucketDomainName, isGithubRef, authPersister, inBrowser } from 'nimbella-deployer';
+    computeBucketDomainName, isGithubRef, authPersister, inBrowser, getGithubAuth } from 'nimbella-deployer';
 import * as path from 'path'
 
 export class ProjectDeploy extends NimBaseCommand {
@@ -34,6 +34,7 @@ export class ProjectDeploy extends NimBaseCommand {
     include: flags.string({ description: 'Project portions to include' }),
     exclude: flags.string({ description: 'Project portions to exclude' }),
     incremental: flags.boolean({ description: 'Deploy only changes since last deploy' }),
+    'anon-github': flags.boolean({ description: 'Attempt github deploys anonymously'} ),
     ...NimBaseCommand.flags
   }
 
@@ -46,12 +47,16 @@ export class ProjectDeploy extends NimBaseCommand {
       this.doHelp()
     }
     // Otherwise ...
+    const isGithub = argv.some(project => isGithubRef(project))
     const { target, env, apihost, auth, insecure, production, yarn, incremental, include, exclude } = flags
-    if (incremental && argv.some(project => isGithubRef(project))) {
-      this.handleError(`'--incremental' may not be used with github projects`)
+    if (incremental && isGithub) {
+      logger.handleError(`'--incremental' may not be used with github projects`)
     }
-    if (inBrowser && argv.some(project => !isGithubRef(project))) {
+    if (inBrowser && !isGithub) {
       logger.handleError(`only github projects are deployable from the cloud`)
+    }
+    if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
+      logger.handleError(`you don't have github authorization.  Use 'nim auth github --initial' to activate it`)
     }
     const cmdFlags: Flags = { verboseBuild: flags['verbose-build'], verboseZip: flags['verbose-zip'], production, incremental, env, yarn,
       webLocal: flags['web-local'], include, exclude }

@@ -20,7 +20,7 @@ import * as Octokit from '@octokit/rest'
 import * as rimrafOrig from 'rimraf'
 import { promisify } from 'util'
 import * as makeDebug from 'debug'
-import { authPersister } from './credentials'
+import { authPersister, getGithubAuth } from './credentials'
 
 const rimraf = promisify(rimrafOrig)
 const debug = makeDebug('nim:deployer:github')
@@ -98,11 +98,7 @@ export function parseGithubRef(projectPath: string): GithubDef {
   }
   // Add auth
   const path = slashSplit.slice(2).join('/')
-  const store = authPersister.loadCredentialStoreIfPresent()
-  let auth
-  if (store && store.github && store.currentGithub) {
-    auth = store.github[store.currentGithub]
-  }
+  const auth = getGithubAuth(authPersister)
   return { owner, repo, path, auth, ref }
 }
 
@@ -138,7 +134,10 @@ export async function readContents(client: Octokit, def: GithubDef, path: string
       if (err.status === 404) {
         // Common user error
         throw new Error(`The repository path '${formatGithubDef(def)}' is not recognized by github`)
+      } else if (err.status === 403 && err.message.includes('rate limit exceeded')) {
+        throw new Error(`You can't deploy '${formatGithubDef(def)}' without authenticating to github (requires too high an access rate).`)
       } else {
+        debug('Error detected in readContents: %O', err)
         throw err
       }
     }

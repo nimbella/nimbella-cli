@@ -420,6 +420,15 @@ export async function deleteGithubAccount(name: string, persister: Persister): P
   }
 }
 
+// Get active github token
+export function getGithubAuth(persister: Persister): string {
+  const store = persister.loadCredentialStoreIfPresent()
+  if (store && store.github && store.currentGithub) {
+    return store.github[store.currentGithub]
+  }
+  return undefined
+}
+
 // Switch the active github account
 export async function switchGithubAccount(name: string, persister: Persister): Promise<boolean> {
   const store = await persister.loadCredentialStore()

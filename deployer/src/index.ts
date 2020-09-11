@@ -24,7 +24,7 @@ export {
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'
 export {
   addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace, getCurrentNamespace,
-  getApiHosts, Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
+  getApiHosts, Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount, getGithubAuth,
   switchGithubAccount, getPostmanKeys, deletePostmanKey, switchPostmanKey, addPostmanKey, getPostmanCurrentKey, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser
 } from './credentials'
 export { computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page } from './deploy-to-bucket'

@@ -21,7 +21,7 @@ export {
   doLogin, doAdminLogin, doInteractiveLogin, // from './login'
   addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace,
   getApiHosts, Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
-  switchGithubAccount, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser, // from './credentials'
+  getGithubAuth, switchGithubAccount, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser, // from './credentials'
   computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page, // from './deploy-to-bucket'
   extFromRuntime, wskRequest, inBrowser, RuntimeTable, // from './util'
   GithubDef, isGithubRef, parseGithubRef, fetchProject, // from './github'
