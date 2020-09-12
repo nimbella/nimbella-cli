@@ -12,8 +12,10 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@google-cloud/storage": "^5.3.0",
+    "@nimbella/sdk": "^1.1.0",
     "@oclif/command": "^1",
     "@octokit/rest": "16.36.0",
+    "adm-zip": "^0.4.16",
     "archiver": "^3.0.0",
     "axios": "^0.19.2",
     "chokidar": "^3.4.0",
@@ -41,11 +43,13 @@
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.4.33",
     "@types/archiver": "^3.0.0",
     "@types/js-yaml": "^3.12.1",
     "@types/mime-types": "2.1.0",
     "@types/node": "11.13.4",
     "@types/randomstring": "^1.1.6",
+    "@types/rimraf": "^3.0.0",
     "@types/swagger-schema-official": "2.0.15",
     "@types/url-parse": "1.4.3",
     "globby": "^11.0.0",

@@ -20,6 +20,7 @@ import { isGithubRef, parseGithubRef, fetchProject } from './github'
 import * as makeDebug from 'debug'
 import { makeFileReader } from './file-reader'
 import { makeGithubReader } from './github-reader'
+import { fetchSlice } from './slice-reader'
 const debug = makeDebug('nim:deployer:project-reader')
 
 const CONFIG_FILE = 'project.yml'
@@ -58,11 +59,18 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
       filePath = await fetchProject(github, getUserAgent())
       reader = makeFileReader(filePath)
     } else {
-      debug('Github path which can be remote, making Github reader')
+      debug('Github path which is permitted to be remote, making Github reader')
       reader = makeGithubReader(github, getUserAgent())
     }
   } else {
     debug('not a github path, making file reader')
+    if (filePath.startsWith('slice:')) {
+      debug('fetching slice')
+      filePath = await fetchSlice(filePath.replace('slice:', ''))
+      if (!filePath) {
+        throw new Error('Could not fetch slice')
+      }
+    }
     reader = makeFileReader(filePath)
   }
   const webDir = 'web'; const pkgDir = 'packages'

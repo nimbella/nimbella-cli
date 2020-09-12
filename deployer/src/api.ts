@@ -100,8 +100,14 @@ export function deploy(todeploy: DeployStructure): Promise<DeployResponse> {
 export async function readProject(projectPath: string, envPath: string, includer: Includer, requestRemote: boolean,
   feedback: Feedback = new DefaultFeedback()): Promise<DeployStructure> {
   debug('Starting readProject, projectPath=%s, envPath=%s', projectPath, envPath)
-  const ans = await readTopLevel(projectPath, envPath, includer, false, feedback).then(buildStructureParts).then(assembleInitialStructure)
-    .catch((err) => { return errorStructure(err) })
+  let ans: DeployStructure
+  try {
+    const topLevel = await readTopLevel(projectPath, envPath, includer, false, feedback)
+    const parts = await buildStructureParts(topLevel)
+    ans = assembleInitialStructure(parts)
+  } catch (err) {
+    return errorStructure(err)
+  }
   debug('evaluating the just-read project: %O', ans)
   let needsLocalBuilds: boolean
   try {
@@ -114,11 +120,15 @@ export async function readProject(projectPath: string, envPath: string, includer
     if (inBrowser) {
       return errorStructure(new Error(`Project '${projectPath}' cannot be deployed from the cloud because it requires building`))
     }
-    return readTopLevel(projectPath, envPath, includer, true, feedback).then(buildStructureParts).then(assembleInitialStructure)
-      .catch((err) => { return errorStructure(err) })
-  } else {
-    return ans
+    try {
+      const topLevel = await readTopLevel(projectPath, envPath, includer, true, feedback)
+      const parts = await buildStructureParts(topLevel)
+      ans = assembleInitialStructure(parts)
+    } catch (err) {
+      return errorStructure(err)
+    }
   }
+  return ans
 }
 
 // 'Build' the project by running the "finder builder" steps in each action-as-directory and in the web directory

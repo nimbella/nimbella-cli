@@ -627,7 +627,6 @@ function makeProjectSliceZip(): ProjectSliceZip {
 // TODO this function uploads to the client's data bucket but does not cause an actual build, so it can't yet succeed
 async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owClient: openwhisk.Client, action?: ActionSpec): Promise<string> {
   const bucketClient = await openBucketClient(credentials, 'data')
-  const code = zipped.toString('base64')
   const buildName = new Date().toISOString().replace(/:/g, '-')
   const remoteName = `${BUILDER_PREFIX}/${buildName}`
   const remoteFile = bucketClient.file(remoteName)
@@ -638,7 +637,7 @@ async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owC
     expires: Date.now() + expiration
   }
   const [url] = await remoteFile.getSignedUrl(putOptions)
-  const result = await axios.put(url, code)
+  const result = await axios.put(url, zipped)
   if (result.status !== 200) {
     throw new Error(`Bad response [$result.status}] when uploading '${remoteName}' for remote build`)
   }
@@ -648,7 +647,7 @@ async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owC
   const runtime = canonicalRuntime(kind).replace(':', '_')
   const buildActionName = `${BUILDER_ACTION_STEM}${runtime}`
   debug(`Invoking remote build action '${buildActionName}' for build '${buildName} of action '${action.name}'`)
-  const invoked = await owClient.actions.invoke({ name: buildActionName, params: { toBuild: buildName } })
+  const invoked = await owClient.actions.invoke({ name: buildActionName, params: { toBuild: remoteName } })
   return invoked.activationId
 }
 
