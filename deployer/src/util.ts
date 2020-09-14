@@ -1176,10 +1176,18 @@ export function delay(millis: number): Promise<void> {
 
 // Await the completion of an action invoke (similar to kui's await)
 export async function waitForActivation(id: string, wsk: Client): Promise<Activation<Dict>> {
-  while (true) {
-    const activation = await wsk.activations.get(id)
-    if (activation.end || activation.response.status) {
-      return activation
+  debug(`waiting for activation with id ${id}`)
+  for (let i = 0; i < 100; i++) {
+    try {
+      const activation = await wsk.activations.get(id)
+      if (activation.end || activation.response.status) {
+        debug('activation %s found after %d iterations', id, i)
+        return activation
+      }
+    } catch (err) {
+      if (err.statusCode !== 404) {
+        throw err
+      }
     }
     await delay(1000)
   }

@@ -91,10 +91,21 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
 
 // Process the remote result when something has been built remotely
 async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string): Promise<DeployResponse> {
-  const activation = waitForActivation(activationId, owClient)
-  // TODO finish the implementation here
+  let activation: openwhisk.Activation<openwhisk.Dict>
+  try {
+    activation = await waitForActivation(activationId, owClient)
+  } catch (err) {
+    return wrapError(err, 'waiting for remote build response')
+  }
   debug('Remote build response was %O', activation)
-  return wrapError(new Error('Remote response processing is not yet implemented'), context)
+  if (!activation.response || !activation.response.success) {
+    return wrapError(new Error('Remote build failed to provide a result'), 'running remote build')
+  }
+  const result = activation.response.result as DeployResponse
+  if (result.failures.length > 0) {
+    debug('There were failures: %O', result.failures)
+  }
+  return result
 }
 
 // Look for 'clean' flags in the actions and packages and perform the cleaning.
