@@ -85,7 +85,7 @@ export function deploy(todeploy: DeployStructure): Promise<DeployResponse> {
   return cleanOrLoadVersions(todeploy).then(doDeploy).then(results => {
     if (!todeploy.githubPath) {
       const statusDir = writeProjectStatus(todeploy.filePath, results, todeploy.includer.isIncludingEverything())
-      if (statusDir) {
+      if (statusDir && !todeploy.slice) {
         todeploy.feedback.progress(`Deployment status recorded in '${statusDir}'`)
       }
     }
@@ -174,10 +174,17 @@ export function buildProject(project: DeployStructure): Promise<DeployStructure>
 export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWOptions, credentials: Credentials, persister: Persister,
   flags: Flags): Promise<DeployStructure> {
   debug('Starting prepare with spec: %O', inputSpec)
+  // 0. Handle slice.  In that case, credentials and flags come from the DeployStructure
+  if (inputSpec.slice) {
+    debug('Retrieving credentials and flags from spec for slice')
+    credentials = inputSpec.credentials
+    flags = inputSpec.flags
+  }
   // 1.  Acquire credentials if not already present
   let isTest = false
   let isProduction = false
   if (!credentials) {
+    debug('Finding credentials locally')
     let namespace: string
     if (typeof inputSpec.targetNamespace === 'string') {
       namespace = inputSpec.targetNamespace
@@ -201,15 +208,18 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
     }
     if (namespace) {
       // The config specified a target namespace so attempt to use it.
+      debug('Retrieving specific credentials for namespace %s', namespace)
       credentials = await getCredentialsForNamespace(namespace, owOptions.apihost, persister)
     } else {
       // There is no target namespace so get credentials for the current one
       let badCredentials: Error
+      debug('Attempting to get credentials for current namespace')
       credentials = await getCredentials(persister).catch(err => {
         badCredentials = err
         return undefined
       })
       if (badCredentials) {
+        debug('Could not get credentials, returning error structure with %O', badCredentials)
         return errorStructure(badCredentials)
       }
     }

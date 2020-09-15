@@ -13,7 +13,7 @@
 
 import {
   DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, DeployerAnnotation, VersionEntry,
-  ProjectReader, OWOptions, KeyVal
+  ProjectReader, OWOptions, KeyVal, Feedback
 } from './deploy-struct'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse,
@@ -70,14 +70,14 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   let webPromises: Promise<DeployResponse>[]
   const remoteResult = todeploy.webBuildResult
   if (remoteResult) {
-    webPromises = [processRemoteResponse(remoteResult, todeploy.owClient, 'web content')]
+    webPromises = [processRemoteResponse(remoteResult, todeploy.owClient, 'web content', todeploy.feedback)]
   } else {
     webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
       todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
   }
   return getDeployerAnnotation(todeploy.filePath, todeploy.githubPath).then(deployerAnnot => {
     const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy.owClient, deployerAnnot, todeploy.parameters,
-      todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader))
+      todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader, todeploy.feedback))
     const strays = straysToResponse(todeploy.strays)
     return Promise.all(webPromises.concat(actionPromises)).then(responses => {
       responses.push(strays)
@@ -90,22 +90,25 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
 }
 
 // Process the remote result when something has been built remotely
-async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string): Promise<DeployResponse> {
+async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string, feedback: Feedback): Promise<DeployResponse> {
   let activation: openwhisk.Activation<openwhisk.Dict>
   try {
     activation = await waitForActivation(activationId, owClient)
   } catch (err) {
-    return wrapError(err, 'waiting for remote build response')
+    return wrapError(err, 'waiting for remote build response for ' + context)
   }
   debug('Remote build response was %O', activation)
   if (!activation.response || !activation.response.success) {
-    return wrapError(new Error('Remote build failed to provide a result'), 'running remote build')
+    return wrapError(new Error('Remote build failed to provide a result'), 'running remote build for ' + context)
   }
-  const result = activation.response.result as DeployResponse
-  if (result.failures.length > 0) {
-    debug('There were failures: %O', result.failures)
+  const { transcript, outcome } = activation.response.result as { transcript: string[], outcome: DeployResponse }
+  if (transcript && transcript.length > 0) {
+    feedback.progress(`Transcript of remote build session for ${context}:`)
+    for (const line of transcript) {
+      feedback.progress(line)
+    }
   }
-  return result
+  return outcome
 }
 
 // Look for 'clean' flags in the actions and packages and perform the cleaning.
@@ -197,9 +200,9 @@ function main() {
 // Deploy a package, then deploy everything in it (currently just actions)
 export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, deployerAnnot: DeployerAnnotation,
   projectParams: openwhisk.Dict, projectEnv: openwhisk.Dict, namespaceIsClean: boolean, versions: VersionEntry,
-  reader: ProjectReader): Promise<DeployResponse> {
+  reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
   if (pkg.name === 'default') {
-    return Promise.all(pkg.actions.map(action => deployAction(action, wsk, '', deployerAnnot, namespaceIsClean, versions, reader)))
+    return Promise.all(pkg.actions.map(action => deployAction(action, wsk, '', deployerAnnot, namespaceIsClean, versions, reader, feedback)))
       .then(combineResponses)
   }
   // Check whether the package metadata needs to be deployed; if so, deploy it.  If not, make a vacuous response with the existing package
@@ -236,15 +239,15 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
   // Now deploy (or skip) the actions of the package
   const prefix = pkg.name + '/'
   const promises = pkg.actions.map(action => deployAction(action, wsk, prefix, deployerAnnot, pkg.clean || namespaceIsClean,
-    versions, reader)).concat(Promise.resolve(pkgResponse))
+    versions, reader, feedback)).concat(Promise.resolve(pkgResponse))
   return Promise.all(promises).then(responses => combineResponses(responses))
 }
 
 // Deploy an action
 function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
-  actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader): Promise<DeployResponse> {
+  actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
   if (action.buildResult) {
-    return processRemoteResponse(action.buildResult, wsk, action.name)
+    return processRemoteResponse(action.buildResult, wsk, action.name, feedback)
   }
   if (action.code) {
     return deployActionFromCode(action, prefix, action.code, wsk, deplAnnot, actionIsClean, versions)

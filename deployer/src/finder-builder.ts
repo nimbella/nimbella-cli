@@ -482,7 +482,7 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   debug('outputPromise settled for project slice of action %s', action.name)
   const toSend = (output as memoryStreams.WritableStream).toBuffer()
   debug('sending the remote build request for project %s and action %s', project.filePath, actionName)
-  action.buildResult = await invokeRemoteBuilder(toSend, project.credentials, project.owClient, action)
+  action.buildResult = await invokeRemoteBuilder(toSend, project.credentials, project.owClient, project.feedback, action)
   return action
 }
 
@@ -530,7 +530,7 @@ async function doRemoteWebBuild(project: DeployStructure) {
   zip.finalize()
   await outputPromise
   const toSend = (output as memoryStreams.WritableStream).toBuffer()
-  project.webBuildResult = await invokeRemoteBuilder(toSend, project.credentials, project.owClient)
+  project.webBuildResult = await invokeRemoteBuilder(toSend, project.credentials, project.owClient, project.feedback)
   return [] // An array of WebResource is expected but since no deployment will be done locally an empty one suffices
 }
 
@@ -623,9 +623,9 @@ function makeProjectSliceZip(): ProjectSliceZip {
   return { output, zip, outputPromise }
 }
 
-// Invoke the remote builder, return the response.   Last two arguments omitted for web builds.
-// TODO this function uploads to the client's data bucket but does not cause an actual build, so it can't yet succeed
-async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owClient: openwhisk.Client, action?: ActionSpec): Promise<string> {
+// Invoke the remote builder, return the response.  The 'action' argument is omitted for web builds
+async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owClient: openwhisk.Client, feedback: Feedback, action?: ActionSpec): Promise<string> {
+  // Upload project slice to the user's data bucket
   const bucketClient = await openBucketClient(credentials, 'data')
   const buildName = new Date().toISOString().replace(/:/g, '-')
   const remoteName = `${BUILDER_PREFIX}/${buildName}`
@@ -644,10 +644,12 @@ async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owC
   // Invoke the remote builder action.  The action name incorporates the runtime 'kind'.
   // That action will re-invoke the nim deployer in the target runtime.
   const kind = action ? action.runtime : 'nodejs:default'
+  const activityName = action ? `action '${action.name}'` : 'web content'
   const runtime = canonicalRuntime(kind).replace(':', '_')
   const buildActionName = `${BUILDER_ACTION_STEM}${runtime}`
-  debug(`Invoking remote build action '${buildActionName}' for build '${buildName} of action '${action.name}'`)
+  debug(`Invoking remote build action '${buildActionName}' for build '${buildName} of ${activityName}`)
   const invoked = await owClient.actions.invoke({ name: buildActionName, params: { toBuild: remoteName } })
+  feedback.progress(`Submitted ${activityName} for remote building and deployment in runtime ${kind}`)
   return invoked.activationId
 }
 

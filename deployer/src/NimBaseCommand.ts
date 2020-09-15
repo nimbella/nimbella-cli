@@ -61,18 +61,15 @@ export interface NimLogger {
 // Maybe silenced for certain use cases (e.g. deploying slices)
 export class NimFeedback implements Feedback {
   logger: NimLogger
-  silent = false
   constructor(logger: NimLogger) {
     this.logger = logger
   }
 
   warn(msg?: any, ...args: any[]): void {
-    if (this.silent) return
     this.logger.log(String(msg), ...args)
   }
 
   progress(msg?: any, ...args: any[]): void {
-    if (this.silent) return
     this.logger.log(String(msg), ...args)
   }
 }
