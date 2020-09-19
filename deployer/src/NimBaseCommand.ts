@@ -54,6 +54,7 @@ export interface NimLogger {
   handleError: (msg: string, err?: Error) => never
   exit: (code: number) => void // don't use 'never' here because 'exit' doesn't always exit
   displayError: (msg: string, err?: Error) => void
+  logJSON: (entity: Record<string, unknown>) => void
 }
 
 // Wrap the logger in a Feedback for using the deployer API
@@ -98,6 +99,10 @@ export class CaptureLogger implements NimLogger {
 
     exit(_code: number): void {
       // a no-op here
+    }
+
+    logJSON(entity: Record<string, unknown>): void {
+      this.entity = entity
     }
 }
 
@@ -147,6 +152,15 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     }
   }
 
+  // Implement logJSON for logger interface.  Since this context assumes textual output we just stringify the JSON
+  logJSON(entity: Record<string, unknown>): void {
+    const output = JSON.stringify(entity, null, 2)
+    const lines = output.split('\n')
+    for (const line of lines) {
+      this.log(line)
+    }
+  }
+
   // Generic oclif run() implementation.   Parses and then invokes the abstract runCommand method
   async run(): Promise<void> {
     const { argv, args, flags } = this.parse(this.constructor as typeof NimBaseCommand)
@@ -183,7 +197,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
       cmd.handleError = logger.handleError.bind(logger)
       debug('aio handleError intercepted in capture mode')
       cmd.parsed = { argv, args, flags }
-      cmd.logJSON = this.logJSON(logger)
+      cmd.logJSON = this.makeLogJSON(logger)
       cmd.table = this.saveTable(logger)
       logger.command = this.command
       debug('aio capture intercepts installed')
@@ -196,7 +210,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   }
 
   // Replacement for logJSON function in RuntimeBaseCommand when running with capture
-  logJSON = (logger: CaptureLogger) => (_ignored: string, entity: Record<string, unknown>): void => {
+  makeLogJSON = (logger: CaptureLogger) => (_ignored: string, entity: Record<string, unknown>): void => {
     logger.entity = entity
   }
 
