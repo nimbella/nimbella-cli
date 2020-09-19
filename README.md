@@ -24,8 +24,9 @@ benefits:
 - Build workflows and orchestrate long running tasks.
 
 This repository contains the source to our `nim` command line tool.
-Our plan is to open it for contributions but those policies are not in place yet.
-Currently, to build it
+It is possible to contribute.  See [our contribution guide](CONTRIBUTING.md).
+
+To Build the code
 
 ```
 cd deployer
