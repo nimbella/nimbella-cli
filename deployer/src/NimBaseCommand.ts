@@ -355,10 +355,13 @@ export function parseAPIHost(host: string|undefined): string|undefined {
   return 'https://' + host + '.nimbella.io'
 }
 
-// Stuff the current namespace, API host, and AUTH key into the environment so that AIO does not look in .wskprops when invoked by nim
+// Stuff API host and AUTH key into the environment so that AIO does not look for these in .wskprops when invoked by nim.
+// We also set AIO_RUNTIME_NAMESPACE to the wildcard '_' to guard against an actual namespace being `.wskprops` (an older
+// practice now deprecated by OpenWhisk).
 function fixAioCredentials(logger: NimLogger, flags: any) {
+  process.env.AIO_RUNTIME_NAMESPACE = '_'
   if (flags && flags.apihost && flags.auth) {
-    // No need to fix credentials if complete creds are supplied on cmdline
+    // No need to fix remaining credentials if complete creds are supplied on cmdline
     return
   }
   const store = authPersister.loadCredentialStoreIfPresent()
@@ -382,6 +385,4 @@ function fixAioCredentials(logger: NimLogger, flags: any) {
   }
   process.env.AIO_RUNTIME_APIHOST = currentHost
   process.env.AIO_RUNTIME_AUTH = currentAuth
-  // Don't pass the namespace to AIO.  It causes some problems with CORS in the beta workbench.
-  // process.env.AIO_RUNTIME_NAMESPACE = currentNamespace
 }
