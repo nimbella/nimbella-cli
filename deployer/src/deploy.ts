@@ -277,10 +277,15 @@ async function deployActionFromCode(action: ActionSpec, prefix: string, code: st
     annotations['web-export'] = true
     annotations.final = true
     annotations['raw-http'] = true
-  } else if (action.web === false) {
+  } else if (!action.web) {
     annotations['web-export'] = false
     annotations.final = false
     annotations['raw-http'] = false
+  }
+  if (typeof action.webSecure === 'string' || action.webSecure === true) {
+    annotations['require-whisk-auth'] = action.webSecure
+  } else if (!action.webSecure) {
+    annotations['require-whisk-auth'] = false
   }
   // Get the former annotations of the action if any
   let former: openwhisk.Action
@@ -291,12 +296,6 @@ async function deployActionFromCode(action: ActionSpec, prefix: string, code: st
   const oldAnnots = former && former.annotations ? makeDict(former.annotations) : {}
   // Merge the annotations
   const annotDict = Object.assign({}, oldAnnots, annotations)
-  // Now process the webSecure annotation, which requires that the old annotations be available
-  if (typeof action.webSecure === 'string' || action.webSecure === true) {
-    annotDict['require-whisk-auth'] = action.webSecure
-  } else if (action.webSecure === false) {
-    delete annotDict['require-whisk-auth']
-  }
   // Compute the complete Action value for the call
   const params = encodeParameters(action.parameters, action.environment)
   const exec = { code, binary: action.binary, kind: runtime, main: action.main } // Actually legal but openwhisk.Exec doesn't think so
