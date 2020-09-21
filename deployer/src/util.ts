@@ -519,10 +519,9 @@ export function actionFileToParts(fileName: string): { name: string, binary: boo
     if (parts.length === 2) {
       name = parts[0]
     } else if (ext === 'zip') {
-      mid = parts[parts.length - 2]
-      name = parts.slice(0, parts.length - 2).join('.')
+      [name, mid] = getNameAndMid(parts.slice(0, -1))
     } else {
-      name = parts.slice(0, parts.length - 1).join('.')
+      name = parts.slice(0, -1).join('.')
     }
     runtime = mid ? runtimeFromZipMid(mid) : runtimeFromExt(ext)
     binary = binaryFromExt(ext)
@@ -531,6 +530,27 @@ export function actionFileToParts(fileName: string): { name: string, binary: boo
   const z = zipped ? '' : 'not '
   debug(`action ${name} is ${z}zipped`)
   return { name, binary, zipped, runtime }
+}
+
+// Correctly parse a "mid" segment from a zip file name.  The input is the name split
+// on periods with the extension dropped.  There are always at least two parts.
+// We should return the name and mid-segment as a two-element array.
+function getNameAndMid(parts: string[]): string[] {
+  if (parts.length === 2) {
+    return parts
+  }
+  // There are at least three parts.  Either the runtime is the last one or the last two
+  const last = parts[parts.length - 1]
+  const nextToLast = parts[parts.length - 2]
+  if (/^\d+$/.test(last) && nextToLast.includes('-')) {
+    // Looks like a runtime version was split on a dot so we need to reassemble
+    const name = parts.slice(0, -2).join('.')
+    const mid = parts.slice(-2).join('.')
+    return [name, mid]
+  } else {
+    const name = parts.slice(0, -1).join('.')
+    return [name, last]
+  }
 }
 
 // The following tables are populated (once) by reading a copy of runtimes.json
