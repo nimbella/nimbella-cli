@@ -14,7 +14,7 @@
   "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#26bdbc71f1214b4c085a654c5d6c5cecac5a84f1",
+    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#1d9ac5c9e6136455e96485a67a597c26ab001dc6",
     "@adobe/aio-lib-core-config": "^1.0.15",
     "@google-cloud/storage": "^3.2.1",
     "@oclif/command": "^1",
