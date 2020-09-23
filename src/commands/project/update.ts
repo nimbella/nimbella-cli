@@ -11,11 +11,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
+
 import { createOrUpdateProject, seemsToBeProject } from '../../generator/project'
-import { default as ProjectCreate } from './create';
-import { flags } from '@oclif/command';
+import ProjectCreate from './create'
+import { flags } from '@oclif/command'
 
 const confPlugin = 'apispecgen'
 export default class ProjectUpdate extends NimBaseCommand {
@@ -35,39 +35,37 @@ export default class ProjectUpdate extends NimBaseCommand {
       this.doHelp()
     }
     if (inBrowser) {
-      logger.handleError(`'project update' needs local file access. Use the 'nim' CLI on your local machine`)
+      logger.handleError('\'project update\' needs local file access. Use the \'nim\' CLI on your local machine')
     }
     if (!seemsToBeProject(process.cwd())) {
-      logger.handleError(`Current directory doesn't appear to be a project`)
+      logger.handleError('Current directory doesn\'t appear to be a project')
     }
 
     if (flags.config) {
-      const pluginCommands = this.config.commands.filter(c => c.pluginName === confPlugin)
+      const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(confPlugin))
       const params = []
-      if (flags.overwrite) { params.push('-o'); }
+      if (flags.overwrite) { params.push('-o') }
       if (pluginCommands.length) {
         await pluginCommands[0].load().run([...params])
-      }
-      else {
-        logger.handleError(`the ${confPlugin} plugin is not installed. try 'nim plugins add ${confPlugin}'`);
+      } else {
+        logger.handleError(`the ${confPlugin} plugin is not installed. try 'nim plugins add ${confPlugin}'`)
       }
       return
     }
 
     if (flags.source) {
       const params = ['-i', flags.id || '', '-k', flags.key || '', '-l', flags.language, '--update']
-      if (flags.overwrite) { params.push('-o'); }
-      if (flags.updateSource) { params.push('-u'); }
-      if (flags.clientCode) { params.push('-c'); }
-      const pluginCommands = this.config.commands.filter(c => c.pluginName === flags.source);
+      if (flags.overwrite) { params.push('-o') }
+      if (flags.updateSource) { params.push('-u') }
+      if (flags.clientCode) { params.push('-c') }
+      const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(flags.source))
       if (pluginCommands.length) {
-        await pluginCommands[0].load().run([...params])
+        const pluginCommand = pluginCommands.filter(c => c.id === ProjectCreate.plugins[flags.source])
+        await pluginCommand[0].load().run([...params])
+      } else {
+        logger.handleError(`the ${flags.source} plugin is not installed. try 'nim plugins add ${flags.source}'`)
       }
-      else {
-        logger.handleError(`the ${flags.source} plugin is not installed. try 'nim plugins add ${flags.source}'`);
-      }
-    }
-    else {
+    } else {
       await createOrUpdateProject(true, args, flags, logger)
     }
   }
