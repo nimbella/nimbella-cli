@@ -71,10 +71,10 @@ function watch(project: string, cmdFlags: Flags, creds: Credentials|undefined, o
     }
     logger.log(`Watching '${project}' [use Control-C to terminate]`)
     let watcher: chokidar.FSWatcher = undefined
-    const reset = () => {
+    const reset = async () => {
         if (watcher) {
             // logger.log("Closing watcher")
-            watcher.close()
+            await watcher.close()
         }
     }
     const watch = () => {
@@ -89,7 +89,7 @@ function watch(project: string, cmdFlags: Flags, creds: Credentials|undefined, o
 // TODO this logic was crafted for fs.watch().  There might be a better way to suspend chokidar.
 // Displays an informative message before deploying.
 async function fireDeploy(project: string, filename: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions,
-        logger: NimLogger, reset: ()=>void, watch: ()=>void, event: string) {
+        logger: NimLogger, reset: ()=>Promise<void>, watch: ()=>void, event: string) {
     if (event === 'addDir') {
         // Don't fire on directory add ... it never represents a complete change.
         return
@@ -97,7 +97,7 @@ async function fireDeploy(project: string, filename: string, cmdFlags: Flags, cr
     if (excluded(filename)) {
         return
     }
-    reset()
+    await reset()
     logger.log(`\nDeploying '${project}' due to change in '${filename}'`)
     let error = false
     const result = await doDeploy(project, cmdFlags, creds, owOptions, true, logger).catch(err => {
