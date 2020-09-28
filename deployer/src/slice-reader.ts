@@ -63,7 +63,8 @@ export async function fetchSlice(sliceName: string): Promise<string> {
     if (!fs.existsSync(parent)) {
       fs.mkdirSync(parent, { recursive: true })
     }
-    fs.writeFileSync(target, entry.getData())
+    const mode = entry.attr >>> 16
+    fs.writeFileSync(target, entry.getData(), { mode })
   }
   return cache
 }
@@ -82,8 +83,8 @@ async function ensureObjectStoreCredentials() {
     const { client_email, private_key } = credentials
     process.env.__NIM_STORAGE_KEY = JSON.stringify({ client_email, private_key, project_id })
   }
-  const namespace = process.env.__OW_NAMESPACE
-  const apiHost = process.env.__OW_API_HOST
+  const namespace = process.env.__OW_NAMESPACE || process.env.savedOW_NAMESPACE
+  const apiHost = process.env.__OW_API_HOST || process.env.savedOW_API_HOST
   if (!namespace || !apiHost) {
     debug('There was not enough information in the environment to determine the object store bucket name, attempting fix')
     if (!creds) {
@@ -91,5 +92,9 @@ async function ensureObjectStoreCredentials() {
     }
     process.env.__OW_NAMESPACE = creds.namespace
     process.env.__OW_API_HOST = creds.ow.apihost
+  } else {
+    // Reset into normal variables in case they were in the backup variables
+    process.env.__OW_NAMESPACE = namespace
+    process.env.__OW_API_HOST = apiHost
   }
 }

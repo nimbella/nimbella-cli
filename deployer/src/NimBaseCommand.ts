@@ -58,7 +58,6 @@ export interface NimLogger {
 }
 
 // Wrap the logger in a Feedback for using the deployer API.
-// Maybe silenced for certain use cases (e.g. deploying slices)
 export class NimFeedback implements Feedback {
   logger: NimLogger
   constructor(logger: NimLogger) {

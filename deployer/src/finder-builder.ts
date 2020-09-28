@@ -508,7 +508,9 @@ async function appendToZip(zip: archiver.Archiver, path: string, reader: Project
 // Append a path known to be a file to the in-memory zip, checking for excessive size and issuing debug if requested.
 async function appendAndCheck(zip: archiver.Archiver, file: string, actionPath: string, reader: ProjectReader) {
   const contents = await reader.readFileContents(file)
-  zip.append(contents, { name: file })
+  const mode = (await reader.getPathKind(file)).mode
+  debug(`mode for ${file} is ${mode}`)
+  zip.append(contents, { name: file, mode })
   const size = zip.pointer()
   if (size > 512 * 1024) {
     throw new Error(`'Remote build upload for '${actionPath}' exceeds 512K.  Make sure the directory is free of derived artifacts`)

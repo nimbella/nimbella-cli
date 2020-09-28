@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, parseGithubRef } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger } from 'nimbella-deployer'
 import { readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
     computeBucketDomainName, isGithubRef, authPersister, inBrowser, getGithubAuth } from 'nimbella-deployer';
 import * as path from 'path'
@@ -109,7 +109,8 @@ export async function processCredentials(ignore_certs: boolean, apihost: string|
 // Deploy one project
 export async function doDeploy(project: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions, watching: boolean,
     logger: NimLogger): Promise<boolean> {
-  let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, undefined, new NimFeedback(logger))
+  const feedback = project.startsWith("slice:") ? new NimFeedback(new CaptureLogger()) : new NimFeedback(logger)
+  let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, undefined, feedback)
    if (!todeploy) {
     return false
   } else if (todeploy.error) {
@@ -126,7 +127,7 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
   }
   const result: DeployResponse = await deploy(todeploy)
   if (todeploy.slice) {
-    return displaySliceResult(result, logger)
+    return displaySliceResult(result, logger, feedback)
   }
   return displayResult(result, watching, cmdFlags.webLocal, logger)
 }
@@ -146,11 +147,13 @@ function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
 }
 
 // Display the result of a successful run when deploying a slice
-// The only output should be the DeployResponse as JSON
-function displaySliceResult(result: DeployResponse, logger: NimLogger): boolean {
-  const toDisplay = JSON.stringify(result, null, 2)
+// The output should be the DeployResponse as JSON on a single line, combined with the Feedback transcript if any
+function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback: any): boolean {
+  const transcript = feedback.logger.captured
+  const result = { transcript, outcome }
+  const toDisplay = JSON.stringify(result)
   logger.log(toDisplay)
-  return result.failures.length === 0
+  return outcome.failures.length === 0
 }
 
 // Display the result of a successful run
