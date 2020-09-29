@@ -149,9 +149,19 @@ function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
 // Display the result of a successful run when deploying a slice
 // The output should be the DeployResponse as JSON on a single line, combined with the Feedback transcript if any
 function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback: any): boolean {
+  function replaceErrors(_key: string, value: any) {
+    if (value instanceof Error) {
+      const error = {};
+      Object.getOwnPropertyNames(value).forEach(function (key) {
+        error[key] = value[key];
+      });
+      return error;
+    }
+    return value;
+  }
   const transcript = feedback.logger.captured
   const result = { transcript, outcome }
-  const toDisplay = JSON.stringify(result)
+  const toDisplay = JSON.stringify(result, replaceErrors)
   logger.log(toDisplay)
   return outcome.failures.length === 0
 }

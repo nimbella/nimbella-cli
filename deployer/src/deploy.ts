@@ -97,7 +97,6 @@ async function processRemoteResponse(activationId: string, owClient: openwhisk.C
   } catch (err) {
     return wrapError(err, 'waiting for remote build response for ' + context)
   }
-  debug('Remote build response was %O', activation)
   if (!activation.response || !activation.response.success) {
     let err = 'Remote build failed to provide a result'
     if (activation?.response?.result?.error) {
@@ -105,7 +104,9 @@ async function processRemoteResponse(activationId: string, owClient: openwhisk.C
     }
     return wrapError(new Error(`Remote error '${err}'`), 'running remote build for ' + context)
   }
-  const { transcript, outcome } = activation.response.result as { transcript: string[], outcome: DeployResponse }
+  const result = activation.response.result as Record<string, any>
+  debug('Remote result was %O', result)
+  const { transcript, outcome }  = result
   if (transcript && transcript.length > 0) {
     feedback.progress(`Transcript of remote build session for ${context}:`)
     for (const line of transcript) {

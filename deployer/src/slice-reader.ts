@@ -41,7 +41,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
   const bucket: Bucket = await nim.storage()
   debug('have bucket client')
   const remoteFile = bucket.file(sliceName)
-  debug('have remote file')
+  debug('have remote file for %s', sliceName)
   const exists = await remoteFile.exists()
   debug('have exists response: %O', exists)
   if (!exists[0]) {
@@ -94,6 +94,7 @@ async function ensureObjectStoreCredentials() {
     process.env.__OW_API_HOST = creds.ow.apihost
   } else {
     // Reset into normal variables in case they were in the backup variables
+    debug('Found namespace=%s and apiHost=%s', namespace, apiHost)
     process.env.__OW_NAMESPACE = namespace
     process.env.__OW_API_HOST = apiHost
   }

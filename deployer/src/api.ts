@@ -30,10 +30,10 @@ import * as makeDebug from 'debug'
 const debug = makeDebug('nim:deployer:api')
 
 // Initialize the API by 1. purging existing __OW_ entries from the environment, 2.  setting __OW_USER_AGENT, 3. returning a map of
-// entries that were purged.   Also saves the __OW_NAMESPACE and __OW_API_HOST values in the environment itself for the special
+// entries that were purged.   Also saves the __OW_NAMESPACE and __OW_API_HOST values in the environment, renamed, for the special
 // cases where there is no credential store but certain code paths still must work.  An example is the slice reader.
 export function initializeAPI(userAgent: string): {[key: string]: string} {
-  const result = {}
+  const result: Record<string, string> = {}
   for (const item in process.env) {
     if (item.startsWith('__OW_')) {
       result[item] = process.env[item]
@@ -41,8 +41,13 @@ export function initializeAPI(userAgent: string): {[key: string]: string} {
     }
   }
   process.env.__OW_USER_AGENT = userAgent
-  process.env.savedOW_NAMESPACE = result['__OW_NAMESPACE']
-  process.env.savedOW_API_HOST = result['__OW_API_HOST']
+  // Careful with these transfers.  Assigning a value to the env always casts to string (even undefined -> "undefined")
+  if (result.__OW_NAMESPACE) {
+    process.env.savedOW_NAMESPACE = result.__OW_NAMESPACE
+  }
+  if (result.__OW_API_HOST) {
+    process.env.savedOW_API_HOST = result.__OW_API_HOST
+  }
   return result
 }
 

@@ -567,6 +567,10 @@ export function actionFileToParts(fileName: string): { name: string, binary: boo
     runtime = mid ? runtimeFromZipMid(mid) : runtimeFromExt(ext)
     binary = binaryFromExt(ext)
     zipped = ext === 'zip'
+  } else {
+    // No extension.  Assume binary, with unknown runtime
+    binary = true
+    zipped = false
   }
   const z = zipped ? '' : 'not '
   debug(`action ${name} is ${z}zipped`)

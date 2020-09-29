@@ -459,7 +459,7 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   // Get the zipper
   const { zip, output, outputPromise } = makeProjectSliceZip()
   // Get the project slice in convenient form
-  const { spec, pkgName } = makeConfigFromActionSpec(action, project)
+  const pkgName = path.basename(path.dirname(action.file))
   const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
   // Zip the actionPath, also determining runtime if the action spec doesn't already have one
   debug('zipping action path %s for project slice', action.file)
@@ -472,6 +472,7 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
     action.runtime = runtime
   }
   // Add the project.yml
+  const spec = makeConfigFromActionSpec(action, project, pkgName)
   debug('converting slice spec to YAML: %O', spec)
   const config = yaml.safeDump(spec)
   zip.append(config, { name: 'project.yml' })
@@ -538,7 +539,7 @@ async function doRemoteWebBuild(project: DeployStructure) {
 
 // Slice the project to contain only one ActionSpec and no web folder; return a DeployStructure that can be written
 // out as a project.yml and also the path to the action file or directory, for zipping.
-function makeConfigFromActionSpec(action: ActionSpec, spec: DeployStructure): { spec: DeployStructure, pkgName: string } {
+function makeConfigFromActionSpec(action: ActionSpec, spec: DeployStructure, pkgName: string): DeployStructure {
   debug('converting action spec to sliced project.yml: %O', action)
   const { targetNamespace, cleanNamespace, parameters, credentials, flags } = spec
   flags.remoteBuild = false
@@ -560,11 +561,10 @@ function makeConfigFromActionSpec(action: ActionSpec, spec: DeployStructure): { 
   } as ActionSpec
   removeUndefined(newSpec)
   removeUndefined(newAction)
-  const pkgName = path.basename(path.dirname(action.file))
   const pkg = spec.packages.find(pkg => pkg.name === pkgName)
   pkg.actions = [newAction]
   newSpec.packages = [pkg]
-  return { spec: newSpec, pkgName }
+  return newSpec
 }
 
 // Slice the project to contain only components relevant ot web deploy.  This does not include 'web' itself since that will be
