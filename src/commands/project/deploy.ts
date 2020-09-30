@@ -33,7 +33,7 @@ export class ProjectDeploy extends NimBaseCommand {
     'web-local': flags.string({ description: 'A local directory to receive web deploy, instead of uploading'}),
     include: flags.string({ description: 'Project portions to include' }),
     exclude: flags.string({ description: 'Project portions to exclude' }),
-    'remote-build': flags.boolean({ description: 'Run builds remotely'}),
+    'remote-build': flags.boolean({ description: 'Run builds remotely', hidden: true }),
     incremental: flags.boolean({ description: 'Deploy only changes since last deploy' }),
     'anon-github': flags.boolean({ description: 'Attempt GitHub deploys anonymously'} ),
     ...NimBaseCommand.flags
