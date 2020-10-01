@@ -1179,9 +1179,9 @@ export function delay(millis: number): Promise<void> {
 }
 
 // Await the completion of an action invoke (similar to kui's await)
-export async function waitForActivation(id: string, wsk: Client): Promise<Activation<Dict>> {
+export async function waitForActivation(id: string, wsk: Client, waiting: ()=>void): Promise<Activation<Dict>> {
   debug(`waiting for activation with id ${id}`)
-  for (let i = 0; i < 100; i++) {
+  for (let i = 1; i < 151; i++) {
     try {
       const activation = await wsk.activations.get(id)
       if (activation.end || activation.response.status) {
@@ -1193,8 +1193,12 @@ export async function waitForActivation(id: string, wsk: Client): Promise<Activa
         throw err
       }
     }
+    if (i % 10 === 0) {
+      waiting()
+    }
     await delay(1000)
   }
+  throw new Error(`Timed out waiting for activation with id ${id}`)
 }
 
 // Subroutine to invoke OW with a GET and return the response.  Bypasses the OW client.  Used

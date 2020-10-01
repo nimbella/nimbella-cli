@@ -92,8 +92,9 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
 // Process the remote result when something has been built remotely
 async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string, feedback: Feedback): Promise<DeployResponse> {
   let activation: openwhisk.Activation<openwhisk.Dict>
+  const tick = () => feedback.progress(`Processing of '${context}' is still running remotely ...`)
   try {
-    activation = await waitForActivation(activationId, owClient)
+    activation = await waitForActivation(activationId, owClient, tick)
   } catch (err) {
     return wrapError(err, 'waiting for remote build response for ' + context)
   }
