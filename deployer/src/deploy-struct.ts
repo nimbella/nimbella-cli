@@ -71,6 +71,7 @@ export interface ActionSpec {
     build?: string
     wrapping?: string
     buildResult?: string // The activation id of the remote build
+    buildError?: Error // Error reported from the build step
 }
 
 // Information of various kinds typically specified on the command line
@@ -147,7 +148,8 @@ export interface DeployStructure {
     reader?: ProjectReader // The project reader to use
     versions?: VersionEntry // The VersionEntry for credentials.namespace on the selected API host if available
     feedback?: Feedback // The object to use for immediate communication to the user (e.g. for warnings and progress reports)
-    error?: Error // Records an error in reading, preparing, or building; the structure should not be used
+    error?: Error // Records an error in reading or preparing, or a terminal error in building; the structure should not be used
+    webBuildError?: Error // Indicates an error in building the web component; the structure is usable but the failure should be reported
     webBuildResult?: string // activation id of remote build
 }
 

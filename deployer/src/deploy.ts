@@ -71,6 +71,8 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   const remoteResult = todeploy.webBuildResult
   if (remoteResult) {
     webPromises = [processRemoteResponse(remoteResult, todeploy.owClient, 'web content', todeploy.feedback)]
+  } else if (todeploy.webBuildError) {
+    webPromises = [ Promise.resolve(wrapError(todeploy.webBuildError, 'web content')) ]
   } else {
     webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
       todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
@@ -252,6 +254,9 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
 // Deploy an action
 function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
   actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
+  if (action.buildError) {
+    return Promise.resolve(wrapError(action.buildError, `action '${prefix}${action.name}`))
+  }
   if (action.buildResult) {
     return processRemoteResponse(action.buildResult, wsk, action.name, feedback)
   }

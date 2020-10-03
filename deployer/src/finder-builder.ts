@@ -86,7 +86,10 @@ async function buildActionsOfPackage(pkg: PackageSpec, spec: DeployStructure): P
   for (const action of pkg.actions) {
     if (action.build) {
       nobuilds = false
-      const builtAction = await buildAction(action, spec)
+      const builtAction = await buildAction(action, spec).catch(err => {
+        action.buildError = err
+        return action
+      })
       actionMap[action.name] = builtAction
     }
   }
