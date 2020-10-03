@@ -223,7 +223,7 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
       }
       if (result.failures.length > 0) {
           success = false
-          logger.displayError('Failures:')
+          logger.log('Failures:')
           for (const err of result.failures) {
               success = false
               const context = (err as any)['context']
