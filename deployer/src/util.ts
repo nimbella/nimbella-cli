@@ -1100,6 +1100,26 @@ export function digestAction(action: ActionSpec, code: string): string {
   return String(hash.digest('hex'))
 }
 
+// Get the status reporting directory, making it if it doesn't exist
+function getStatusDir(project: string): { statusDir: string, created: boolean } {
+  const statusDir = path.join(project, '.nimbella')
+  let created = false
+  if (!fs.existsSync(statusDir)) {
+    fs.mkdirSync(statusDir)
+    created = true
+  }
+  return { statusDir, created }
+}
+
+// Write the "slice result" to the status area
+// Note: this is not being used yet.  It is not clear how the remote build action is supposed to find the status area.
+// Other possibilities are to write it in a more easily found place or to write it to a file descriptor and pipe it
+// somewhere.
+export function writeSliceResult(project: string, result: string) {
+  const file = path.join(getStatusDir(project).statusDir, "sliceResult")
+  fs.writeFileSync(file, result)
+}
+
 // Called after a deploy step to record important information from the DeployResponse into the project.
 // Essentially a dual of loadVersions but not quite symmetrical since its argument is a DeployResponse
 // The 'replace' argument causes the new VersionEntry calculated from the DeployResponse to replace
@@ -1114,12 +1134,7 @@ export function writeProjectStatus(project: string, results: DeployResponse, rep
     debug('there is no meaningful project status to write')
     return ''
   }
-  const statusDir = path.join(project, '.nimbella')
-  let created = false
-  if (!fs.existsSync(statusDir)) {
-    fs.mkdirSync(statusDir)
-    created = true
-  }
+  const { statusDir, created } = getStatusDir(project)
   let versionList: VersionEntry[] = []
   const versionFile = path.join(statusDir, 'versions.json')
   if (fs.existsSync(versionFile)) {
