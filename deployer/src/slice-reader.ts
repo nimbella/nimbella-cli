@@ -32,7 +32,7 @@ const TEMP = process.platform === 'win32' ? process.env.TEMP : '/tmp'
 // Make
 export async function fetchSlice(sliceName: string): Promise<string> {
   await ensureObjectStoreCredentials()
-  const cache = path.join(TEMP, 'slices', sliceName)
+  const cache = path.join(TEMP, 'slices', path.basename(sliceName))
   if (fs.existsSync(cache)) {
     rimraf.sync(cache)
   }
