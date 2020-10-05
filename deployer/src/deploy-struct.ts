@@ -136,6 +136,7 @@ export interface DeployStructure {
     slice?: boolean // Labels this DeployStructure as belonging to a a project slice
     credentials?: Credentials // The full credentials for the deployment (consistent with targetNamespace if one was specified)
     flags? : Flags // options typically specified on the command line
+    deployerAnnotation?: DeployerAnnotation // The deployer annotation to use (with the digest undefined, as it varies)
     // The following fields are never permitted in project.yml but are always added internally
     webBuild?: string // Type of build (build.sh or package.json) to apply to the web directory
     sharedBuilds?: BuildTable // The build table for this project, populated as shared builds are initiated

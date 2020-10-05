@@ -17,7 +17,7 @@ import {
 } from './deploy-struct'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse,
-  getDeployerAnnotation, straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions, waitForActivation
+  straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions, waitForActivation
 } from './util'
 import * as openwhisk from 'openwhisk'
 import { Bucket } from '@google-cloud/storage'
@@ -63,7 +63,7 @@ export async function cleanOrLoadVersions(todeploy: DeployStructure): Promise<De
 
 // Do the actual deployment (after testing the target namespace and cleaning)
 export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
-  let webLocal
+  let webLocal: string
   if (todeploy.flags.webLocal) {
     webLocal = ensureWebLocal(todeploy.flags.webLocal)
   }
@@ -72,22 +72,20 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   if (remoteResult) {
     webPromises = [processRemoteResponse(remoteResult, todeploy.owClient, 'web content', todeploy.feedback)]
   } else if (todeploy.webBuildError) {
-    webPromises = [ Promise.resolve(wrapError(todeploy.webBuildError, 'web content')) ]
+    webPromises = [Promise.resolve(wrapError(todeploy.webBuildError, 'web content'))]
   } else {
     webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
       todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
   }
-  return getDeployerAnnotation(todeploy.filePath, todeploy.githubPath).then(deployerAnnot => {
-    const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy.owClient, deployerAnnot, todeploy.parameters,
-      todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader, todeploy.feedback))
-    const strays = straysToResponse(todeploy.strays)
-    return Promise.all(webPromises.concat(actionPromises)).then(responses => {
-      responses.push(strays)
-      const response = combineResponses(responses)
-      response.apihost = todeploy.credentials.ow.apihost
-      if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
-      return response
-    })
+  const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy.owClient, todeploy.deployerAnnotation, todeploy.parameters,
+    todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader, todeploy.feedback))
+  const strays = straysToResponse(todeploy.strays)
+  return Promise.all(webPromises.concat(actionPromises)).then(responses => {
+    responses.push(strays)
+    const response = combineResponses(responses)
+    response.apihost = todeploy.credentials.ow.apihost
+    if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
+    return response
   })
 }
 
@@ -109,7 +107,7 @@ async function processRemoteResponse(activationId: string, owClient: openwhisk.C
   }
   const result = activation.response.result as Record<string, any>
   debug('Remote result was %O', result)
-  const { transcript, outcome }  = result
+  const { transcript, outcome } = result
   if (transcript && transcript.length > 0) {
     feedback.progress(`Transcript of remote build session for ${context}:`)
     for (const line of transcript) {

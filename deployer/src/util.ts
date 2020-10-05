@@ -235,8 +235,9 @@ export function validateDeployConfig(arg: any): string {
     }
     case 'credentials':
     case 'flags':
+    case 'deployerAnnotation':
       if (slice) continue
-      // In a slice we accept credentials and flags without further validation; otherwise, they are illegal
+      // In a slice we accept these without further validation; otherwise, they are illegal
       // Otherwise, fall through
     default:
       return `Invalid key '${item}' found in project.yml`
@@ -1115,8 +1116,8 @@ function getStatusDir(project: string): { statusDir: string, created: boolean } 
 // Note: this is not being used yet.  It is not clear how the remote build action is supposed to find the status area.
 // Other possibilities are to write it in a more easily found place or to write it to a file descriptor and pipe it
 // somewhere.
-export function writeSliceResult(project: string, result: string) {
-  const file = path.join(getStatusDir(project).statusDir, "sliceResult")
+export function writeSliceResult(project: string, result: string): void {
+  const file = path.join(getStatusDir(project).statusDir, 'sliceResult')
   fs.writeFileSync(file, result)
 }
 

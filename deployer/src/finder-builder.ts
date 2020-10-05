@@ -544,10 +544,10 @@ async function doRemoteWebBuild(project: DeployStructure) {
 // out as a project.yml and also the path to the action file or directory, for zipping.
 function makeConfigFromActionSpec(action: ActionSpec, spec: DeployStructure, pkgName: string): DeployStructure {
   debug('converting action spec to sliced project.yml: %O', action)
-  const { targetNamespace, cleanNamespace, parameters, credentials, flags } = spec
+  const { targetNamespace, cleanNamespace, parameters, credentials, flags, deployerAnnotation } = spec
   flags.remoteBuild = false
   const { name, runtime, main, binary, zipped, web, webSecure, annotations, environment, limits, clean } = action
-  const newSpec = { targetNamespace, cleanNamespace, parameters, credentials, flags, slice: true } as DeployStructure
+  const newSpec = { targetNamespace, cleanNamespace, parameters, credentials, flags, deployerAnnotation, slice: true } as DeployStructure
   const newAction = {
     name,
     runtime,
@@ -574,9 +574,9 @@ function makeConfigFromActionSpec(action: ActionSpec, spec: DeployStructure, pkg
 // included in the project slice separately
 function makeConfigFromWebSpec(project: DeployStructure): DeployStructure {
   debug('converting project spec to sliced project.yml for web building')
-  const { targetNamespace, cleanNamespace, bucket, credentials, flags } = project
+  const { targetNamespace, cleanNamespace, bucket, credentials, flags, deployerAnnotation } = project
   flags.remoteBuild = false
-  return removeUndefined({ targetNamespace, cleanNamespace, bucket, credentials, flags, slice: true })
+  return removeUndefined({ targetNamespace, cleanNamespace, bucket, credentials, flags, deployerAnnotation, slice: true })
 }
 
 // Remove undefined fields from object (mutates object but returns it as well)
