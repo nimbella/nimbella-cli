@@ -924,8 +924,11 @@ export function mapActions(actions: ActionSpec[]): ActionMap {
 // Get the best available name for a project for recording.  If project is either in github or in cloned repo
 // the name should reflect the github coordinates and not include incidental aspects of the github URL.
 // If the project is just in the file system we use its absolute path (best we have)
-export async function getBestProjectName(project: DeployStructure): Promise<string> {
-  const annot = await getDeployerAnnotation(project.filePath, project.githubPath)
+export function getBestProjectName(project: DeployStructure): string {
+  const annot = project.deployerAnnotation
+  if (!annot) {
+    return project.githubPath || project.filePath
+  }
   if (annot.repository) {
     let repo = annot.repository
     if (repo.includes(':')) {

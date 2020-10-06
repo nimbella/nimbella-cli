@@ -51,7 +51,7 @@ export interface ActionSpec {
     name: string // The name of the action
     // The following are used to assemble 'exec'.  Currently, you can't specify exec directly
     file?: string // The path to the file comprising the action (possibly a zip file)
-    displayFile?: string // The file path but in github when applicable, otherwise undefined
+    displayFile?: string // The file path to display in messages
     code?: string // The code of the action (bypasses file reading; used internally; not specifiable in the config)
     runtime?: string // The runtime to use for the action
     main?: string // The 'main' directive if needed

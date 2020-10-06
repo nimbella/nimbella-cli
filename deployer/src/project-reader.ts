@@ -14,7 +14,7 @@
 import * as path from 'path'
 import { getUserAgent } from './api'
 import { DeployStructure, PackageSpec, ActionSpec, WebResource, Includer, ProjectReader, PathKind, Feedback } from './deploy-struct'
-import { emptyStructure, actionFileToParts, filterFiles, convertToResources, promiseFilesAndFilterFiles, loadProjectConfig, errorStructure, getDeployerAnnotation } from './util'
+import { emptyStructure, actionFileToParts, filterFiles, convertToResources, promiseFilesAndFilterFiles, loadProjectConfig, errorStructure, getDeployerAnnotation, getBestProjectName } from './util'
 import { getBuildForAction, getBuildForWeb } from './finder-builder'
 import { isGithubRef, parseGithubRef, fetchProject } from './github'
 import * as makeDebug from 'debug'
@@ -130,18 +130,13 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
 // assemble a "Promise.all" for the combined work
 export async function buildStructureParts(topLevel: TopLevel): Promise<DeployStructure[]> {
   const { web, packages, config, strays, filePath, env, githubPath, includer, reader, feedback } = topLevel
-  let packagesGithub = packages
-  if (githubPath) {
-    if (packages) {
-      packagesGithub = path.join(githubPath, packages)
-    }
-  }
-  debug('display path for actions is %O', packagesGithub)
-  const webPart = await getBuildForWeb(web, reader).then(build => buildWebPart(web, build, reader))
-  const actionsPart = await buildActionsPart(packages, packagesGithub, includer, reader)
   let configPart = await readConfig(config, env, filePath, includer, reader, feedback)
   const deployerAnnotation = configPart.deployerAnnotation || await getDeployerAnnotation(filePath, githubPath)
   configPart = Object.assign(configPart, { strays, filePath, githubPath, includer, reader, feedback, deployerAnnotation })
+  const displayName = getBestProjectName(configPart)
+  debug('display path for actions is %O', displayName)
+  const webPart = await getBuildForWeb(web, reader).then(build => buildWebPart(web, build, reader))
+  const actionsPart = await buildActionsPart(packages, displayName, includer, reader)
   return [webPart, actionsPart, configPart]
 }
 

@@ -23,7 +23,7 @@ export {
   getApiHosts, Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
   getGithubAuth, switchGithubAccount, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser, // from './credentials'
   computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page, // from './deploy-to-bucket'
-  extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, // from './util'
+  extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName, // from './util'
   GithubDef, isGithubRef, parseGithubRef, fetchProject, // from './github'
   NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace // from './NimBaseCommand'
 } from 'nimbella-deployer'

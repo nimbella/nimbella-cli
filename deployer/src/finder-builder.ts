@@ -16,7 +16,7 @@ import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flag
 import {
   FILES_TO_SKIP, actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
   promiseFilesAndFilterFiles,
-  canonicalRuntime
+  canonicalRuntime, getBestProjectName
 } from './util'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -381,7 +381,7 @@ export function getBuildForWeb(filepath: string, reader: ProjectReader): Promise
 export function buildWeb(spec: DeployStructure): Promise<WebResource[]> {
   debug('Performing Web build')
   let scriptPath
-  const displayPath = path.join(spec.githubPath || spec.filePath, 'web')
+  const displayPath = path.join(getBestProjectName(spec), 'web')
   const { reader, flags, feedback, sharedBuilds, webBuild } = spec
   switch (webBuild) {
   case 'build.sh':
