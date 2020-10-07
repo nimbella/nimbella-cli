@@ -20,7 +20,6 @@ import { isGithubRef, parseGithubRef, fetchProject } from './github'
 import * as makeDebug from 'debug'
 import { makeFileReader } from './file-reader'
 import { makeGithubReader } from './github-reader'
-import { fetchSlice } from './slice-reader'
 const debug = makeDebug('nim:deployer:project-reader')
 
 const CONFIG_FILE = 'project.yml'
@@ -66,6 +65,8 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
     debug('not a github path, making file reader')
     if (filePath.startsWith('slice:')) {
       debug('fetching slice')
+      // The following is dynamic instead of static to avoid a webpack issue.  This code path won't happen in a browser
+      const fetchSlice: (arg: string) => Promise<string> = require('./slice-reader').fetchSlice
       filePath = await fetchSlice(filePath.replace('slice:', ''))
       if (!filePath) {
         throw new Error('Could not fetch slice')

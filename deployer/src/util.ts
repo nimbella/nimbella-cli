@@ -71,17 +71,29 @@ export function loadProjectConfig(configFile: string, envPath: string, filePath:
   })
 }
 
-// Determine if a project requires building by examining its web and actions right after project reading
-export function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): boolean {
-  const locateBuild = (buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) => {
-    if (!buildField || buildField === 'identify' || buildField === '.include' || buildField === '.build') {
-      return buildField
-    }
-    if (inBrowser || remoteRequired || (remoteRequested && !localRequired)) {
+// Check whether a build field actually implies a build must be run
+function isRealBuild(buildField: string): boolean {
+  switch (buildField) {
+  case 'build.sh':
+  case 'build.cmd':
+  case '.build':
+  case 'package.json':
+    return true
+  default:
+    return false
+  }
+}
+
+// Replace a build field with 'remote' if it is supposed to be remote according to flags, directives, environment
+function locateBuild (buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) {
+    if (isRealBuild(buildField) && (inBrowser || remoteRequired || (remoteRequested && !localRequired))) {
       return 'remote'
     }
     return buildField
   }
+
+// Set up the build fields for a project and detected conflicts.  Determine if local building is required.
+export function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): boolean {
   const checkConflicts = (buildField: string, remote: boolean, local: boolean, tag: string) => {
     if (remote && local) {
       throw new Error(`Local and remote building cannot both be required (${tag})`)
@@ -105,16 +117,15 @@ export function checkBuildingRequirements(todeploy: DeployStructure, requestRemo
       }
     }
   }
-  let needsLocal = false
   const webRequiresLocal = (todeploy.bucket && todeploy.bucket.localBuild) || !!todeploy.actionWrapPackage
   todeploy.webBuild = locateBuild(todeploy.webBuild, requestRemote, todeploy.bucket && todeploy.bucket.remoteBuild, webRequiresLocal)
-  needsLocal = needsLocal || todeploy.webBuild !== 'remote'
+  let needsLocal = todeploy.webBuild !== 'remote' && isRealBuild(todeploy.webBuild)
   if (todeploy.packages) {
     for (const pkg of todeploy.packages) {
       if (pkg.actions) {
         for (const action of pkg.actions) {
           action.build = locateBuild(action.build, requestRemote, action.remoteBuild, action.localBuild)
-          needsLocal = needsLocal || action.build !== 'remote'
+          needsLocal = needsLocal || (action.build !== 'remote' && isRealBuild(action.build))
         }
       }
     }

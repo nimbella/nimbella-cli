@@ -130,7 +130,7 @@ function buildAction(action: ActionSpec, spec: DeployStructure): Promise<ActionS
     return identifyActionFiles(action,
       flags.incremental, flags.verboseZip, reader, feedback)
   case 'remote':
-    checkBuiltLocally(path.join(spec.filePath, action.file))
+    checkBuiltLocally(reader, action.file)
     return doRemoteActionBuild(action, spec)
   default:
     throw new Error('Unknown build type in ActionSpec: ' + action.build)
@@ -401,7 +401,7 @@ export function buildWeb(spec: DeployStructure): Promise<WebResource[]> {
   case 'identify':
     return identifyWebFiles('web', reader)
   case 'remote':
-    checkBuiltLocally(path.join(spec.filePath, 'web'))
+    checkBuiltLocally(reader, 'web')
     return doRemoteWebBuild(spec)
   default:
     throw new Error('Unknown build type for web directory: ' + build)
@@ -409,7 +409,13 @@ export function buildWeb(spec: DeployStructure): Promise<WebResource[]> {
 }
 
 // Check whether path seems to denote a directory that is already built (heuristic).  Throws if case detected
-function checkBuiltLocally(filepath: string) {
+function checkBuiltLocally(reader: ProjectReader, localPath: string) {
+  const loc = reader.getFSLocation()
+  if (!loc) {
+    debug('checkBuiltLocally skipped because deploying from github')
+    return
+  }
+  const filepath = path.join(loc, localPath)
   debug('checking for local build artifacts in %s when remote build requested', filepath)
   if (fs.existsSync(filepath) && fs.lstatSync(filepath).isDirectory()) {
     debug('%s exists and is a directory', filepath)
@@ -420,7 +426,7 @@ function checkBuiltLocally(filepath: string) {
     }
     debug('did not find %s or %s', zipped, dotBuilt)
   }
-  debug('check passed')
+  debug('checkBuiltLocally passed')
 }
 
 // Identify the files constituting web content.  Similar to its action counterpart but not identical (e.g. there is no zipping)
