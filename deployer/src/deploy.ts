@@ -253,7 +253,7 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
 function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
   actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
   if (action.buildError) {
-    return Promise.resolve(wrapError(action.buildError, `action '${prefix}${action.name}`))
+    return Promise.resolve(wrapError(action.buildError, `action '${prefix}${action.name}'`))
   }
   if (action.buildResult) {
     return processRemoteResponse(action.buildResult, wsk, action.name, feedback)
