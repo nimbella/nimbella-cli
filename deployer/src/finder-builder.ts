@@ -29,7 +29,6 @@ import * as makeDebug from 'debug'
 import { isGithubRef } from './github'
 import { Writable } from 'stream'
 import * as memoryStreams from 'memory-streams'
-import { openBucketClient } from './deploy-to-bucket'
 import openwhisk = require('openwhisk')
 
 const debug = makeDebug('nim:deployer:finder-builder')
@@ -637,21 +636,24 @@ function makeProjectSliceZip(): ProjectSliceZip {
 // Invoke the remote builder, return the response.  The 'action' argument is omitted for web builds
 async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owClient: openwhisk.Client, feedback: Feedback, action?: ActionSpec): Promise<string> {
   // Upload project slice to the user's data bucket
-  const bucketClient = await openBucketClient(credentials, 'data')
   const buildName = new Date().toISOString().replace(/:/g, '-')
   const remoteName = `${BUILDER_PREFIX}/${buildName}`
-  const remoteFile = bucketClient.file(remoteName)
-  const expiration = 5 * 60 * 1000 // 5 minutes
-  const putOptions = {
-    version: 'v4' as 'v2' | 'v4',
-    action: 'write' as 'read' | 'write' | 'delete' | 'resumable',
-    expires: Date.now() + expiration
+  const urlResponse = await owClient.actions.invoke({
+    name: '/nimbella/websupport/getSignedUrl',
+    params: { fileName: remoteName, dataBucket: true },
+    blocking: true,
+    result: true
+  })
+  const url = urlResponse.url
+  if (!url) {
+    throw new Error(`Response from getSignedUrl was not a URL: ${urlResponse}`)
   }
-  const [url] = await remoteFile.getSignedUrl(putOptions)
+  debug('remote build url is %s', url)
   const result = await axios.put(url, zipped)
   if (result.status !== 200) {
     throw new Error(`Bad response [$result.status}] when uploading '${remoteName}' for remote build`)
   }
+  debug('axios put of url was successful')
   // Invoke the remote builder action.  The action name incorporates the runtime 'kind'.
   // That action will re-invoke the nim deployer in the target runtime.
   const kind = action ? action.runtime : 'nodejs:default'
