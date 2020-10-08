@@ -86,13 +86,15 @@ function isRealBuild(buildField: string): boolean {
 
 // Replace a build field with 'remote' if it is supposed to be remote according to flags, directives, environment
 function locateBuild (buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) {
-    if (isRealBuild(buildField) && (inBrowser || remoteRequired || (remoteRequested && !localRequired))) {
+    // TODO: uncomment the 'inBrowser' test when ready.  We are currently hiding remote build capability because
+    // the client side will be merged before the server side.
+    if (isRealBuild(buildField) && (/*inBrowser || */ remoteRequired || (remoteRequested && !localRequired))) {
       return 'remote'
     }
     return buildField
   }
 
-// Set up the build fields for a project and detected conflicts.  Determine if local building is required.
+// Set up the build fields for a project and detect conflicts.  Determine if local building is required.
 export function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): boolean {
   const checkConflicts = (buildField: string, remote: boolean, local: boolean, tag: string) => {
     if (remote && local) {
