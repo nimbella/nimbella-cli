@@ -604,7 +604,7 @@ interface ProjectSliceZip {
     outputPromise: Promise<any>
 }
 function makeProjectSliceZip(): ProjectSliceZip {
-  const output: Writable = new memoryStreams.WritableStream()
+  const output: Writable = new memoryStreams.WritableStream({ highWaterMark: 1024 * 1024 })
   const zip = archiver('zip')
   const outputPromise = new Promise(function(resolve, reject) {
     zip.on('error', err => {
@@ -621,6 +621,9 @@ function makeProjectSliceZip(): ProjectSliceZip {
     })
     output.on('end', () => {
       debug('zipfile data has been drained')
+    })
+    output.on('drain', () => {
+      debug('memory stream posted a drain event')
     })
     zip.on('warning', err => {
       debug('warning issued from archiver %O', err)
@@ -794,7 +797,7 @@ async function autozipBuilder(pairs: string[][], action: ActionSpec, incremental
     output = fs.createWriteStream(localTargetZip)
   } else {
     zipDebug('zipping to memory buffer for action %s', action.name)
-    output = new memoryStreams.WritableStream()
+    output = new memoryStreams.WritableStream({ highWaterMark: 1024 * 1024 })
   }
   const zip = archiver('zip')
   const outputPromise = new Promise(function(resolve, reject) {
