@@ -16,7 +16,7 @@
   "dependencies": {
     "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#f74015deda89d4a0827690233a83a35dcdf394e7",
     "@adobe/aio-lib-core-config": "^1.0.15",
-    "@google-cloud/storage": "^3.2.1",
+    "@google-cloud/storage": "^5.3.0",
     "@oclif/command": "^1",
     "@oclif/config": "^1",
     "@oclif/plugin-autocomplete": "^0.1.5",
@@ -32,7 +32,7 @@
     "dotenv": "7.0.0",
     "expand-home-dir": "0.0.3",
     "get-port": "^5.1.1",
-    "gtoken": "4.1.0",
+    "gtoken": "^5.0.4",
     "ignore": "5.0.6",
     "js-yaml": "^3.13.1",
     "memory-streams": "^0.1.3",
