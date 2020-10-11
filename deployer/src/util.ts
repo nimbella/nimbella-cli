@@ -17,7 +17,7 @@ import {
 } from './deploy-struct'
 import { getUserAgent } from './api'
 import { XMLHttpRequest } from 'xmlhttprequest'
-import * as openwhisk from 'openwhisk'
+import { Client, Dict, Activation } from 'openwhisk'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
@@ -71,26 +71,68 @@ export function loadProjectConfig(configFile: string, envPath: string, filePath:
   })
 }
 
-// Determine if a project requires building by examining its web and actions right after project reading
-export function needsBuilding(todeploy: DeployStructure): boolean {
-  const isRealBuild = (buildField: string) => {
-    return buildField && buildField !== 'identify' && buildField !== '.include'
-  }
-  if (isRealBuild(todeploy.webBuild)) {
+// Check whether a build field actually implies a build must be run
+function isRealBuild(buildField: string): boolean {
+  switch (buildField) {
+  case 'build.sh':
+  case 'build.cmd':
+  case '.build':
+  case 'package.json':
     return true
+  default:
+    return false
+  }
+}
+
+// Replace a build field with 'remote' if it is supposed to be remote according to flags, directives, environment
+function locateBuild (buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) {
+    // TODO: uncomment the 'inBrowser' test when ready.  We are currently hiding remote build capability because
+    // the client side will be merged before the server side.
+    if (isRealBuild(buildField) && (/*inBrowser || */ remoteRequired || (remoteRequested && !localRequired))) {
+      return 'remote'
+    }
+    return buildField
+  }
+
+// Set up the build fields for a project and detect conflicts.  Determine if local building is required.
+export function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): boolean {
+  const checkConflicts = (buildField: string, remote: boolean, local: boolean, tag: string) => {
+    if (remote && local) {
+      throw new Error(`Local and remote building cannot both be required (${tag})`)
+    }
+    if (remote && buildField === '.build') {
+      throw new Error(`Remote building cannot be required when using a '.build' directive (${tag})`)
+    }
+    if (local && inBrowser) {
+      throw new Error(`Local building required but cannot occur in the workbench; use the CLI (${tag})`)
+    }
+  }
+  if (todeploy.bucket) {
+    checkConflicts(todeploy.webBuild, todeploy.bucket.remoteBuild, todeploy.bucket.localBuild, 'web')
   }
   if (todeploy.packages) {
     for (const pkg of todeploy.packages) {
       if (pkg.actions) {
         for (const action of pkg.actions) {
-          if (isRealBuild(action.build)) {
-            return true
-          }
+          checkConflicts(action.build, action.remoteBuild, action.localBuild, `action ${action.name}`)
         }
       }
     }
   }
-  return false
+  const webRequiresLocal = (todeploy.bucket && todeploy.bucket.localBuild) || !!todeploy.actionWrapPackage
+  todeploy.webBuild = locateBuild(todeploy.webBuild, requestRemote, todeploy.bucket && todeploy.bucket.remoteBuild, webRequiresLocal)
+  let needsLocal = todeploy.webBuild !== 'remote' && isRealBuild(todeploy.webBuild)
+  if (todeploy.packages) {
+    for (const pkg of todeploy.packages) {
+      if (pkg.actions) {
+        for (const action of pkg.actions) {
+          action.build = locateBuild(action.build, requestRemote, action.remoteBuild, action.localBuild)
+          needsLocal = needsLocal || (action.build !== 'remote' && isRealBuild(action.build))
+        }
+      }
+    }
+  }
+  return needsLocal
 }
 
 // In project config we permit many optional string-valued members to be set to '' to remind users that they are available
@@ -141,9 +183,12 @@ function removeEmptyStringMembersFromPackages(packages: PackageSpec[]) {
 // is not expected in this context.  TODO return a list of errors not just the first error.
 export function validateDeployConfig(arg: any): string {
   let haveActionWrap = false; let haveBucket = false
+  const slice = !!arg.slice
   for (const item in arg) {
     if (!arg[item]) continue
     switch (item) {
+    case 'slice':
+      continue
     case 'cleanNamespace':
       if (!(typeof arg[item] === 'boolean')) {
         return `${item} must be a boolean`
@@ -201,6 +246,12 @@ export function validateDeployConfig(arg: any): string {
       }
       break
     }
+    case 'credentials':
+    case 'flags':
+    case 'deployerAnnotation':
+      if (slice) continue
+      // In a slice we accept these without further validation; otherwise, they are illegal
+      // Otherwise, fall through
     default:
       return `Invalid key '${item}' found in project.yml`
     }
@@ -239,6 +290,8 @@ function validateBucketSpec(arg: Record<string, any>): string {
       break
     case 'clean':
     case 'useCache':
+    case 'remoteBuild':
+    case 'localBuild':
       if (!(typeof arg[item] === 'boolean')) {
         return `'${item}' member of 'bucket' must be a boolean`
       }
@@ -333,6 +386,8 @@ function validateActionSpec(arg: Record<string, any>): string {
       break
     case 'binary':
     case 'clean':
+    case 'remoteBuild':
+    case 'localBuild':
       if (!(typeof arg[item] === 'boolean')) {
         return `'${item}' member of an 'action' must be a boolean`
       }
@@ -408,7 +463,7 @@ function validateLimits(arg: any): string {
 }
 
 // Convert convenient "Dict" to the less convenient "KeyVal[]" required in an action object
-export function keyVal(from: openwhisk.Dict): KeyVal[] {
+export function keyVal(from: Dict): KeyVal[] {
   if (!from) {
     return undefined
   }
@@ -416,8 +471,8 @@ export function keyVal(from: openwhisk.Dict): KeyVal[] {
 }
 
 // Make an openwhisk KeyVal into an openwhisk Dict (the former appears in Action and Package, the latter in ActionSpec and PackageSpec)
-export function makeDict(keyVal: KeyVal[]): openwhisk.Dict {
-  const ans: openwhisk.Dict = {}
+export function makeDict(keyVal: KeyVal[]): Dict {
+  const ans: Dict = {}
   keyVal.forEach(pair => {
     ans[pair.key] = pair.value
   })
@@ -490,7 +545,7 @@ export function wrapError(err: any, context: string): DeployResponse {
 }
 
 // Check whether the namespace for an OW client's current auth matches a desired target
-export function isTargetNamespaceValid(client: openwhisk.Client, namespace: string): Promise<boolean> {
+export function isTargetNamespaceValid(client: Client, namespace: string): Promise<boolean> {
   return getTargetNamespace(client).then(ns => {
     if (ns === namespace) {
       return Promise.resolve(true)
@@ -501,7 +556,7 @@ export function isTargetNamespaceValid(client: openwhisk.Client, namespace: stri
 }
 
 // Get the target namespace
-export function getTargetNamespace(client: openwhisk.Client): Promise<string> {
+export function getTargetNamespace(client: Client): Promise<string> {
   return client.namespaces.list().then(ns => ns[0])
 }
 
@@ -526,6 +581,10 @@ export function actionFileToParts(fileName: string): { name: string, binary: boo
     runtime = mid ? runtimeFromZipMid(mid) : runtimeFromExt(ext)
     binary = binaryFromExt(ext)
     zipped = ext === 'zip'
+  } else {
+    // No extension.  Assume binary, with unknown runtime
+    binary = true
+    zipped = false
   }
   const z = zipped ? '' : 'not '
   debug(`action ${name} is ${z}zipped`)
@@ -569,6 +628,9 @@ const extBinaryTable: ExtensionToBinary = {
 type RuntimeToExtensions = { [ key: string]: string[] }
 const validRuntimes: RuntimeToExtensions = { }
 
+// A map from unqualified runtime name to the default kind for that runtime name
+const defaultTable: Record<string, string> = { }
+
 // Provide information from runtimes.json, reading it at most once
 let runtimesRead = false
 type ExtensionDetail = { binary: boolean }
@@ -588,6 +650,7 @@ function initRuntimes() {
           // TODO we do not yet support per-kind extensions but assume that the extension of a default kind applies to the entire
           // runtime class
           validRuntimes[runtime + ':default'] = extensionNames
+          defaultTable[runtime] = entry.kind
           for (const ext of extensionNames) {
             extTable[ext] = runtime
             extBinaryTable[ext] = entry.extensions[ext].binary
@@ -641,6 +704,15 @@ function validateRuntime(kind: string): string {
     return kind
   }
   return undefined
+}
+
+// Convert a runtime name that might end in :default to a semantically identical name that does not
+export function canonicalRuntime(runtime: string): string {
+  if (runtime.endsWith(':default')) {
+    runtime = runtime.split(':')[0]
+    return defaultTable[runtime]
+  }
+  return runtime
 }
 
 // Determine whether a given extension implies binary data
@@ -865,8 +937,11 @@ export function mapActions(actions: ActionSpec[]): ActionMap {
 // Get the best available name for a project for recording.  If project is either in github or in cloned repo
 // the name should reflect the github coordinates and not include incidental aspects of the github URL.
 // If the project is just in the file system we use its absolute path (best we have)
-export async function getBestProjectName(project: DeployStructure): Promise<string> {
-  const annot = await getDeployerAnnotation(project.filePath, project.githubPath)
+export function getBestProjectName(project: DeployStructure): string {
+  const annot = project.deployerAnnotation
+  if (!annot) {
+    return project.githubPath || project.filePath
+  }
   if (annot.repository) {
     let repo = annot.repository
     if (repo.includes(':')) {
@@ -917,7 +992,7 @@ function deployerAnnotationFromGithub(githubPath: string): DeployerAnnotation {
 }
 
 // Wipe all the entities from the namespace referred to by an OW client handle
-export async function wipe(client: openwhisk.Client): Promise<void> {
+export async function wipe(client: Client): Promise<void> {
   await wipeAll(client.actions, 'Action')
   debug('Actions wiped')
   await wipeAll(client.rules, 'Rule')
@@ -1042,6 +1117,26 @@ export function digestAction(action: ActionSpec, code: string): string {
   return String(hash.digest('hex'))
 }
 
+// Get the status reporting directory, making it if it doesn't exist
+function getStatusDir(project: string): { statusDir: string, created: boolean } {
+  const statusDir = path.join(project, '.nimbella')
+  let created = false
+  if (!fs.existsSync(statusDir)) {
+    fs.mkdirSync(statusDir)
+    created = true
+  }
+  return { statusDir, created }
+}
+
+// Write the "slice result" to the status area
+// Note: this is not being used yet.  It is not clear how the remote build action is supposed to find the status area.
+// Other possibilities are to write it in a more easily found place or to write it to a file descriptor and pipe it
+// somewhere.
+export function writeSliceResult(project: string, result: string): void {
+  const file = path.join(getStatusDir(project).statusDir, 'sliceResult')
+  fs.writeFileSync(file, result)
+}
+
 // Called after a deploy step to record important information from the DeployResponse into the project.
 // Essentially a dual of loadVersions but not quite symmetrical since its argument is a DeployResponse
 // The 'replace' argument causes the new VersionEntry calculated from the DeployResponse to replace
@@ -1056,12 +1151,7 @@ export function writeProjectStatus(project: string, results: DeployResponse, rep
     debug('there is no meaningful project status to write')
     return ''
   }
-  const statusDir = path.join(project, '.nimbella')
-  let created = false
-  if (!fs.existsSync(statusDir)) {
-    fs.mkdirSync(statusDir)
-    created = true
-  }
+  const { statusDir, created } = getStatusDir(project)
   let versionList: VersionEntry[] = []
   const versionFile = path.join(statusDir, 'versions.json')
   if (fs.existsSync(versionFile)) {
@@ -1111,6 +1201,36 @@ export function loadVersions(projectPath: string, namespace: string, apihost: st
     }
   }
   return { namespace, apihost, packageVersions: {}, actionVersions: {}, webHashes: {} }
+}
+
+// Introduce small delay
+export function delay(millis: number): Promise<void> {
+  return new Promise(function(resolve) {
+    setTimeout(() => resolve(), millis)
+  })
+}
+
+// Await the completion of an action invoke (similar to kui's await)
+export async function waitForActivation(id: string, wsk: Client, waiting: ()=>void): Promise<Activation<Dict>> {
+  debug(`waiting for activation with id ${id}`)
+  for (let i = 1; i < 151; i++) {
+    try {
+      const activation = await wsk.activations.get(id)
+      if (activation.end || activation.response.status) {
+        debug('activation %s found after %d iterations', id, i)
+        return activation
+      }
+    } catch (err) {
+      if (err.statusCode !== 404) {
+        throw err
+      }
+    }
+    if (i % 10 === 0) {
+      waiting()
+    }
+    await delay(1000)
+  }
+  throw new Error(`Timed out waiting for activation with id ${id}`)
 }
 
 // Subroutine to invoke OW with a GET and return the response.  Bypasses the OW client.  Used

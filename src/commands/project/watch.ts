@@ -13,7 +13,7 @@
 
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { ProjectDeploy, processCredentials, doDeploy } from './deploy'
-import { Flags, Credentials, OWOptions, inBrowser, isGithubRef } from 'nimbella-deployer'
+import { Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay } from 'nimbella-deployer'
 import * as fs from 'fs'
 import * as chokidar from 'chokidar'
 import * as path from 'path'
@@ -33,6 +33,7 @@ export default class ProjectWatch extends NimBaseCommand {
     'web-local': ProjectDeploy.flags['web-local'],
     include: ProjectDeploy.flags.include,
     exclude: ProjectDeploy.flags.exclude,
+    'remote-build': ProjectDeploy.flags['remote-build'],
     ...NimBaseCommand.flags
   }
 
@@ -55,7 +56,7 @@ export default class ProjectWatch extends NimBaseCommand {
     }
     const { target, env, apihost, auth, insecure, yarn, include, exclude } = flags
     const cmdFlags: Flags = { verboseBuild: flags['verbose-build'], verboseZip: flags['verboseZip'], production: false,
-        incremental: true, env, yarn, webLocal: flags['web-local'], include, exclude }
+        incremental: true, env, yarn, webLocal: flags['web-local'], include, exclude, remoteBuild: flags['remote-build'] }
     this.debug('cmdFlags', cmdFlags)
     const { creds, owOptions } = await processCredentials(insecure, apihost, auth, target, logger)
     argv.forEach(project => watch(project, cmdFlags, creds, owOptions, logger))
@@ -107,7 +108,7 @@ async function fireDeploy(project: string, filename: string, cmdFlags: Flags, cr
     if (error || !result)
         return
     logger.log("Deployment complete.  Resuming watch.\n")
-    await delay().then(() => watch())
+    await delay(200).then(() => watch())
 }
 
 // Decide if a file name should be excluded from consideration when firing a deploy.
@@ -139,13 +140,6 @@ function validateProject(project: string): string|undefined {
         return undefined
     }
     return `${project} is a directory but it doesn't appear to contain a project`
-}
-
-// Introduce small delay
-function delay(): Promise<undefined> {
-    return new Promise(function (resolve) {
-        setTimeout(() => resolve(undefined), 200)
-    })
 }
 
 // Check for typical things found in a project (part of validating that a directory is a project)

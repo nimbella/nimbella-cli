@@ -31,6 +31,7 @@ Our guidelines for adding subcommands directly to `nim` are _in addition_ to ocl
 
 **(1)** We support subcommands at top level and under one level of topic.  We do not support more deeply nested topics.  You can have a command called 
 
+
 ```
 nim buy
 ```
@@ -79,5 +80,3 @@ The first two of these duplicate methods provided by `oclif`'s `Command` and sho
    - always use these utilities in preference to alternatives when you can
    - if you have a user interaction need that isn't covered by `ui.ts` then add that interaction to `ui.ts` as part of your PR and we will review it accordingly
 	- note that `ui.ts` uses `cli-ux` internally but demand-loads it when safe and provide alternatives when running in a web browser.  
-
-

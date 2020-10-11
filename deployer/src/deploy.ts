@@ -13,11 +13,11 @@
 
 import {
   DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, DeployerAnnotation, VersionEntry,
-  ProjectReader, OWOptions, KeyVal
+  ProjectReader, OWOptions, KeyVal, Feedback
 } from './deploy-struct'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse,
-  getDeployerAnnotation, straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions
+  straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions, waitForActivation
 } from './util'
 import * as openwhisk from 'openwhisk'
 import { Bucket } from '@google-cloud/storage'
@@ -42,7 +42,7 @@ export async function cleanOrLoadVersions(todeploy: DeployStructure): Promise<De
     // Incremental deployment requires the versions up front to have access to the form hashes
     todeploy.versions = loadVersions(todeploy.filePath, todeploy.credentials.namespace, todeploy.credentials.ow.apihost)
   } else {
-    if (todeploy.includer.isWebIncluded && (todeploy.cleanNamespace || (todeploy.bucket && todeploy.bucket.clean))) {
+    if (todeploy.includer.isWebIncluded && !todeploy.webBuildResult && (todeploy.cleanNamespace || (todeploy.bucket && todeploy.bucket.clean))) {
       if (todeploy.bucketClient) {
         const warn = await cleanBucket(todeploy.bucketClient, todeploy.bucket, todeploy.credentials.ow)
         if (warn) {
@@ -63,24 +63,58 @@ export async function cleanOrLoadVersions(todeploy: DeployStructure): Promise<De
 
 // Do the actual deployment (after testing the target namespace and cleaning)
 export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
-  let webLocal
+  let webLocal: string
   if (todeploy.flags.webLocal) {
     webLocal = ensureWebLocal(todeploy.flags.webLocal)
   }
-  const webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
-    todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
-  return getDeployerAnnotation(todeploy.filePath, todeploy.githubPath).then(deployerAnnot => {
-    const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy.owClient, deployerAnnot, todeploy.parameters,
-      todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader))
-    const strays = straysToResponse(todeploy.strays)
-    return Promise.all(webPromises.concat(actionPromises)).then(responses => {
-      responses.push(strays)
-      const response = combineResponses(responses)
-      response.apihost = todeploy.credentials.ow.apihost
-      if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
-      return response
-    })
+  let webPromises: Promise<DeployResponse>[]
+  const remoteResult = todeploy.webBuildResult
+  if (remoteResult) {
+    webPromises = [processRemoteResponse(remoteResult, todeploy.owClient, 'web content', todeploy.feedback)]
+  } else if (todeploy.webBuildError) {
+    webPromises = [Promise.resolve(wrapError(todeploy.webBuildError, 'web content'))]
+  } else {
+    webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
+      todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
+  }
+  const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy.owClient, todeploy.deployerAnnotation, todeploy.parameters,
+    todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader, todeploy.feedback))
+  const strays = straysToResponse(todeploy.strays)
+  return Promise.all(webPromises.concat(actionPromises)).then(responses => {
+    responses.push(strays)
+    const response = combineResponses(responses)
+    response.apihost = todeploy.credentials.ow.apihost
+    if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
+    return response
   })
+}
+
+// Process the remote result when something has been built remotely
+async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string, feedback: Feedback): Promise<DeployResponse> {
+  let activation: openwhisk.Activation<openwhisk.Dict>
+  const tick = () => feedback.progress(`Processing of '${context}' is still running remotely ...`)
+  try {
+    activation = await waitForActivation(activationId, owClient, tick)
+  } catch (err) {
+    return wrapError(err, 'waiting for remote build response for ' + context)
+  }
+  if (!activation.response || !activation.response.success) {
+    let err = 'Remote build failed to provide a result'
+    if (activation?.response?.result?.error) {
+      err = activation.response.result.error
+    }
+    return wrapError(new Error(`Remote error '${err}'`), 'running remote build for ' + context)
+  }
+  const result = activation.response.result as Record<string, any>
+  debug('Remote result was %O', result)
+  const { transcript, outcome } = result
+  if (transcript && transcript.length > 0) {
+    feedback.progress(`Transcript of remote build session for ${context}:`)
+    for (const line of transcript) {
+      feedback.progress(line)
+    }
+  }
+  return outcome
 }
 
 // Look for 'clean' flags in the actions and packages and perform the cleaning.
@@ -97,7 +131,7 @@ function cleanActionsAndPackages(todeploy: DeployStructure): Promise<DeployStruc
     } else if (pkg.actions) {
       const prefix = defaultPkg ? '' : pkg.name + '/'
       for (const action of pkg.actions) {
-        if (action.clean && todeploy.includer.isActionIncluded(pkg.name, action.name)) {
+        if (action.clean && todeploy.includer.isActionIncluded(pkg.name, action.name) && !action.buildResult) {
           delete todeploy.versions.actionVersions[action.name]
           promises.push(todeploy.owClient.actions.delete(prefix + action.name).catch(() => undefined))
         }
@@ -172,9 +206,9 @@ function main() {
 // Deploy a package, then deploy everything in it (currently just actions)
 export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, deployerAnnot: DeployerAnnotation,
   projectParams: openwhisk.Dict, projectEnv: openwhisk.Dict, namespaceIsClean: boolean, versions: VersionEntry,
-  reader: ProjectReader): Promise<DeployResponse> {
+  reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
   if (pkg.name === 'default') {
-    return Promise.all(pkg.actions.map(action => deployAction(action, wsk, '', deployerAnnot, namespaceIsClean, versions, reader)))
+    return Promise.all(pkg.actions.map(action => deployAction(action, wsk, '', deployerAnnot, namespaceIsClean, versions, reader, feedback)))
       .then(combineResponses)
   }
   // Check whether the package metadata needs to be deployed; if so, deploy it.  If not, make a vacuous response with the existing package
@@ -211,13 +245,19 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
   // Now deploy (or skip) the actions of the package
   const prefix = pkg.name + '/'
   const promises = pkg.actions.map(action => deployAction(action, wsk, prefix, deployerAnnot, pkg.clean || namespaceIsClean,
-    versions, reader)).concat(Promise.resolve(pkgResponse))
+    versions, reader, feedback)).concat(Promise.resolve(pkgResponse))
   return Promise.all(promises).then(responses => combineResponses(responses))
 }
 
 // Deploy an action
 function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
-  actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader): Promise<DeployResponse> {
+  actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
+  if (action.buildError) {
+    return Promise.resolve(wrapError(action.buildError, `action '${prefix}${action.name}'`))
+  }
+  if (action.buildResult) {
+    return processRemoteResponse(action.buildResult, wsk, action.name, feedback)
+  }
   if (action.code) {
     return deployActionFromCode(action, prefix, action.code, wsk, deplAnnot, actionIsClean, versions)
   }

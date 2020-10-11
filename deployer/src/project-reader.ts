@@ -14,7 +14,7 @@
 import * as path from 'path'
 import { getUserAgent } from './api'
 import { DeployStructure, PackageSpec, ActionSpec, WebResource, Includer, ProjectReader, PathKind, Feedback } from './deploy-struct'
-import { emptyStructure, actionFileToParts, filterFiles, convertToResources, promiseFilesAndFilterFiles, loadProjectConfig, errorStructure } from './util'
+import { emptyStructure, actionFileToParts, filterFiles, convertToResources, promiseFilesAndFilterFiles, loadProjectConfig, errorStructure, getDeployerAnnotation, getBestProjectName } from './util'
 import { getBuildForAction, getBuildForWeb } from './finder-builder'
 import { isGithubRef, parseGithubRef, fetchProject } from './github'
 import * as makeDebug from 'debug'
@@ -58,11 +58,20 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
       filePath = await fetchProject(github, getUserAgent())
       reader = makeFileReader(filePath)
     } else {
-      debug('Github path which can be remote, making Github reader')
+      debug('Github path which is permitted to be remote, making Github reader')
       reader = makeGithubReader(github, getUserAgent())
     }
   } else {
     debug('not a github path, making file reader')
+    if (filePath.startsWith('slice:')) {
+      debug('fetching slice')
+      // The following is dynamic instead of static to avoid a webpack issue.  This code path won't happen in a browser
+      const fetchSlice: (arg: string) => Promise<string> = require('./slice-reader').fetchSlice
+      filePath = await fetchSlice(filePath.replace('slice:', ''))
+      if (!filePath) {
+        throw new Error('Could not fetch slice')
+      }
+    }
     reader = makeFileReader(filePath)
   }
   const webDir = 'web'; const pkgDir = 'packages'
@@ -122,16 +131,13 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
 // assemble a "Promise.all" for the combined work
 export async function buildStructureParts(topLevel: TopLevel): Promise<DeployStructure[]> {
   const { web, packages, config, strays, filePath, env, githubPath, includer, reader, feedback } = topLevel
-  let packagesGithub = packages
-  if (githubPath) {
-    if (packages) {
-      packagesGithub = path.join(githubPath, packages)
-    }
-  }
-  debug('display path for actions is %O', packagesGithub)
+  let configPart = await readConfig(config, env, filePath, includer, reader, feedback)
+  const deployerAnnotation = configPart.deployerAnnotation || await getDeployerAnnotation(filePath, githubPath)
+  configPart = Object.assign(configPart, { strays, filePath, githubPath, includer, reader, feedback, deployerAnnotation })
+  const displayName = getBestProjectName(configPart)
+  debug('display path for actions is %O', displayName)
   const webPart = await getBuildForWeb(web, reader).then(build => buildWebPart(web, build, reader))
-  const actionsPart = await buildActionsPart(packages, packagesGithub, includer, reader)
-  const configPart = await readConfig(config, env, filePath, strays, githubPath, includer, reader, feedback)
+  const actionsPart = await buildActionsPart(packages, displayName, includer, reader)
   return [webPart, actionsPart, configPart]
 }
 
@@ -384,17 +390,16 @@ function duplicateName(actionName: string, formerUse: string, newUse: string) {
 }
 
 // Read the config file if present.  For convenience, the extra information not merged from elsewhere is tacked on here
-function readConfig(configFile: string, envPath: string, filePath: string, strays: string[], githubPath: string,
-  includer: Includer, reader: ProjectReader, feedback: Feedback): Promise<DeployStructure> {
-  const alwaysIncluded = { strays, filePath, githubPath, includer, reader, feedback }
+function readConfig(configFile: string, envPath: string, filePath: string, includer: Includer, reader: ProjectReader,
+  feedback: Feedback): Promise<DeployStructure> {
   if (!configFile) {
     debug('No config file found')
-    const ans = Object.assign({}, emptyStructure(), alwaysIncluded)
+    const ans = Object.assign({}, emptyStructure())
     return Promise.resolve(ans)
   }
   debug('Reading config file')
   return loadProjectConfig(configFile, envPath, filePath, reader, feedback).then(config => trimConfigWithIncluder(config, includer))
-    .then(config => Object.assign({}, config, alwaysIncluded)).catch(err => errorStructure(err))
+    .catch(err => errorStructure(err))
 }
 
 // Given a DeployStructure with web and package sections, trim those sections according to the rules of an Includer

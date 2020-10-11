@@ -18,7 +18,7 @@ import { DeployStructure, DeployResponse, PackageSpec, OWOptions, WebResource, C
 import { readTopLevel, buildStructureParts, assembleInitialStructure } from './project-reader'
 import {
   isTargetNamespaceValid, wrapError, wipe, saveUsFromOurselves, writeProjectStatus, getTargetNamespace,
-  needsBuilding, errorStructure, getBestProjectName, inBrowser
+  checkBuildingRequirements, errorStructure, getBestProjectName, inBrowser
 } from './util'
 import { openBucketClient } from './deploy-to-bucket'
 import { buildAllActions, buildWeb } from './finder-builder'
@@ -30,9 +30,10 @@ import * as makeDebug from 'debug'
 const debug = makeDebug('nim:deployer:api')
 
 // Initialize the API by 1. purging existing __OW_ entries from the environment, 2.  setting __OW_USER_AGENT, 3. returning a map of
-// entries that were purged.
+// entries that were purged.   Also saves the __OW_NAMESPACE and __OW_API_HOST values in the environment, renamed, for the special
+// cases where there is no credential store but certain code paths still must work.  An example is the slice reader.
 export function initializeAPI(userAgent: string): {[key: string]: string} {
-  const result = {}
+  const result: Record<string, string> = {}
   for (const item in process.env) {
     if (item.startsWith('__OW_')) {
       result[item] = process.env[item]
@@ -40,6 +41,13 @@ export function initializeAPI(userAgent: string): {[key: string]: string} {
     }
   }
   process.env.__OW_USER_AGENT = userAgent
+  // Careful with these transfers.  Assigning a value to the env always casts to string (even undefined -> "undefined")
+  if (result.__OW_NAMESPACE) {
+    process.env.savedOW_NAMESPACE = result.__OW_NAMESPACE
+  }
+  if (result.__OW_API_HOST) {
+    process.env.savedOW_API_HOST = result.__OW_API_HOST
+  }
   return result
 }
 
@@ -57,7 +65,7 @@ export function deployProject(path: string, owOptions: OWOptions, credentials: C
   debug('deployProject invoked with incremental %s', flags.incremental)
   return readPrepareAndBuild(path, owOptions, credentials, persister, flags).then(spec => {
     if (spec.error) {
-      debug('An error was caught prior to deployment: %O', spec.error)
+      debug('An error was caught prior to %O:', spec.error)
       return Promise.resolve(wrapError(spec.error, undefined))
     }
     return deploy(spec)
@@ -75,7 +83,7 @@ export function readPrepareAndBuild(path: string, owOptions: OWOptions, credenti
 export function readAndPrepare(path: string, owOptions: OWOptions, credentials: Credentials, persister: Persister,
   flags: Flags, userAgent?: string, feedback?: Feedback): Promise<DeployStructure> {
   const includer = makeIncluder(flags.include, flags.exclude)
-  return readProject(path, flags.env, includer, feedback).then(spec => spec.error ? spec
+  return readProject(path, flags.env, includer, flags.remoteBuild, feedback).then(spec => spec.error ? spec
     : prepareToDeploy(spec, owOptions, credentials, persister, flags))
 }
 
@@ -85,7 +93,7 @@ export function deploy(todeploy: DeployStructure): Promise<DeployResponse> {
   return cleanOrLoadVersions(todeploy).then(doDeploy).then(results => {
     if (!todeploy.githubPath) {
       const statusDir = writeProjectStatus(todeploy.filePath, results, todeploy.includer.isIncludingEverything())
-      if (statusDir) {
+      if (statusDir && !todeploy.slice) {
         todeploy.feedback.progress(`Deployment status recorded in '${statusDir}'`)
       }
     }
@@ -97,46 +105,69 @@ export function deploy(todeploy: DeployStructure): Promise<DeployResponse> {
 }
 
 // Read the information contained in the project, initializing the DeployStructure
-export async function readProject(projectPath: string, envPath: string, includer: Includer,
+export async function readProject(projectPath: string, envPath: string, includer: Includer, requestRemote: boolean,
   feedback: Feedback = new DefaultFeedback()): Promise<DeployStructure> {
   debug('Starting readProject, projectPath=%s, envPath=%s', projectPath, envPath)
-  const ans = await readTopLevel(projectPath, envPath, includer, false, feedback).then(buildStructureParts).then(assembleInitialStructure)
-    .catch((err) => { return errorStructure(err) })
+  let ans: DeployStructure
+  try {
+    const topLevel = await readTopLevel(projectPath, envPath, includer, false, feedback)
+    const parts = await buildStructureParts(topLevel)
+    ans = assembleInitialStructure(parts)
+  } catch (err) {
+    return errorStructure(err)
+  }
   debug('evaluating the just-read project: %O', ans)
-  if (needsBuilding(ans) && ans.reader.getFSLocation() === null) {
-    debug("project '%s' will be re-read and cached because it's a github project that needs building", projectPath)
+  let needsLocalBuilds: boolean
+  try {
+    needsLocalBuilds = checkBuildingRequirements(ans, requestRemote)
+    debug('needsLocalBuilds=%s', needsLocalBuilds)
+  } catch (err) {
+    return errorStructure(err)
+  }
+  if (needsLocalBuilds && ans.reader.getFSLocation() === null) {
+    debug("project '%s' will be re-read and cached because it's a github project that needs local building", projectPath)
     if (inBrowser) {
       return errorStructure(new Error(`Project '${projectPath}' cannot be deployed from the cloud because it requires building`))
     }
-    return readTopLevel(projectPath, envPath, includer, true, feedback).then(buildStructureParts).then(assembleInitialStructure)
-      .catch((err) => { return errorStructure(err) })
-  } else {
-    return ans
+    try {
+      const topLevel = await readTopLevel(projectPath, envPath, includer, true, feedback)
+      const parts = await buildStructureParts(topLevel)
+      ans = assembleInitialStructure(parts)
+    } catch (err) {
+      return errorStructure(err)
+    }
   }
+  return ans
 }
 
 // 'Build' the project by running the "finder builder" steps in each action-as-directory and in the web directory
 export function buildProject(project: DeployStructure): Promise<DeployStructure> {
   debug('Starting buildProject with spec %O', project)
-  let webPromise: Promise<WebResource[]>
+  let webPromise: Promise<WebResource[]|Error>
   project.sharedBuilds = { }
   if (project.webBuild) {
-    const displayPath = project.githubPath || project.filePath
-    webPromise = buildWeb(project.webBuild, project.sharedBuilds, 'web', path.join(displayPath, 'web'),
-      project.flags, project.reader, project.feedback)
+    webPromise = buildWeb(project).catch(err => Promise.resolve(err))
   }
-  const actionPromise: Promise<PackageSpec[]> = buildAllActions(project.packages, project.sharedBuilds, project.flags, project.reader, project.feedback)
+  const actionPromise: Promise<PackageSpec[]> = buildAllActions(project)
   if (webPromise) {
     if (actionPromise) {
       return Promise.all([webPromise, actionPromise]).then(result => {
         const [web, packages] = result
-        project.web = web
+        if (web instanceof Error) {
+          project.webBuildError = web
+        } else {
+          project.web = web
+        }
         project.packages = packages
         return project
       }).catch(err => errorStructure(err))
     } else {
       return webPromise.then(web => {
-        project.web = web
+        if (web instanceof Error) {
+          project.webBuildError = web
+        } else {
+          project.web = web
+        }
         return project
       }).catch(err => errorStructure(err))
     }
@@ -160,10 +191,17 @@ export function buildProject(project: DeployStructure): Promise<DeployStructure>
 export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWOptions, credentials: Credentials, persister: Persister,
   flags: Flags): Promise<DeployStructure> {
   debug('Starting prepare with spec: %O', inputSpec)
+  // 0. Handle slice.  In that case, credentials and flags come from the DeployStructure
+  if (inputSpec.slice) {
+    debug('Retrieving credentials and flags from spec for slice')
+    credentials = inputSpec.credentials
+    flags = inputSpec.flags
+  }
   // 1.  Acquire credentials if not already present
   let isTest = false
   let isProduction = false
   if (!credentials) {
+    debug('Finding credentials locally')
     let namespace: string
     if (typeof inputSpec.targetNamespace === 'string') {
       namespace = inputSpec.targetNamespace
@@ -187,15 +225,18 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
     }
     if (namespace) {
       // The config specified a target namespace so attempt to use it.
+      debug('Retrieving specific credentials for namespace %s', namespace)
       credentials = await getCredentialsForNamespace(namespace, owOptions.apihost, persister)
     } else {
       // There is no target namespace so get credentials for the current one
       let badCredentials: Error
+      debug('Attempting to get credentials for current namespace')
       credentials = await getCredentials(persister).catch(err => {
         badCredentials = err
         return undefined
       })
       if (badCredentials) {
+        debug('Could not get credentials, returning error structure with %O', badCredentials)
         return errorStructure(badCredentials)
       }
     }

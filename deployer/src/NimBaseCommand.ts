@@ -57,7 +57,7 @@ export interface NimLogger {
   logJSON: (entity: Record<string, unknown>) => void
 }
 
-// Wrap the logger in a Feedback for using the deployer API
+// Wrap the logger in a Feedback for using the deployer API.
 export class NimFeedback implements Feedback {
   logger: NimLogger
   constructor(logger: NimLogger) {

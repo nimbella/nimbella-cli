@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, parseGithubRef } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger } from 'nimbella-deployer'
 import { readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
     computeBucketDomainName, isGithubRef, authPersister, inBrowser, getGithubAuth } from 'nimbella-deployer';
 import * as path from 'path'
@@ -33,6 +33,7 @@ export class ProjectDeploy extends NimBaseCommand {
     'web-local': flags.string({ description: 'A local directory to receive web deploy, instead of uploading'}),
     include: flags.string({ description: 'Project portions to include' }),
     exclude: flags.string({ description: 'Project portions to exclude' }),
+    'remote-build': flags.boolean({ description: 'Run builds remotely', hidden: true }),
     incremental: flags.boolean({ description: 'Deploy only changes since last deploy' }),
     'anon-github': flags.boolean({ description: 'Attempt GitHub deploys anonymously'} ),
     ...NimBaseCommand.flags
@@ -59,7 +60,7 @@ export class ProjectDeploy extends NimBaseCommand {
       logger.handleError(`you don't have GitHub authorization.  Use 'nim auth github --initial' to activate it.`)
     }
     const cmdFlags: Flags = { verboseBuild: flags['verbose-build'], verboseZip: flags['verbose-zip'], production, incremental, env, yarn,
-      webLocal: flags['web-local'], include, exclude }
+      webLocal: flags['web-local'], include, exclude, remoteBuild: flags['remote-build'] }
     this.debug('cmdFlags', cmdFlags)
     const { creds, owOptions } = await processCredentials(insecure, apihost, auth, target, logger)
     this.debug('creds', creds)
@@ -108,14 +109,15 @@ export async function processCredentials(ignore_certs: boolean, apihost: string|
 // Deploy one project
 export async function doDeploy(project: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions, watching: boolean,
     logger: NimLogger): Promise<boolean> {
-  let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, undefined, new NimFeedback(logger))
+  const feedback = project.startsWith("slice:") ? new NimFeedback(new CaptureLogger()) : new NimFeedback(logger)
+  let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, undefined, feedback)
    if (!todeploy) {
     return false
   } else if (todeploy.error) {
       logger.displayError('', todeploy.error)
       return false
   }
-  if (!watching) {
+  if (!watching && !todeploy.slice) {
     displayHeader(project, todeploy.credentials, logger)
   }
   todeploy = await buildProject(todeploy)
@@ -124,6 +126,9 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
       return false
   }
   const result: DeployResponse = await deploy(todeploy)
+  if (todeploy.slice) {
+    return displaySliceResult(result, logger, feedback)
+  }
   return displayResult(result, watching, cmdFlags.webLocal, logger)
 }
 
@@ -139,6 +144,26 @@ function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
   }
   const projectPath = isGithubRef(project) ? project : path.resolve(project)
   logger.log(`Deploying project '${projectPath}'${namespaceClause}${hostClause}`)
+}
+
+// Display the result of a successful run when deploying a slice
+// The output should be the DeployResponse as JSON on a single line, combined with the Feedback transcript if any
+function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback: any): boolean {
+  function replaceErrors(_key: string, value: any) {
+    if (value instanceof Error) {
+      const error = {};
+      Object.getOwnPropertyNames(value).forEach(function (key) {
+        error[key] = value[key];
+      });
+      return error;
+    }
+    return value;
+  }
+  const transcript = feedback.logger.captured
+  const result = { transcript, outcome }
+  const toDisplay = JSON.stringify(result, replaceErrors)
+  logger.log(toDisplay)
+  return outcome.failures.length === 0
 }
 
 // Display the result of a successful run
@@ -198,14 +223,15 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
       }
       if (result.failures.length > 0) {
           success = false
-          logger.displayError('Failures:')
+          logger.log('Failures:')
           for (const err of result.failures) {
               success = false
               const context = (err as any)['context']
               if (context) {
-                  logger.displayError(`While deploying ${context}:`, err)
+                  logger.displayError(`While deploying ${context}`, err)
+              } else {
+                logger.displayError('', err)
               }
-              logger.displayError('', err)
           }
       }
   }

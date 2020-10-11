@@ -51,7 +51,7 @@ export interface ActionSpec {
     name: string // The name of the action
     // The following are used to assemble 'exec'.  Currently, you can't specify exec directly
     file?: string // The path to the file comprising the action (possibly a zip file)
-    displayFile?: string // The file path but in github when applicable, otherwise undefined
+    displayFile?: string // The file path to display in messages
     code?: string // The code of the action (bypasses file reading; used internally; not specifiable in the config)
     runtime?: string // The runtime to use for the action
     main?: string // The 'main' directive if needed
@@ -65,9 +65,13 @@ export interface ActionSpec {
     environment?: Dict // Bound parameters for the action destined to go in the environment
     limits?: Limits // Action limits (time, memory, logs)
     clean?: boolean // Indicates that an old copy of the action should be removed before deployment
+    remoteBuild?: boolean // States that the build (if any) must be done remotely
+    localBuild?: boolean // States that the build (if any) must be done locally (precludes a github deploy in the cloud)
     // Build information (not specifiable in the config)
     build?: string
     wrapping?: string
+    buildResult?: string // The activation id of the remote build
+    buildError?: Error // Error reported from the build step
 }
 
 // Information of various kinds typically specified on the command line
@@ -81,6 +85,7 @@ export interface Flags {
     webLocal: string|undefined
     include: string|undefined
     exclude: string|undefined
+    remoteBuild: boolean
 }
 
 // Provides the status of a shared build
@@ -126,9 +131,13 @@ export interface DeployStructure {
     actionWrapPackage?: string // The name of a package into which web resources will be action-wrapped.
     parameters?: Dict // Parameters to apply to all packages in the project
     environment?: Dict // Environment to apply to all packages in the project
-    // The following fields are not permitted in project.yml but are filled in internally
+    // The following fields are not documented for inclusion project.yml but may be present in a project slice config (remote build)
+    // They are typically added internally.
+    slice?: boolean // Labels this DeployStructure as belonging to a a project slice
     credentials?: Credentials // The full credentials for the deployment (consistent with targetNamespace if one was specified)
     flags? : Flags // options typically specified on the command line
+    deployerAnnotation?: DeployerAnnotation // The deployer annotation to use (with the digest undefined, as it varies)
+    // The following fields are never permitted in project.yml but are always added internally
     webBuild?: string // Type of build (build.sh or package.json) to apply to the web directory
     sharedBuilds?: BuildTable // The build table for this project, populated as shared builds are initiated
     strays?: string[] // files or directories found in the project that don't fit the model, not necessarily an error
@@ -140,7 +149,9 @@ export interface DeployStructure {
     reader?: ProjectReader // The project reader to use
     versions?: VersionEntry // The VersionEntry for credentials.namespace on the selected API host if available
     feedback?: Feedback // The object to use for immediate communication to the user (e.g. for warnings and progress reports)
-    error?: Error // Records an error in reading, preparing, or building; the structure should not be used
+    error?: Error // Records an error in reading or preparing, or a terminal error in building; the structure should not be used
+    webBuildError?: Error // Indicates an error in building the web component; the structure is usable but the failure should be reported
+    webBuildResult?: string // activation id of remote build
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)
@@ -157,7 +168,9 @@ export interface BucketSpec {
     mainPageSuffix?: string // The suffix to append to any directory URL (including the bucket root) to form the URL of a web page (defaults to 'index.html')
     notFoundPage?: string // The name of a page (relative to the root) to show on 404 errors.
     clean?: boolean // Deletes existing content starting at prefixPath (or the root if no prefixPath) before deploying new content
-    useCache?: boolean // If true, default caching (one hour) is enabled.  Otherwise a Cache-Control header of `no-cache` is set
+    useCache?: boolean // If true, default cacheing (one hour) is enabled.  Otherwise a Cache-Control header of `no-cache` is set
+    remoteBuild?: boolean // States that the build (if any) must be done remotely
+    localBuild?: boolean // States that the build (if any) must be done locally (precludes a github deploy in the cloud)
  }
 
 // Types used in the DeployResponse
@@ -188,6 +201,28 @@ export interface DeployResponse {
     actionVersions: VersionMap
     apihost?: string
     webHashes?: { [key: string]: string }
+}
+
+// Structure sent to the remote builder
+// This declaration is taken directly from https://github.com/nimbella-corp/main/tree/master/builder/docs
+// Most fields are irrelevant to deployer use.  I believe
+//    'auth' is required in order to authenticate the request.
+//    'code' will contain the zipped slice (how do I convey that this contains a zipped slice and not the legacy input to the builder?  Do I need to?)
+//    'binary' will always be true
+//    'kind' will be set to convey the runtime to use (must support pre-compile, which hopefully will be every runtime soon)
+//    'action' may contain the action name but I don't expect it to be used since the builder shouldn't deploy slices itself.  Also, if
+//      the slice is a web build, 'action' will be set to ''.
+//    'main' and 'extra' will be unused (since `nim project deploy` will deploy the slice).   I will set them to empty strings.
+export interface SliceRequest {
+  value: {
+    auth: string
+    code: string
+    binary: boolean
+    main: string
+    kind: string
+    action: string
+    extra: any
+  }
 }
 
 // The version file entry for a given deployment
