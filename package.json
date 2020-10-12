@@ -27,7 +27,7 @@
     "axios": "^0.19.2",
     "chalk": "^4.1.0",
     "chokidar": "^3.4.0",
-    "commander": "nimbella/commander-cli#8f31018077bdb6b3177d96d8932affbece9b72e2",
+    "commander": "nimbella/commander-cli#820440347c5d46092138fe6c4a36004f14a2ad71",
     "debug": "^4.1.1",
     "dotenv": "7.0.0",
     "expand-home-dir": "0.0.3",
