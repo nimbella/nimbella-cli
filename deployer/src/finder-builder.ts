@@ -15,7 +15,7 @@ import { spawn } from 'child_process'
 import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback, Credentials } from './deploy-struct'
 import {
   FILES_TO_SKIP, actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
-  promiseFilesAndFilterFiles,
+  promiseFilesAndFilterFiles, agreeOnRuntime,
   canonicalRuntime, getBestProjectName
 } from './util'
 import * as path from 'path'
@@ -42,6 +42,10 @@ interface Ignore {
 const ZIP_TARGET = '__deployer__.zip'
 const BUILDER_PREFIX = '.nimbella/builds'
 const BUILDER_ACTION_STEM = '/nimbella/builder/build_'
+const CANNED_REMOTE_BUILD = `
+#!/bin/bash
+/defaultBuild
+`
 
 // Determine the build type for an action that is defined as a directory
 export function getBuildForAction(filepath: string, reader: ProjectReader): Promise<string> {
@@ -129,6 +133,7 @@ function buildAction(action: ActionSpec, spec: DeployStructure): Promise<ActionS
     return identifyActionFiles(action,
       flags.incremental, flags.verboseZip, reader, feedback)
   case 'remote':
+  case 'remote-default':
     checkBuiltLocally(reader, action.file)
     return doRemoteActionBuild(action, spec)
   default:
@@ -471,7 +476,7 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
   // Zip the actionPath, also determining runtime if the action spec doesn't already have one
   debug('zipping action path %s for project slice', action.file)
-  const runtime = await appendToZip(zip, action.file, project.reader)
+  const runtime = await appendToZip(zip, action.file, project.reader, action.build === 'remote-default')
   if (!action.runtime) {
     if (!runtime) {
       throw new Error(`Could not determine runtime for remote build of '${actionName}'.  You may need to specify it in 'project.yml'`)
@@ -495,20 +500,34 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   return action
 }
 
-// Zip a file or directory for a remote build slice.  For actions, also attempts to determine a runtime
-// For web builds, the returned 'runtime' is irrelevant and can be ignored
-async function appendToZip(zip: archiver.Archiver, path: string, reader: ProjectReader): Promise<string> {
-  const kind = await reader.getPathKind(path)
+// Zip a file or directory for a remote build slice.  For actions, also attempts to determine a runtime.
+// For web builds, the returned 'runtime' is irrelevant and can be ignored.  If the generateBuild
+// flag is true, then add a two-line `build.sh`.  This may require changing the single-file case to
+// a multi-file case.
+async function appendToZip(zip: archiver.Archiver, actionPath: string, reader: ProjectReader, generateBuild: boolean): Promise<string> {
+  const kind = await reader.getPathKind(actionPath)
   let analyzeForRuntime: string[]
   if (kind.isFile) {
-    await appendAndCheck(zip, path, path, reader)
-    analyzeForRuntime = [path]
+    if (generateBuild) {
+      // Change to multi-file case, although there is still only one source file
+      const file = path.join(actionPath, path.basename(actionPath))
+      await appendAndCheck(zip, file, actionPath, reader)
+      const buildFile = path.join(actionPath, 'build.sh')
+      zip.append(CANNED_REMOTE_BUILD, { name: buildFile, mode: 0o777 })
+    } else {
+      await appendAndCheck(zip, actionPath, actionPath, reader)
+    }
+    analyzeForRuntime = [actionPath]
   } else if (kind.isDirectory) {
     zipDebug('getting contents of directory %s for remote build slice', path)
-    const files = await promiseFilesAndFilterFiles(path, reader)
+    const files = await promiseFilesAndFilterFiles(actionPath, reader)
     analyzeForRuntime = files
     for (const file of files) {
-      await appendAndCheck(zip, file, path, reader)
+      await appendAndCheck(zip, file, actionPath, reader)
+    }
+    if (generateBuild) {
+      const buildFile = path.join(actionPath, 'build.sh')
+      zip.append(CANNED_REMOTE_BUILD, { name: buildFile, mode: 0o777 })
     }
   }
   return agreeOnRuntime(analyzeForRuntime)
@@ -534,7 +553,7 @@ async function doRemoteWebBuild(project: DeployStructure) {
   // Get the project slice in convenient form
   const spec = makeConfigFromWebSpec(project)
   // Zip the web path
-  await appendToZip(zip, 'web', project.reader)
+  await appendToZip(zip, 'web', project.reader, false)
   // Add the project.yml
   const config = yaml.safeDump(spec)
   zip.append(config, { name: 'project.yml' })
@@ -672,22 +691,6 @@ async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owC
 // Read a directory and filter the result
 function readDirectory(filepath: string, reader: ProjectReader): Promise<PathKind[]> {
   return reader.readdir(filepath).then(filterFiles)
-}
-
-// Check whether a list of names that are candidates for zipping can agree on a runtime.  This is called only when the
-// config doesn't already provide a runtime or on the raw material in the case of remote builds.
-function agreeOnRuntime(items: string[]): string {
-  let agreedRuntime: string
-  items.forEach(item => {
-    const { runtime } = actionFileToParts(item)
-    if (runtime) {
-      if (agreedRuntime && runtime !== agreedRuntime) {
-        return undefined
-      }
-      agreedRuntime = runtime
-    }
-  })
-  return agreedRuntime
 }
 
 // Find the "dominant" special file in a collection of files within an action or web directory, while checking for some errors

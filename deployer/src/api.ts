@@ -119,7 +119,7 @@ export async function readProject(projectPath: string, envPath: string, includer
   debug('evaluating the just-read project: %O', ans)
   let needsLocalBuilds: boolean
   try {
-    needsLocalBuilds = checkBuildingRequirements(ans, requestRemote)
+    needsLocalBuilds = await checkBuildingRequirements(ans, requestRemote)
     debug('needsLocalBuilds=%s', needsLocalBuilds)
   } catch (err) {
     return errorStructure(err)

@@ -95,7 +95,7 @@ function locateBuild (buildField: string, remoteRequested: boolean, remoteRequir
   }
 
 // Set up the build fields for a project and detect conflicts.  Determine if local building is required.
-export function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): boolean {
+export async function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): Promise<boolean> {
   const checkConflicts = (buildField: string, remote: boolean, local: boolean, tag: string) => {
     if (remote && local) {
       throw new Error(`Local and remote building cannot both be required (${tag})`)
@@ -127,12 +127,62 @@ export function checkBuildingRequirements(todeploy: DeployStructure, requestRemo
       if (pkg.actions) {
         for (const action of pkg.actions) {
           action.build = locateBuild(action.build, requestRemote, action.remoteBuild, action.localBuild)
+          if (requestRemote && action.build !== 'remote') {
+            if (await hasDefaultRemote(action, todeploy.reader)) {
+              action.build = 'remote-default'
+              continue // does not effect needsLocal
+            }
+          }
           needsLocal = needsLocal || (action.build !== 'remote' && isRealBuild(action.build))
         }
       }
     }
   }
   return needsLocal
+}
+
+// Determine if an action has a default remote build.  This depends on the action's 'kind': currently, swift, go, and Java have a
+// default remote build while other languages do not.   This function is designed to be called before the builder's runtime determination
+// so it is prepared to peek into the project to figure out the operative runtime.
+async function hasDefaultRemote(action: ActionSpec, reader: ProjectReader): Promise<boolean> {
+  let runtime = action.runtime
+  if (!runtime) {
+    const pathKind = await reader.getPathKind(action.file)
+    if (pathKind.isFile) {
+      ( { runtime } = actionFileToParts(pathKind.name))
+    } else if (pathKind.isDirectory) {
+      const files = await promiseFilesAndFilterFiles(action.file, reader)
+      runtime = agreeOnRuntime(files)
+    } else {
+      return false
+    }
+  }
+  const kind = runtime.split(':')[0]
+  switch (kind) {
+    // TODO shouild this be an external table?
+    case 'go':
+    case 'swift':
+    case 'java':
+      return true
+    default:
+      return false
+  }
+}
+
+// Check whether a list of names that are candidates for zipping can agree on a runtime.  This is called only when the
+// config doesn't already provide a runtime or on the raw material in the case of remote builds.
+export function agreeOnRuntime(items: string[]): string {
+  let agreedRuntime: string
+  items.forEach(item => {
+    const { runtime } = actionFileToParts(item)
+    if (runtime) {
+      if (agreedRuntime && runtime !== agreedRuntime) {
+        return undefined
+      }
+      agreedRuntime = runtime
+    }
+  })
+  return agreedRuntime
 }
 
 // In project config we permit many optional string-valued members to be set to '' to remind users that they are available
