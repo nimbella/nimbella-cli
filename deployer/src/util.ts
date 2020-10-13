@@ -141,9 +141,9 @@ export async function checkBuildingRequirements(todeploy: DeployStructure, reque
   return needsLocal
 }
 
-// Determine if an action has a default remote build.  This depends on the action's 'kind': currently, swift, go, and Java have a
-// default remote build while other languages do not.   This function is designed to be called before the builder's runtime determination
-// so it is prepared to peek into the project to figure out the operative runtime.
+// Determine if an action has a default remote build.  This depends on the action's 'kind': currently, swift and go have a
+// default remote build while other languages do not.   This function is designed to be called before the runtime is otherwise
+// known so it is prepared to peek into the project to figure out the operative runtime.
 async function hasDefaultRemote(action: ActionSpec, reader: ProjectReader): Promise<boolean> {
   let runtime = action.runtime
   if (!runtime) {
@@ -162,7 +162,6 @@ async function hasDefaultRemote(action: ActionSpec, reader: ProjectReader): Prom
     // TODO shouild this be an external table?
     case 'go':
     case 'swift':
-    case 'java':
       return true
     default:
       return false

@@ -44,7 +44,7 @@ const BUILDER_PREFIX = '.nimbella/builds'
 const BUILDER_ACTION_STEM = '/nimbella/builder/build_'
 const CANNED_REMOTE_BUILD = `
 #!/bin/bash
-/defaultBuild
+/bin/defaultBuild
 `
 
 // Determine the build type for an action that is defined as a directory
@@ -476,7 +476,7 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
   // Zip the actionPath, also determining runtime if the action spec doesn't already have one
   debug('zipping action path %s for project slice', action.file)
-  const runtime = await appendToZip(zip, action.file, project.reader, action.build === 'remote-default')
+  const runtime = await appendToZip(zip, action.file, project.reader, action.build === 'remote-default' ? action.name : '')
   if (!action.runtime) {
     if (!runtime) {
       throw new Error(`Could not determine runtime for remote build of '${actionName}'.  You may need to specify it in 'project.yml'`)
@@ -501,18 +501,21 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
 }
 
 // Zip a file or directory for a remote build slice.  For actions, also attempts to determine a runtime.
-// For web builds, the returned 'runtime' is irrelevant and can be ignored.  If the generateBuild
-// flag is true, then add a two-line `build.sh`.  This may require changing the single-file case to
-// a multi-file case.
-async function appendToZip(zip: archiver.Archiver, actionPath: string, reader: ProjectReader, generateBuild: boolean): Promise<string> {
+// For web builds, the returned 'runtime' is irrelevant and can be ignored.  If the generateBuild argument
+// is non-empty it provides the action directory name and indicates that we should add a two-line `build.sh`.
+// This may require changing the single-file case to a multi-file case.
+async function appendToZip(zip: archiver.Archiver, actionPath: string, reader: ProjectReader, generateBuild: string): Promise<string> {
   const kind = await reader.getPathKind(actionPath)
   let analyzeForRuntime: string[]
   if (kind.isFile) {
     if (generateBuild) {
       // Change to multi-file case, although there is still only one source file
-      const file = path.join(actionPath, path.basename(actionPath))
-      await appendAndCheck(zip, file, actionPath, reader)
-      const buildFile = path.join(actionPath, 'build.sh')
+      const parent = path.dirname(actionPath)
+      const simpleFile = path.basename(actionPath)
+      const name = path.join(parent, generateBuild, simpleFile)
+      const contents = await reader.readFileContents(actionPath)
+      zip.append(contents, { name, mode: 0o666 })
+      const buildFile = path.join(parent, generateBuild, 'build.sh')
       zip.append(CANNED_REMOTE_BUILD, { name: buildFile, mode: 0o777 })
     } else {
       await appendAndCheck(zip, actionPath, actionPath, reader)
@@ -553,7 +556,7 @@ async function doRemoteWebBuild(project: DeployStructure) {
   // Get the project slice in convenient form
   const spec = makeConfigFromWebSpec(project)
   // Zip the web path
-  await appendToZip(zip, 'web', project.reader, false)
+  await appendToZip(zip, 'web', project.reader, '')
   // Add the project.yml
   const config = yaml.safeDump(spec)
   zip.append(config, { name: 'project.yml' })
