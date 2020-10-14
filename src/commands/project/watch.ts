@@ -80,7 +80,7 @@ function watch(project: string, cmdFlags: Flags, creds: Credentials|undefined, o
     }
     const watch = () => {
         // logger.log("Opening new watcher")
-        watcher = chokidar.watch(project, { ignoreInitial: true, followSymlinks: false })
+        watcher = chokidar.watch(project, { ignoreInitial: true, followSymlinks: false, usePolling: false, useFsEvents: false })
         watcher.on('all', async (event, filename) => await fireDeploy(project, filename, cmdFlags, creds, owOptions, logger, reset, watch, event))
     }
     watch()
@@ -115,7 +115,9 @@ async function fireDeploy(project: string, filename: string, cmdFlags: Flags, cr
 // TODO Someday this might be based on a list of patterns but the number of rules right now are small enough to
 // not bother with that.   Note that chokidar has an ignore feature using wildcards that we might switch to.
 function excluded(filename: string): boolean {
-    return filename.split('/').includes('.nimbella')
+    const parts = filename.includes('\\') ? filename.split('\\') : filename.split('/')
+    return parts.includes('.nimbella')
+        || parts.includes('.git')
         || filename.endsWith('~')
         || filename.includes('_tmp_')
         || filename.endsWith('.swx')
