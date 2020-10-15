@@ -45,12 +45,10 @@ export default class WebContentCreate extends NimBaseCommand {
 
     async uploadFile(webContentPath: string, destination: string, cache: number, client: Bucket, logger: NimLogger) {
         if (!existsSync(webContentPath)) {
-            logger.log(`${webContentPath} doesn't exist`)
-            return
+            logger.handleError(`${webContentPath} doesn't exist`)
         }
         if (!lstatSync(webContentPath).isFile()) {
-            logger.log(`${webContentPath} is not a valid file`)
-            return
+            logger.handleError(`${webContentPath} is not a valid file`)
         }
         const contentName = basename(webContentPath)
 
@@ -67,8 +65,7 @@ export default class WebContentCreate extends NimBaseCommand {
 
         const [exists] = await client.file(targetPath).exists()
         if (exists) {
-            logger.log(`${targetPath} already exists, use 'web:update' to update it. e.g. nim web update ${contentName}`)
-            return
+            logger.handleError(`${targetPath} already exists, use 'web:update' to update it. e.g. nim web update ${contentName}`)
         }
 
         loader.start(`adding ${contentName}`, 'uploading', { stdout: true })

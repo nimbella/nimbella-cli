@@ -44,7 +44,7 @@ export default class Clean extends NimBaseCommand {
         if (res.value) {
           logger.log('all content cleared');
         } else {
-          logger.log("couldn't clear content");
+          logger.handleError("couldn't clear content");
         }
       })
       // Log the error returned by the action.

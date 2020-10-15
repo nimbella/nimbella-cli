@@ -45,8 +45,7 @@ export default class ObjectGet extends NimBaseCommand {
 
     async downloadFile(objectName: string, destination: string, client: Bucket, logger: NimLogger, saveAs: string, save: boolean = false) {
         if (!existsSync(destination)) {
-            logger.log(`${destination} doesn't exist`)
-            return
+            logger.handleError(`${destination} doesn't exist`)
         }
         const loader = await spinner();
         loader.start(`getting ${objectName}`, 'downloading', { stdout: true })

@@ -49,7 +49,7 @@ export default class WebContentGet extends NimBaseCommand {
                 logger.log(`https://${creds.namespace}-${url.hostname}/${args.webContentName}`)
                 return
             }
-            logger.log(`${args.webContentName} is not available.`)
+            logger.handleError(`${args.webContentName} is not available.`)
         }
         else
             await this.downloadFile(args.webContentName, args.destination, client, logger, flags.saveAs, flags.save).catch((err: Error) => logger.handleError('', err));
@@ -57,8 +57,7 @@ export default class WebContentGet extends NimBaseCommand {
 
     async downloadFile(webContentName: string, destination: string, client: Bucket, logger: NimLogger, saveAs: string, save: boolean = false) {
         if (!existsSync(destination)) {
-            logger.log(`${destination} doesn't exist`)
-            return
+            logger.handleError(`${destination} doesn't exist`)
         }
         const loader = await spinner();
         loader.start(`getting ${webContentName}`, 'downloading', { stdout: true })

@@ -42,12 +42,10 @@ export default class ObjectUpdate extends NimBaseCommand {
 
     async uploadFile(objectPath: string, destination: string, client: Bucket, logger: NimLogger) {
         if (!existsSync(objectPath)){
-            logger.log(`${objectPath} doesn't exist`)
-            return
+            logger.handleError(`${objectPath} doesn't exist`)
         }
         if (!lstatSync(objectPath).isFile()) {
-            logger.log(`${objectPath} is not a valid file`)
-            return
+            logger.handleError(`${objectPath} is not a valid file`)
         }
         const objectName = basename(objectPath)
 
@@ -59,8 +57,7 @@ export default class ObjectUpdate extends NimBaseCommand {
 
         const [exists] = await client.file(targetPath).exists()
         if (!exists) {
-            logger.log(`${targetPath} doesn't exist, use 'object:add' to add it. e.g. nim object add ${objectName}`)
-            return
+            logger.handleError(`${targetPath} doesn't exist, use 'object:add' to add it. e.g. nim object add ${objectName}`)
         }
 
         loader.start(`updating ${targetPath}`, 'uploading', {stdout: true})
