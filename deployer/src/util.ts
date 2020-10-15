@@ -85,14 +85,14 @@ function isRealBuild(buildField: string): boolean {
 }
 
 // Replace a build field with 'remote' if it is supposed to be remote according to flags, directives, environment
-function locateBuild (buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) {
-    // TODO: uncomment the 'inBrowser' test when ready.  We are currently hiding remote build capability because
-    // the client side will be merged before the server side.
-    if (isRealBuild(buildField) && (/*inBrowser || */ remoteRequired || (remoteRequested && !localRequired))) {
-      return 'remote'
-    }
-    return buildField
+function locateBuild(buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) {
+  // TODO: uncomment the 'inBrowser' test when ready.  We are currently hiding remote build capability because
+  // the client side will be merged before the server side.
+  if (isRealBuild(buildField) && (/* inBrowser || */ remoteRequired || (remoteRequested && !localRequired))) {
+    return 'remote'
   }
+  return buildField
+}
 
 // Set up the build fields for a project and detect conflicts.  Determine if local building is required.
 export async function checkBuildingRequirements(todeploy: DeployStructure, requestRemote: boolean): Promise<boolean> {
@@ -149,7 +149,7 @@ async function hasDefaultRemote(action: ActionSpec, reader: ProjectReader): Prom
   if (!runtime) {
     const pathKind = await reader.getPathKind(action.file)
     if (pathKind.isFile) {
-      ( { runtime } = actionFileToParts(pathKind.name))
+      ({ runtime } = actionFileToParts(pathKind.name))
     } else if (pathKind.isDirectory) {
       const files = await promiseFilesAndFilterFiles(action.file, reader)
       runtime = agreeOnRuntime(files)
@@ -159,12 +159,12 @@ async function hasDefaultRemote(action: ActionSpec, reader: ProjectReader): Prom
   }
   const kind = runtime.split(':')[0]
   switch (kind) {
-    // TODO shouild this be an external table?
-    case 'go':
-    case 'swift':
-      return true
-    default:
-      return false
+  // TODO shouild this be an external table?
+  case 'go':
+  case 'swift':
+    return true
+  default:
+    return false
   }
 }
 
