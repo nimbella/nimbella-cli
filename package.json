@@ -14,7 +14,7 @@
   "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#f74015deda89d4a0827690233a83a35dcdf394e7",
+    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#bff0d389f1826babde962f7414548e05b92651c6",
     "@adobe/aio-lib-core-config": "^1.0.15",
     "@google-cloud/storage": "^5.3.0",
     "@oclif/command": "^1",
@@ -26,8 +26,9 @@
     "archiver": "^3.0.0",
     "axios": "^0.19.2",
     "chalk": "^4.1.0",
+    "check-node-version": "^4.0.3",
     "chokidar": "^3.4.0",
-    "commander": "nimbella/commander-cli#820440347c5d46092138fe6c4a36004f14a2ad71",
+    "commander": "nimbella/commander-cli#a424a83e7980d8dbedc20c1c751055ce176e50cb",
     "debug": "^4.1.1",
     "dotenv": "7.0.0",
     "expand-home-dir": "0.0.3",
@@ -203,13 +204,14 @@
     }
   },
   "scripts": {
-    "prepare": "patch-package",
-    "postpack": "rm -f oclif.manifest.json",
-    "prepack": "rm -rf lib && tsc -b && npm run minify && oclif-dev manifest && oclif-dev readme",
+    "prepare": "npm run version-check && patch-package",
+    "postpack": "rimraf oclif.manifest.json",
+    "prepack": "rimraf lib && tsc -b && npm run minify && oclif-dev manifest && oclif-dev readme",
     "test": "echo NO TESTS",
     "version": "oclif-dev readme && git add README.md",
     "lint": "eslint src/**/*.ts deployer/src/**/*.ts --ignore-pattern node_modules",
-    "minify": "test $NO_MINIFY || for i in `find lib -type f -name \\*.js`; do npx minify $i > minified; mv minified $i; done"
+    "minify": "test $NO_MINIFY || for i in `find lib -type f -name \\*.js`; do npx minify $i > minified; mv minified $i; done",
+    "version-check": "npx check-node-version --node \">= 10.0\""
   },
   "types": "lib/index.d.ts"
 }
