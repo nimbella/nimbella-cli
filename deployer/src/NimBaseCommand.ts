@@ -33,6 +33,7 @@ import { format } from 'util'
 import { STATUS_CODES } from 'http'
 import { authPersister, getCredentialList } from './credentials'
 import { Feedback } from './deploy-struct'
+import { GaxiosError } from 'gaxios'
 
 import * as createDebug from 'debug'
 const debug = createDebug('nim:base')
@@ -268,7 +269,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   handleError(msg: string, err?: any): never {
     this.parse(this.constructor as typeof NimBaseCommand)
     msg = improveErrorMsg(msg, err)
-    verboseError(err)
+    verboseError('%O', err)
     return this.error(msg, { exit: 1 })
   }
 
@@ -276,7 +277,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   displayError(msg: string, err?: any): void {
     this.parse(this.constructor as typeof NimBaseCommand)
     msg = improveErrorMsg(msg, err)
-    verboseError(err)
+    verboseError('%O', err)
     return this.error(msg, { exit: false })
   }
 
@@ -290,11 +291,12 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
 
 // Improves an error message based on analyzing the accompanying Error object (based on similar code in RuntimeBaseCommand)
 function improveErrorMsg(msg: string, err?: any): string {
-  debug('msg: %s, err: %O', msg, err)
-  const getStatusCode = (code) => `${code} ${STATUS_CODES[code] || ''}`.trim()
+  debug('Improving msg: %s, err: %O', msg, err)
+  const getStatusCode = (code: number) => `${code} ${STATUS_CODES[code] || ''}`.trim()
 
+  let pretty: string = ''
   if (err) {
-    let pretty = err.message || ''
+    pretty = err.message || ''
     if (err.name === 'OpenWhiskError') {
       if (err.error && err.error.error) {
         pretty = err.error.error.toLowerCase()
@@ -303,11 +305,14 @@ function improveErrorMsg(msg: string, err?: any): string {
       } else if (err.statusCode) {
         pretty = getStatusCode(err.statusCode)
       }
-    }
-
-    if ((pretty || '').toString().trim()) {
-      msg = msg ? `${msg}: ${pretty}` : pretty
-    }
+    } else if (err instanceof GaxiosError) {
+      pretty = `An error occurred communicating with Google Cloud Storage.
+This may be a problem with your Nimbella credentials.
+Repeat the command with the '--verbose' flag for more detail`
+    } // add more case logic here
+  }
+  if ((pretty || '').toString().trim()) {
+    msg = msg ? `${msg}: ${pretty}` : pretty
   }
   debug('improved msg: %s', msg)
   return msg

@@ -292,8 +292,7 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
     const bucketClient = await openBucketClient(credentials, inputSpec.bucket)
       .catch(origError => {
         debug('Error creating bucket client: %O', origError)
-        // TODO the following might be made clearer or more precise after some insight into the kinds of errors that occur in practice
-        error = new Error('Could not access object storage using the supplied credentials')
+        error = origError // Let it flow up to displayError where it will be improved
         return undefined
       })
     if (error) {
