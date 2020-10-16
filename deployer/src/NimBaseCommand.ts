@@ -294,7 +294,7 @@ function improveErrorMsg(msg: string, err?: any): string {
   debug('Improving msg: %s, err: %O', msg, err)
   const getStatusCode = (code: number) => `${code} ${STATUS_CODES[code] || ''}`.trim()
 
-  let pretty: string = ''
+  let pretty = ''
   if (err) {
     pretty = err.message || ''
     if (err.name === 'OpenWhiskError') {
