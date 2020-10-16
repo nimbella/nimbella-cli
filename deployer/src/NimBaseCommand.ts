@@ -306,7 +306,7 @@ function improveErrorMsg(msg: string, err?: any): string {
         pretty = getStatusCode(err.statusCode)
       }
     } else if (err instanceof GaxiosError) {
-      pretty = `An error occurred communicating with Google Cloud Storage.
+      pretty = `An error occurred communicating with Cloud Storage.
 This may be a problem with your Nimbella credentials.
 Repeat the command with the '--verbose' flag for more detail`
     } // add more case logic here
