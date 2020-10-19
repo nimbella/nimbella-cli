@@ -11,7 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-// Re-export what nimbella-deployer exports.  This is mostly for backward compatibility.
+// Re-export what nimbella-deployer exports.  This is for convenience when the full nimbella-cli dependency
+// is needed in order to use the command invocation API but the deployer API should be available as well.
 
 export {
   initializeAPI, deployProject, readPrepareAndBuild, readAndPrepare, deploy, readProject, buildProject, prepareToDeploy,
@@ -25,5 +26,6 @@ export {
   computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page, // from './deploy-to-bucket'
   extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName, // from './util'
   GithubDef, isGithubRef, parseGithubRef, fetchProject, // from './github'
-  NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace // from './NimBaseCommand'
+  NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, // from './NimBaseCommand'
+  deleteSlice // from './slice-reader'
 } from 'nimbella-deployer'

@@ -31,3 +31,4 @@ export { computeBucketStorageName, computeBucketDomainName, cleanBucket, restore
 export { extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName } from './util'
 export { GithubDef, isGithubRef, parseGithubRef, fetchProject } from './github'
 export { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger } from './NimBaseCommand'
+export { deleteSlice } from './slice-reader'

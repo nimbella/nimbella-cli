@@ -29,6 +29,7 @@ import * as makeDebug from 'debug'
 import { isGithubRef } from './github'
 import { Writable } from 'stream'
 import * as memoryStreams from 'memory-streams'
+import { getRemoteBuildName } from './slice-reader'
 import openwhisk = require('openwhisk')
 
 const debug = makeDebug('nim:deployer:finder-builder')
@@ -40,7 +41,6 @@ interface Ignore {
 }
 
 const ZIP_TARGET = '__deployer__.zip'
-const BUILDER_PREFIX = '.nimbella/builds'
 const BUILDER_ACTION_STEM = '/nimbella/builder/build_'
 const CANNED_REMOTE_BUILD = `
 #!/bin/bash
@@ -661,8 +661,7 @@ function makeProjectSliceZip(): ProjectSliceZip {
 // Invoke the remote builder, return the response.  The 'action' argument is omitted for web builds
 async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owClient: openwhisk.Client, feedback: Feedback, action?: ActionSpec): Promise<string> {
   // Upload project slice to the user's data bucket
-  const buildName = new Date().toISOString().replace(/:/g, '-')
-  const remoteName = `${BUILDER_PREFIX}/${buildName}`
+  const remoteName = getRemoteBuildName()
   const urlResponse = await owClient.actions.invoke({
     name: '/nimbella/websupport/getSignedUrl',
     params: { fileName: remoteName, dataBucket: true },
@@ -685,7 +684,7 @@ async function invokeRemoteBuilder(zipped: Buffer, credentials: Credentials, owC
   const activityName = action ? `action '${action.name}'` : 'web content'
   const runtime = canonicalRuntime(kind).replace(':', '_')
   const buildActionName = `${BUILDER_ACTION_STEM}${runtime}`
-  debug(`Invoking remote build action '${buildActionName}' for build '${buildName} of ${activityName}`)
+  debug(`Invoking remote build action '${buildActionName}' for build '${path.basename(remoteName)} of ${activityName}`)
   const invoked = await owClient.actions.invoke({ name: buildActionName, params: { toBuild: remoteName } })
   feedback.progress(`Submitted ${activityName} for remote building and deployment in runtime ${kind}`)
   return invoked.activationId

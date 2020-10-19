@@ -17,22 +17,31 @@ import * as fs from 'fs'
 import * as makeDebug from 'debug'
 import * as Zip from 'adm-zip'
 import * as rimraf from 'rimraf'
-import { Credentials } from './deploy-struct'
+import { Credentials, DeployStructure } from './deploy-struct'
 import { Bucket } from '@google-cloud/storage'
 import { getCredentials, authPersister } from './credentials'
 const debug = makeDebug('nim:deployer:slice-reader')
 
 const TEMP = process.platform === 'win32' ? process.env.TEMP : '/tmp'
+const BUCKET_BUILDER_PREFIX = '.nimbella/builds'
 
-// Provides a ProjectReader implementation suitable for reading project "slices" from the user's data bucket.
-// This does not provide a ProjectReader specialization, just a `makeSliceReader` method that stages on disk
-// and returns a FileProjectReader.  There is no value in avoiding the disk staging since it will be needed
-// sooner or later to run the build (the main motivation for project slices being remote building).
+// Supports the fetching and deletion of project slices from the data bucket and related management functions
 
-// Make
+// Generate a remote build name
+export function getRemoteBuildName(): string {
+  const buildName = new Date().toISOString().replace(/:/g, '-')
+  return `${BUCKET_BUILDER_PREFIX}/${buildName}`
+}
+
+// Get the cache area
+function cacheArea() {
+  return path.join(TEMP, 'slices')
+}
+
+// Fetch the slice to cache storage.
 export async function fetchSlice(sliceName: string): Promise<string> {
   await ensureObjectStoreCredentials()
-  const cache = path.join(TEMP, 'slices', path.basename(sliceName))
+  const cache = path.join(cacheArea(), path.basename(sliceName))
   if (fs.existsSync(cache)) {
     rimraf.sync(cache)
   }
@@ -67,6 +76,17 @@ export async function fetchSlice(sliceName: string): Promise<string> {
     fs.writeFileSync(target, entry.getData(), { mode })
   }
   return cache
+}
+
+// Delete.  In this function we assume object store credentials are valid since the fetch
+// operation will have been called earlier.  The function assumes the DeployStructure is
+// a slice without further checks.
+export async function deleteSlice(project: DeployStructure): Promise<void> {
+  const sliceName = path.relative(cacheArea(), project.filePath)
+  const slicePath = path.join(BUCKET_BUILDER_PREFIX, sliceName)
+  const bucket: Bucket = await nim.storage()
+  const remoteFile = bucket.file(slicePath)
+  await remoteFile.delete()
 }
 
 // This function is to support testing the slice-reader locally.  Normally, the slice-reader runs in an action

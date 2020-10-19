@@ -12,9 +12,9 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger } from 'nimbella-deployer'
-import { readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
-    computeBucketDomainName, isGithubRef, authPersister, inBrowser, getGithubAuth } from 'nimbella-deployer';
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
+  readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
+  computeBucketDomainName, isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice } from 'nimbella-deployer';
 import * as path from 'path'
 
 export class ProjectDeploy extends NimBaseCommand {
@@ -127,7 +127,11 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
   }
   const result: DeployResponse = await deploy(todeploy)
   if (todeploy.slice) {
-    return displaySliceResult(result, logger, feedback)
+    const success = displaySliceResult(result, logger, feedback)
+    if (success) {
+      await deleteSlice(todeploy)
+    }
+    return success
   }
   return displayResult(result, watching, cmdFlags.webLocal, logger)
 }
