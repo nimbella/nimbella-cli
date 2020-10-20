@@ -11,7 +11,6 @@
  * governing permissions and limitations under the License.
  */
 
-import * as nim from '@nimbella/sdk'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as makeDebug from 'debug'
@@ -21,21 +20,33 @@ import { Credentials, DeployStructure } from './deploy-struct'
 import { Bucket } from '@google-cloud/storage'
 import { getCredentials, authPersister } from './credentials'
 const debug = makeDebug('nim:deployer:slice-reader')
-
 const TEMP = process.platform === 'win32' ? process.env.TEMP : '/tmp'
 const BUCKET_BUILDER_PREFIX = '.nimbella/builds'
 
 // Supports the fetching and deletion of project slices from the data bucket and related management functions
 
-// Generate a remote build name
-export function getRemoteBuildName(): string {
-  const buildName = new Date().toISOString().replace(/:/g, '-')
-  return `${BUCKET_BUILDER_PREFIX}/${buildName}`
-}
+// This is the anchor for the nimbella sdk.  It is included dynamically instead of statically due to
+// webpack considerations in the workbench.  We do not want the dependency followed during module
+// initialization but only on demand.
+let nim: { storage: () => Bucket | PromiseLike<Bucket> }
 
 // Get the cache area
 function cacheArea() {
   return path.join(TEMP, 'slices')
+}
+
+// Get the nimbella sdk
+function getNim() {
+  if (!nim) {
+    nim = require('@nimbella/sdk')
+  }
+  return nim
+}
+
+// Generate a remote build name
+export function getRemoteBuildName(): string {
+  const buildName = new Date().toISOString().replace(/:/g, '-')
+  return `${BUCKET_BUILDER_PREFIX}/${buildName}`
 }
 
 // Fetch the slice to cache storage.
@@ -47,7 +58,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
   }
   debug('Making cache directory: %s', cache)
   fs.mkdirSync(cache, { recursive: true })
-  const bucket: Bucket = await nim.storage()
+  const bucket: Bucket = await getNim().storage()
   debug('have bucket client')
   const remoteFile = bucket.file(sliceName)
   debug('have remote file for %s', sliceName)
@@ -84,7 +95,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
 export async function deleteSlice(project: DeployStructure): Promise<void> {
   const sliceName = path.relative(cacheArea(), project.filePath)
   const slicePath = path.join(BUCKET_BUILDER_PREFIX, sliceName)
-  const bucket: Bucket = await nim.storage()
+  const bucket: Bucket = await getNim().storage()
   const remoteFile = bucket.file(slicePath)
   await remoteFile.delete()
 }
