@@ -42,13 +42,22 @@ export default class Info extends NimBaseCommand {
         this.displayLimits(sysinfo, logger)
       }
     } else {
-      let cli
-      // Preferentially use version.json which incorporates more info but fall back on package.json
+      // We want the version to include a githash.  Versions taken from package.json will have one if they were installed
+      // via an update "channel" and these also have the advantage of including a channel name.  However, "stable" versions
+      // taken from package.json are just a semver.  In that case, we try to take the version from a separate version.json file.
+      // That file is not guaranteed to be present.
+      let vj, pj
       try {
-        cli = require('../../version.json')
+        vj = require('../../version.json')
       } catch {
-        cli = require('../../package.json')
+        // Do nothing
       }
+      try {
+        pj = require('../../package.json')
+      } catch {
+        // Do nothing
+      }
+      const cli = pj?.version?.includes('-') ? pj : (vj || pj)
       const aio = require('@adobe/aio-cli-plugin-runtime/package.json')
       logger.log(`Nimbella CLI version: ${cli.version}`)
       logger.log(`Adobe I/O version:    ${aio.version}`)
