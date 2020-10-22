@@ -1,6 +1,6 @@
 {
   "name": "nimbella-deployer",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "The deployer component of nimbella-cli",
   "main": "lib/index.js",
   "repository": {
