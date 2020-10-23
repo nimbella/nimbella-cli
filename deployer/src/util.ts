@@ -87,9 +87,7 @@ function isRealBuild(buildField: string): boolean {
 
 // Replace a build field with 'remote' if it is supposed to be remote according to flags, directives, environment
 function locateBuild(buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) {
-  // TODO: uncomment the 'inBrowser' test when ready.  We are currently hiding remote build capability because
-  // the client side will be merged before the server side.
-  if (isRealBuild(buildField) && (/* inBrowser || */ remoteRequired || (remoteRequested && !localRequired))) {
+  if (isRealBuild(buildField) && ( inBrowser || remoteRequired || (remoteRequested && !localRequired))) {
     return 'remote'
   }
   return buildField
