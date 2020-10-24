@@ -467,8 +467,34 @@ function checkForNodeModules(items: string[]) {
   })
 }
 
+// Check the basic pre-reqs for doing a remote build.  There must be storage credentials (indicating that the namespace has a data bucket).
+// And, there cannot be an `.include` entry that is absolute or has a `../` directive.
+async function checkRemoteBuildPreReqs(filepath: string, project: DeployStructure) {
+  debug(`checking remote build pre-reqs for '${filepath}'`)
+  if (!project.credentials?.storageKey) {
+    throw new Error('Remote building requires storage credentials')
+  }
+  const reader = project.reader
+  if ((await reader.getPathKind(filepath)).isDirectory) {
+    const include = path.join(filepath, '.include')
+    if (reader.isExistingFile(include)) {
+      debug(`found an .include file for '${filepath}'`)
+      const items = await readFileAsList(include, reader)
+      debug(`read ${items.length} .include items for '${filepath}'`)
+      items.forEach (item => {
+        if (item.includes('..') || path.isAbsolute(item)) {
+          debug(`found illegal item`)
+          throw new Error(`Remote build not possible for '${filepath}': included item '${item}' is outside the built directory`)
+        }
+      })
+    }
+  }
+}
+
 // Initiate request to builder for building an action
 async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure): Promise<ActionSpec> {
+  // Check that a remote build is supportable
+  await checkRemoteBuildPreReqs(action.file, project)
   // Get the zipper
   const { zip, output, outputPromise } = makeProjectSliceZip()
   // Get the project slice in convenient form
@@ -551,6 +577,8 @@ async function appendAndCheck(zip: archiver.Archiver, file: string, actionPath: 
 
 // Initiate request to builder for building web content
 async function doRemoteWebBuild(project: DeployStructure) {
+  // Check that a remote build is supportable
+  await checkRemoteBuildPreReqs('web', project)
   // Get the zipper
   const { zip, output, outputPromise } = makeProjectSliceZip()
   // Get the project slice in convenient form
