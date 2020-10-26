@@ -217,7 +217,7 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
           logger.log(`Skipped ${skippedWeb} unchanged web resources${bucketClause}`)
       }
       if (actions.length > 0) {
-          logger.log('Deployed actions:')
+          logger.log(`Deployed actions ('nim action get <actionName> --url' for URL):`)
           for (const action of actions) {
               logger.log(`  - ${action}`)
           }
