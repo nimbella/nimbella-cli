@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, CaptureLogger, authPersister, getCredentials, getCredentialsForNamespace } from 'nimbella-deployer'
 import { inBrowser } from 'nimbella-deployer'
 import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/get')
@@ -19,7 +19,13 @@ const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-run
 export default class ActionGet extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
     AioCommand.fullGet = inBrowser
-    await this.runAio(rawArgv, argv, args, flags, logger, AioCommand)
+    if (flags.url) {
+      const capture = new CaptureLogger()
+      await this.runAio(rawArgv, argv, args, flags, capture, AioCommand)
+      logger.log(await this.simplifyUrl(capture.captured[0]))
+    } else {
+      await this.runAio(rawArgv, argv, args, flags, logger, AioCommand)
+    }
   }
 
   static args = AioCommand.args
@@ -27,4 +33,31 @@ export default class ActionGet extends NimBaseCommand {
   static flags = AioCommand.flags
 
   static description = AioCommand.description
+
+  // This function simplifies a web action URL if the namespace is in the present user's credential store
+  // and has storage.  The simplified URL requires this since it will go through the bucketingress.
+  async simplifyUrl(url: string): Promise<string> {
+    if (url.includes('/api/v1/web/')) {
+      const parts = url.split('/api/v1/web/')
+      if (parts.length === 2) {
+        // It should, but let's be careful
+        const apihost = parts[0]
+        const pathParts = parts[1].split('/')
+        const namespace = pathParts[0]
+        const actionPath = pathParts.slice(1).join('/')
+        let hasStorage = false
+        try {
+          let creds = await getCredentialsForNamespace(namespace, apihost, authPersister)
+          hasStorage = !!creds.storageKey
+        } catch {
+          // ignore; hasStorage remains false
+        }
+        if (hasStorage) {
+          const hostname = new URL(apihost).hostname
+          url = `https://${namespace}-${hostname}/api/${actionPath}`
+        }
+      }
+    }
+    return url
+  }
 }
