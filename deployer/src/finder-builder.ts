@@ -481,9 +481,9 @@ async function checkRemoteBuildPreReqs(filepath: string, project: DeployStructur
       debug(`found an .include file for '${filepath}'`)
       const items = await readFileAsList(include, reader)
       debug(`read ${items.length} .include items for '${filepath}'`)
-      items.forEach (item => {
+      items.forEach(item => {
         if (item.includes('..') || path.isAbsolute(item)) {
-          debug(`found illegal item`)
+          debug('found illegal item')
           throw new Error(`Remote build not possible for '${filepath}': included item '${item}' is outside the built directory`)
         }
       })
