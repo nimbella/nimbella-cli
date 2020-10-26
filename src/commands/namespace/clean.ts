@@ -16,7 +16,7 @@ import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from '
 import { getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace, computeBucketStorageName,
      cleanBucket, Credentials } from 'nimbella-deployer'
 import { Storage } from '@google-cloud/storage'
-import { prompt } from '../../ui'
+import { prompt, choicePrompter } from '../../ui'
 
 export default class NamespaceClean extends NimBaseCommand {
      static description = 'Remove content from a namespace'
@@ -38,7 +38,7 @@ export default class NamespaceClean extends NimBaseCommand {
             creds = await getCredentials(authPersister).catch(err => logger.handleError('', err))
             namespace = creds.namespace
         } else {
-            namespace = await disambiguateNamespace(namespace, flags.apihost)
+            namespace = await disambiguateNamespace(namespace, flags.apihost, choicePrompter)
         }
         if (!flags.force) {
             const ow = flags.justwhisk ? " openwhisk" : ""

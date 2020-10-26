@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
 import { getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts } from 'nimbella-deployer'
-import { prompt } from '../../ui'
+import { prompt, choicePrompter } from '../../ui'
 
 export default class AuthLogout extends NimBaseCommand {
   static description = 'Drop access to Nimbella namespaces'
@@ -62,11 +62,11 @@ export default class AuthLogout extends NimBaseCommand {
       if (flags.all) {
         const allHosts = await getApiHosts(authPersister)
         for (const onehost of allHosts) {
-          const namespace = await disambiguateNamespace(ns, onehost).catch(err => logger.handleError('', err))
+          const namespace = await disambiguateNamespace(ns, onehost, choicePrompter).catch(err => logger.handleError('', err))
           await this.doLogout(namespace, onehost, logger)
         }
       } else {
-        const namespace = await disambiguateNamespace(ns, host).catch(err => logger.handleError('', err))
+        const namespace = await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))
         await this.doLogout(namespace, host, logger)
       }
     }

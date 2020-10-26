@@ -15,6 +15,7 @@ import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from '
 import { flags } from '@oclif/command'
 import { getCredentials, getCredentialsForNamespace, authPersister } from 'nimbella-deployer'
 import { getCredentialsToken } from '../../oauth'
+import { choicePrompter } from '../../ui'
 
 export default class AuthExport extends NimBaseCommand {
   static description = 'Make a token for switching to another machine or web browser'
@@ -34,7 +35,7 @@ export default class AuthExport extends NimBaseCommand {
 
     let namespace: string
     if (args.namespace) {
-        namespace = await disambiguateNamespace(args.namespace, host).catch(err => logger.handleError('', err))
+        namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
     }
 
     const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister) :

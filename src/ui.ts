@@ -49,6 +49,27 @@ export async function prompt(msg: string): Promise<string> {
     }
 }
 
+// Specialized prompt for selecting from a list of strings
+export async function choicePrompter(choices: string[]): Promise<string> {
+    const promptLines: string[] = []
+    for (let i = 0; i < choices.length; i++) {
+        promptLines.push(`${i}: ${choices[i]}`)
+    }
+    promptLines.push('Choose by number')
+    let promptText = promptLines.join('\n')
+    let choice: string
+    while (!choice) {
+        const response = await prompt(promptText)
+        promptText = 'Choose by number'
+        const index = +response
+        if (!isNaN(index) && index >= 0 && index < choices.length) {
+            choice = choices[index]
+            break
+        }
+    }
+    return choice
+}
+
 export async function spinner(): Promise<any> {
     if (inBrowser) {
         return Promise.resolve({

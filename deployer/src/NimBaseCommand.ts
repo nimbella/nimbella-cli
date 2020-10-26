@@ -322,8 +322,10 @@ Repeat the command with the '--verbose' flag for more detail`
 // If the namespace does not end with '-' just return it
 // If the match is unique up to the apihost, return the unique match (possibly still ambiguous if apihost not provided)
 // If there is no match, return the provided string sans '-'
-// If the match is not unique up to the apihost, throw error
-export async function disambiguateNamespace(namespace: string, apihost: string|undefined): Promise<string> {
+// If the match is not unique up to the apihost, then
+//     - if a choice prompter is provided, invoke it to get the user's choice
+//     - otherwise throw an error
+export async function disambiguateNamespace(namespace: string, apihost: string|undefined, choicePrompter: (list: string[])=>Promise<string>): Promise<string> {
   if (namespace.endsWith('-')) {
     const allCreds = await getCredentialList(authPersister)
     namespace = namespace.slice(0, -1)
@@ -334,6 +336,8 @@ export async function disambiguateNamespace(namespace: string, apihost: string|u
     if (matches.length > 0) {
       if (matches.every(cred => cred.namespace === matches[0].namespace)) {
         return matches[0].namespace
+      } else if (choicePrompter) {
+        return choicePrompter(matches.map(match => match.namespace))
       } else {
         throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
       }

@@ -14,6 +14,7 @@
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, disambiguateNamespace, parseAPIHost } from 'nimbella-deployer'
 import { recordNamespaceOwnership, getCredentials, getCredentialDict, getCredentialList, authPersister, CredentialRow } from 'nimbella-deployer'
+import { choicePrompter } from '../../ui'
 
 // 'Free' a namespace entry in the credential store by removing any ownership information
 export default class NamespaceFree extends NimBaseCommand {
@@ -50,7 +51,7 @@ export default class NamespaceFree extends NimBaseCommand {
 
         // Free one or more namespaces by name
         for (const ns of argv) {
-            const namespace = await disambiguateNamespace(ns, host).catch(err => logger.handleError('', err))
+            const namespace = await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))
             await this.doFree(namespace, host, logger)
         }
     }

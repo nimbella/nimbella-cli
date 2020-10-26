@@ -15,6 +15,7 @@ import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace,
     doLogin, getCredentials, getCredentialsForNamespace, authPersister } from 'nimbella-deployer'
 import { flags } from '@oclif/command'
 import { getCredentialsToken } from '../../oauth'
+import { choicePrompter } from '../../ui'
 
 export default class AuthRefresh extends NimBaseCommand {
     static description = 'Refresh Nimbella namespace credentials by re-reading the latest from the backend'
@@ -31,7 +32,7 @@ export default class AuthRefresh extends NimBaseCommand {
 
     let namespace: string
     if (args.namespace) {
-        namespace = await disambiguateNamespace(args.namespace, host).catch(err => logger.handleError('', err))
+        namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
     }
 
     const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister) :

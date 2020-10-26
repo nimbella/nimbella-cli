@@ -14,6 +14,7 @@
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
 import { switchNamespace, authPersister } from 'nimbella-deployer'
+import { choicePrompter } from '../../ui'
 
 export default class AuthSwitch extends NimBaseCommand {
   static description = 'Switch to a different Nimbella namespace'
@@ -27,7 +28,7 @@ export default class AuthSwitch extends NimBaseCommand {
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
     const host = parseAPIHost(flags.apihost)
-    const namespace = await disambiguateNamespace(args.namespace, host).catch(err => logger.handleError('', err))
+    const namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
     const creds = await switchNamespace(namespace, host, authPersister).catch(err => logger.handleError('', err))
     logger.log(`Successful switch to namespace '${namespace}' on API host '${creds.ow.apihost}'`)
   }
