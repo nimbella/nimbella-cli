@@ -477,7 +477,7 @@ async function checkRemoteBuildPreReqs(filepath: string, project: DeployStructur
   const reader = project.reader
   if ((await reader.getPathKind(filepath)).isDirectory) {
     const include = path.join(filepath, '.include')
-    if (reader.isExistingFile(include)) {
+    if (await reader.isExistingFile(include)) {
       debug(`found an .include file for '${filepath}'`)
       const items = await readFileAsList(include, reader)
       debug(`read ${items.length} .include items for '${filepath}'`)
