@@ -496,7 +496,7 @@ async function doRemoteActionBuild(action: ActionSpec, project: DeployStructure)
   // Check that a remote build is supportable
   await checkRemoteBuildPreReqs(action.file, project)
   // Get the zipper
-  const { zip, output, outputPromise } = makeProjectSliceZip()
+  const { zip, output, outputPromise } = makeProjectSliceZip(action.file)
   // Get the project slice in convenient form
   const pkgName = path.basename(path.dirname(action.file))
   const actionName = pkgName === 'default' ? action.name : path.join(pkgName, action.name)
@@ -570,7 +570,7 @@ async function appendAndCheck(zip: archiver.Archiver, file: string, actionPath: 
   zip.append(contents, { name: file, mode })
   const size = zip.pointer()
   if (size > 512 * 1024) {
-    throw new Error(`'Remote build upload for '${actionPath}' exceeds 512K.  Make sure the directory is free of derived artifacts`)
+    throw new Error(`Remote build upload for '${actionPath}' exceeds 512K.  Make sure the directory is free of derived artifacts`)
   }
   zipDebug("zipped '%s' for remote build slice, emitted %d", file, size)
 }
@@ -580,7 +580,7 @@ async function doRemoteWebBuild(project: DeployStructure) {
   // Check that a remote build is supportable
   await checkRemoteBuildPreReqs('web', project)
   // Get the zipper
-  const { zip, output, outputPromise } = makeProjectSliceZip()
+  const { zip, output, outputPromise } = makeProjectSliceZip('web content')
   // Get the project slice in convenient form
   const spec = makeConfigFromWebSpec(project)
   // Zip the web path
@@ -653,7 +653,7 @@ interface ProjectSliceZip {
     zip: archiver.Archiver
     outputPromise: Promise<any>
 }
-function makeProjectSliceZip(): ProjectSliceZip {
+function makeProjectSliceZip(context: string): ProjectSliceZip {
   const output: Writable = new memoryStreams.WritableStream({ highWaterMark: 1024 * 1024 })
   const zip = archiver('zip')
   const outputPromise = new Promise(function(resolve, reject) {
@@ -674,6 +674,7 @@ function makeProjectSliceZip(): ProjectSliceZip {
     })
     output.on('drain', () => {
       debug('memory stream posted a drain event')
+      reject(new Error(`Remote build upload for '${context}' is too large.  Make sure the directory is free of derived artifacts`))
     })
     zip.on('warning', err => {
       debug('warning issued from archiver %O', err)
