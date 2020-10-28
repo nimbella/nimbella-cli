@@ -61,6 +61,7 @@ export interface NimLogger {
 // Wrap the logger in a Feedback for using the deployer API.
 export class NimFeedback implements Feedback {
   logger: NimLogger
+  warnOnly: boolean
   constructor(logger: NimLogger) {
     this.logger = logger
   }
@@ -70,6 +71,7 @@ export class NimFeedback implements Feedback {
   }
 
   progress(msg?: any, ...args: any[]): void {
+    if (this.warnOnly) return
     this.logger.log(String(msg), ...args)
   }
 }

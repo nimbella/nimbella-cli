@@ -110,7 +110,13 @@ export async function processCredentials(ignore_certs: boolean, apihost: string|
 // Deploy one project
 export async function doDeploy(project: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions, watching: boolean,
     logger: NimLogger): Promise<boolean> {
-  const feedback = project.startsWith("slice:") ? new NimFeedback(new CaptureLogger()) : new NimFeedback(logger)
+  let feedback: NimFeedback
+  if (project.startsWith("slice:")) {
+    feedback = new NimFeedback(new CaptureLogger())
+    feedback.warnOnly = true
+   } else {
+     feedback = new NimFeedback(logger)
+   }
   let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, undefined, feedback)
    if (!todeploy) {
     return false
