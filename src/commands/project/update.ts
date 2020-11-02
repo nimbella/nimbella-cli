@@ -17,53 +17,61 @@ import { createOrUpdateProject, seemsToBeProject } from '../../generator/project
 import ProjectCreate from './create'
 import { flags } from '@oclif/command'
 
-const confPlugin = 'apispecgen'
+const plugins = { postman: 'ppm', openapi: 'poa', sample: 'sample', apispecgen: 'pas' }
 export default class ProjectUpdate extends NimBaseCommand {
   static description = 'Update a Nimbella Project'
-
+  static strict = false
   static flags = Object.assign(
     ProjectCreate.flags,
     {
       config: flags.boolean({ description: 'Generate config file' })
     })
 
+  static args = [{ name: 'project', description: 'project path in the file system', default: process.cwd(), required: false }]
   // For now:
   static hidden = true
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-    if (!flags.source && !flags.config) {
+  getCommand = (type: string): any => {
+    const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(type))
+    if (pluginCommands.length) {
+      const pluginCommand = pluginCommands.filter(c => c.id === plugins[type])
+      return pluginCommand[0]
+    }
+  }
+
+  async init(): Promise<any> {
+    const { flags } = this.parse(ProjectUpdate)
+    if (flags.type) { ProjectUpdate.flags = Object.assign(ProjectUpdate.flags, (this.getCommand(flags.type) || '').flags) }
+  }
+
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<any> {
+    if (!flags.type && !flags.config) {
       this.doHelp()
     }
     if (inBrowser) {
       logger.handleError('\'project update\' needs local file access. Use the \'nim\' CLI on your local machine')
     }
-    if (!seemsToBeProject(process.cwd())) {
-      logger.handleError('Current directory doesn\'t appear to be a project')
+    if (!seemsToBeProject(args.project)) {
+      logger.handleError(`${args.project} doesn't appear to be a project`)
     }
 
     if (flags.config) {
-      const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(confPlugin))
-      const params = []
-      if (flags.overwrite) { params.push('-o') }
-      if (pluginCommands.length) {
-        await pluginCommands[0].load().run([...params])
+      const configCommand = Object.keys(plugins)[3]
+      const command = this.getCommand(configCommand)
+      if (command) {
+        await command.load().run(rawArgv)
       } else {
-        logger.handleError(`the ${confPlugin} plugin is not installed. try 'nim plugins add ${confPlugin}'`)
+        logger.handleError(`the ${configCommand} plugin is not installed. try 'nim plugins add ${configCommand}'`)
       }
       return
     }
 
-    if (flags.source) {
-      const params = ['-i', flags.id || '', '-k', flags.key || '', '-l', flags.language, '--update']
-      if (flags.overwrite) { params.push('-o') }
-      if (flags.updateSource) { params.push('-u') }
-      if (flags.clientCode) { params.push('-c') }
-      const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(flags.source))
-      if (pluginCommands.length) {
-        const pluginCommand = pluginCommands.filter(c => c.id === ProjectCreate.plugins[flags.source])
-        await pluginCommand[0].load().run([...params])
+    if (flags.type) {
+      const command = this.getCommand(flags.type)
+      if (command) {
+        await command.load().run(rawArgv)
       } else {
-        logger.handleError(`the ${flags.source} plugin is not installed. try 'nim plugins add ${flags.source}'`)
+        logger.handleError(`the ${flags.type} plugin is not installed. try 'nim plugins add ${flags.type}'`)
       }
     } else {
       await createOrUpdateProject(true, args, flags, logger)
