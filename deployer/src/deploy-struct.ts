@@ -337,7 +337,7 @@ export interface CredentialRow {
 // The Includer object is used during project reading and deployment to screen web, packages, and actions to be included
 export interface Includer {
     isWebIncluded: boolean
-    isPackageIncluded: (pkg: string) => boolean
+    isPackageIncluded: (pkg: string, all: boolean) => boolean
     isActionIncluded: (pkg: string, action: string) => boolean
     isIncludingEverything: () => boolean
  }

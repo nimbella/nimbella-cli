@@ -27,7 +27,7 @@ export function makeIncluder(include: string, exclude: string): Includer {
 // The implementation behind the Includer interface
 class IncluderImpl implements Includer {
     isWebIncluded = false
-    startWithAllIncluded = false
+    isExcludingOnly = false
     includedPackages: Set<string> = new Set()
     excludedPackages: Set<string> = new Set()
     includedActions: Map<string, Set<string>> = new Map()
@@ -37,7 +37,7 @@ class IncluderImpl implements Includer {
     constructor(includes: string[], excludes: string[]) {
       if (!includes) {
         this.isWebIncluded = true
-        this.startWithAllIncluded = true
+        this.isExcludingOnly = true
       } else {
         for (let token of includes) {
           if (token === 'web') {
@@ -75,10 +75,13 @@ class IncluderImpl implements Includer {
     }
 
     // Implement isPackageIncluded
-    isPackageIncluded = (pkg: string) => {
-      const ans = (this.startWithAllIncluded || this.includedPackages.has(pkg)) && !this.excludedPackages.has(pkg)
-      debug('isPackageIncluded(%s)=%s', pkg, String(ans))
-      return ans
+    isPackageIncluded = (pkg: string, all: boolean) => {
+      const nominallyIncluded = this.includedPackages.has(pkg) || (this.isExcludingOnly && !this.excludedPackages.has(pkg))
+      if (all) {
+        return nominallyIncluded && !this.excludedActions.has(pkg)
+      } else {
+        return nominallyIncluded || this.includedActions.has(pkg)
+      }
     }
 
     // Implement isActionIncluded
@@ -90,12 +93,12 @@ class IncluderImpl implements Includer {
         return false // excluded, either explicitly or at package level
       }
       // So far, the action is not excluded but was not explicitly included either so the result depends on package inclusion
-      return this.startWithAllIncluded || this.includedPackages.has(pkg)
+      return this.isExcludingOnly || this.includedPackages.has(pkg)
     }
 
     // Implement isIncludingEverything
     isIncludingEverything = () => {
-      return this.startWithAllIncluded && this.includedActions.size === 0 && this.includedPackages.size === 0
+      return this.isExcludingOnly && this.includedActions.size === 0 && this.includedPackages.size === 0
     }
 
     // Utility to add an action to an action map

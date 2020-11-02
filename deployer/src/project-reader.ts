@@ -329,7 +329,7 @@ function buildPkgArray(pkgsDir: string, displayPath: string, includer: Includer,
     const pkgNames = items.filter(dirent => dirent.isDirectory).map(dirent => dirent.name)
     const rdrs: Promise<PackageSpec>[] = []
     for (const name of pkgNames) {
-      if (includer.isPackageIncluded(name)) {
+      if (includer.isPackageIncluded(name, false)) {
         const pkgPath = path.join(pkgsDir, name)
         rdrs.push(readPackage(pkgPath, path.join(displayPath, name), name, includer, reader))
       }
@@ -411,7 +411,7 @@ function trimConfigWithIncluder(config: DeployStructure, includer: Includer): De
   if (config.packages) {
     const newPkgs: PackageSpec[] = []
     for (const pkg of config.packages) {
-      if (includer.isPackageIncluded(pkg.name)) {
+      if (includer.isPackageIncluded(pkg.name, false)) {
         if (pkg.actions) {
           pkg.actions = pkg.actions.filter(action => includer.isActionIncluded(pkg.name, action.name))
         }

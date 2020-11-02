@@ -125,7 +125,7 @@ function cleanActionsAndPackages(todeploy: DeployStructure): Promise<DeployStruc
   const promises: Promise<any>[] = []
   for (const pkg of todeploy.packages) {
     const defaultPkg = pkg.name === 'default'
-    if (pkg.clean && !defaultPkg && todeploy.includer.isPackageIncluded(pkg.name)) {
+    if (pkg.clean && !defaultPkg && todeploy.includer.isPackageIncluded(pkg.name, true)) {
       // We should have headed off 'clean' of the default package already.  The added test is just in case
       promises.push(cleanPackage(todeploy.owClient, pkg.name, todeploy.versions))
     } else if (pkg.actions) {
