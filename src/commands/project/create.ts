@@ -15,54 +15,63 @@ import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
 
 import { createOrUpdateProject } from '../../generator/project'
+
 export default class ProjectCreate extends NimBaseCommand {
-    static description = 'Create a Nimbella Project'
-    static plugins = { postman: 'ppm', openapi: 'poa' }
-    static flags = {
-      config: flags.boolean({ description: 'Generate template config file' }),
-      source: flags.string({
-        char: 's',
-        description: 'API specs source',
-        options: Object.keys(ProjectCreate.plugins)
-      }),
-      id: flags.string({ char: 'i', description: 'API specs id/name/path' }),
-      key: flags.string({ char: 'k', dependsOn: ['source'], description: 'Key to access the source API' }),
-      language: flags.string({
-        char: 'l',
-        description: 'Language for the project (creates sample project unless source is specified)',
-        default: 'js',
-        options: ['go', 'js', 'ts', 'py', 'java', 'swift', 'php']
-      }),
-      overwrite: flags.boolean({ char: 'o', description: 'Overwrites the existing file(s)' }),
-      updateSource: flags.boolean({ char: 'u', description: 'Sync updated API specs back to source' }),
-      clientCode: flags.boolean({ char: 'c', description: 'Generates client code', default: true }),
+  static strict = false
+  static description = 'Create a Nimbella Project'
+  static plugins = { postman: 'ppm', openapi: 'poa', sample: 'sample' }
 
-      ...NimBaseCommand.flags
+  static flags = {
+    config: flags.boolean({ description: 'Generate template config file' }),
+    type: flags.string({
+      char: 't',
+      description: 'API specs source',
+      options: Object.keys(ProjectCreate.plugins)
+    }),
+    language: flags.string({
+      char: 'l',
+      description: 'Language for the project (creates sample project unless source is specified)',
+      default: 'js',
+      options: ['go', 'js', 'ts', 'py', 'java', 'swift', 'php']
+    }),
+    overwrite: flags.boolean({ char: 'o', description: 'Overwrites the existing file(s)' }),
+    ...NimBaseCommand.flags
+  }
+
+  static args = [{ name: 'project', description: 'project path in the file system', required: false }]
+
+  getCommand = (type: string): any => {
+    const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(type))
+    if (pluginCommands.length) {
+      const pluginCommand = pluginCommands.filter(c => c.id === ProjectCreate.plugins[type])
+      return pluginCommand[0]
     }
+  }
 
-    static args = [{ name: 'name', description: 'Project name', required: false }]
+  async init():Promise<any> {
+    const { flags } = this.parse(ProjectCreate)
+    ProjectCreate.flags = Object.assign(ProjectCreate.flags, (this.getCommand(flags.type) || '').flags)
+  }
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-      if (!args.name && !flags.source) {
-        this.doHelp()
-      }
-      if (inBrowser) {
-        logger.handleError('\'project create\' needs local file access. Use the \'nim\' CLI on your local machine')
-      }
-      if (flags.source) {
-        const params = ['-i', flags.id || '', '-k', flags.key || '', '-l', flags.language]
-        if (flags.overwrite) { params.push('-o') }
-        if (flags.updateSource) { params.push('-u') }
-        if (flags.clientCode) { params.push('-c') }
-        const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(flags.source))
-        if (pluginCommands.length) {
-          const pluginCommand = pluginCommands.filter(c => c.id === ProjectCreate.plugins[flags.source])
-          await pluginCommand[0].load().run([...params])
-        } else {
-          logger.handleError(`the ${flags.source} plugin is not installed. try 'nim plugins add ${flags.source}'`)
-        }
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger):Promise<any> {
+    if (!args.project && !flags.type) {
+      this.doHelp()
+    }
+    if (inBrowser) {
+      logger.handleError('\'project create\' needs local file access. Use the \'nim\' CLI on your local machine')
+    }
+    if (flags.type && flags.type === 'sample') {
+      args.project = args.project || flags.type
+      await createOrUpdateProject(false, args, flags, logger)
+    } else if (flags.type) {
+      const command = this.getCommand(flags.type)
+      if (command) {
+        await command.load().run(rawArgv)
       } else {
-        await createOrUpdateProject(false, args, flags, logger)
+        logger.handleError(`the ${flags.type} plugin is not installed. try 'nim plugins add ${flags.type}'`)
       }
+    } else {
+      await createOrUpdateProject(false, args, flags, logger)
     }
+  }
 }
