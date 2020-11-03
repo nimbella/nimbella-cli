@@ -16,7 +16,7 @@
   "dependencies": {
     "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#9ce0ff4842e88e578ce1d7dacefa6f2060260ba7",
     "@adobe/aio-lib-core-config": "^1.0.15",
-    "@google-cloud/storage": "^5.3.0",
+    "@google-cloud/storage": "5.3.0",
     "@oclif/command": "^1",
     "@oclif/config": "^1",
     "@oclif/plugin-autocomplete": "^0.1.5",
