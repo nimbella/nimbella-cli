@@ -11,12 +11,20 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
 import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/delete')
+import { prompt } from '../../ui'
 
 export default class ActionDelete extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    if (inBrowser && flags.json) { // behave correctly when invoked from sidecar delete button
+      const ans = await prompt(`type 'yes' to really delete '${args.actionName}'`)
+      if (ans !== 'yes') {
+        logger.log('doing nothing')
+        return
+      }
+    }
     await this.runAio(rawArgv, argv, args, flags, logger, AioCommand)
   }
 

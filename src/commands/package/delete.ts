@@ -11,14 +11,22 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
 import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
 import { flags } from '@oclif/command'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/package/delete')
 import { getCredentials, wipePackage, authPersister } from 'nimbella-deployer'
+import { prompt } from '../../ui'
 
 export default class PackageDelete extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    if (inBrowser && flags.json) { // behave correctly when invoked from sidecar delete button
+      const ans = await prompt(`type 'yes' to really delete '${args.packageName}'`)
+      if (ans !== 'yes') {
+        logger.log('doing nothing')
+        return
+      }
+    }
     // Don't delegate the recursive case.  We handle it specially here
     if (flags.recursive) {
       this.debug('invoking recursive delete')
