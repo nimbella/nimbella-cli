@@ -12,6 +12,7 @@
  */
 
 import * as path from 'path'
+import * as fs from 'fs'
 import { getUserAgent } from './api'
 import { DeployStructure, PackageSpec, ActionSpec, WebResource, Includer, ProjectReader, PathKind, Feedback } from './deploy-struct'
 import { emptyStructure, actionFileToParts, filterFiles, convertToResources, promiseFilesAndFilterFiles, loadProjectConfig, errorStructure, getDeployerAnnotation, getBestProjectName } from './util'
@@ -46,6 +47,10 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
   // causes a GithubReader to be used.
   debug("readTopLevel with filePath:'%s' and mustBeLocal:'%s'", filePath, String(mustBeLocal))
   debug('feedback is %O', feedback)
+  // Before doing the more expensive operations, check existence of env, which is cheap.  If does not exist we will fail later anyway.
+  if (env && !fs.existsSync(env)) {
+    throw new Error(`The specified environment file '${env}' does not exist`)
+  }
   let githubPath: string
   let reader: ProjectReader
   if (isGithubRef(filePath)) {
