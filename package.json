@@ -28,7 +28,7 @@
     "chalk": "^4.1.0",
     "check-node-version": "^4.0.3",
     "chokidar": "^3.4.0",
-    "commander": "nimbella/commander-cli#ace4f62a18afb72fcddd161c765e8ea5615116a3",
+    "commander": "nimbella/commander-cli#b6ae05af14839166fa69caecf1428879bbfeea3f",
     "debug": "^4.1.1",
     "dotenv": "7.0.0",
     "expand-home-dir": "0.0.3",
