@@ -40,7 +40,7 @@ export default class AuthRefresh extends NimBaseCommand {
     logger.log('Contacting the backend')
     const token = await getCredentialsToken(creds.ow, logger)
     logger.log('Refreshing credentials')
-    await doLogin(token, authPersister, host)
+    await doLogin(token, authPersister, creds.ow.apihost)
     logger.log(`New credentials stored for namespace '${creds.namespace}'`)
   }
 }

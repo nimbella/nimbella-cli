@@ -239,11 +239,11 @@ function providerFromResponse(response: OAuthResponse): string {
 }
 
 // Compute the API url for a given namespace on a given host.   To this result, one typically appends
-// /pkg/action in order to invoke a (web) action.  The form of URL used here goes through the bucket ingress,
-// not directly to the api ingress
+// /pkg/action in order to invoke a (web) action.  The form of URL used here is designed for the api
+// ingress, not the bucket ingress.  We used to go to the trouble of using the bucket ingress; I'm
+// not sure why.  In some on-prem deployments there will be no bucket ingress, hence the change.
 function getAPIUrl(namespace: string, apihost: string): string {
-  const hostURL = new URL(apihost)
-  return `https://${namespace}-${hostURL.hostname}/api`
+  return `${apihost}/api/v1/web/${namespace}`
 }
 
 // Calculate the reentry point for redirects from the Auth0 flows back to the workbench
