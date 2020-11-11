@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com//nimbella-corp/nimbella-cli.git"
+    "url": "https://github.com//nimbella/nimbella-cli.git"
   },
   "keywords": [],
   "author": "Nimbella Corporation",
