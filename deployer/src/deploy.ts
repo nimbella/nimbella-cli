@@ -16,7 +16,7 @@ import {
   ProjectReader, OWOptions, KeyVal, Feedback
 } from './deploy-struct'
 import {
-  combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse,
+  combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse, isTextType,
   straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions, waitForActivation
 } from './util'
 import * as openwhisk from 'openwhisk'
@@ -184,23 +184,22 @@ export function deployWebResource(res: WebResource, actionWrapPackage: string, s
 }
 
 // Wrap a web resource in an action.   Returns a promise of the resulting ActionSpec
-export function actionWrap(res: WebResource, reader: ProjectReader): Promise<ActionSpec> {
-  return reader.readFileContents(res.filePath).then(data => {
-    let contents = String(data)
-    contents = contents.split('\\').join('\\\\').split('`').join('\\`')
-    const code = `
-const body = \`${contents}\`
-
-function main() {
+export async function actionWrap(res: WebResource, reader: ProjectReader): Promise<ActionSpec> {
+  const body = (await reader.readFileContents(res.filePath)).toString('base64')
+  const name = res.simpleName.endsWith('.html') ? res.simpleName.replace('.html', '') : res.simpleName
+  let bodyExpr = `  const body = '${body}'`
+  if (isTextType(res.mimeType)) {
+    bodyExpr = "  const body = `${Buffer.from(" + body + ", 'base64').toString('utf-8').split('\\\\\\\\').join('\\\\').split('`').join('\\\\`')}`"
+  }
+  let code = `function main() {
+    ${bodyExpr}
     return {
        statusCode: 200,
        headers: { 'Content-Type': '${res.mimeType}' },
-       body: body
+       body
     }
 }`
-    const name = res.simpleName.endsWith('.html') ? res.simpleName.replace('.html', '') : res.simpleName
-    return { name, file: res.filePath, runtime: 'nodejs:default', binary: false, web: true, code, wrapping: res.filePath }
-  })
+  return { name, file: res.filePath, runtime: 'nodejs:default', binary: false, web: true, code, wrapping: res.filePath }
 }
 
 // Deploy a package, then deploy everything in it (currently just actions)

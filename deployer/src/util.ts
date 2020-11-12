@@ -23,6 +23,7 @@ import * as os from 'os'
 import * as path from 'path'
 import * as simplegit from 'simple-git/promise'
 import * as mime from 'mime-types'
+import * as mimedb from 'mime-db'
 import * as randomstring from 'randomstring'
 import * as crypto from 'crypto'
 import * as yaml from 'js-yaml'
@@ -946,6 +947,30 @@ export function convertToResources(names: string[], dropInitial: number): WebRes
     const mimeType = mime.lookup(simpleName) || undefined
     return { filePath, simpleName, mimeType }
   })
+}
+
+// Determine if a mime type is a "text" type (non-binary), should not be base64 encoded in the final html)
+let binaryMimeTypes: Set<string>
+
+export function isTextType(mimeType: string): boolean {
+  if (!binaryMimeTypes) {
+    binaryMimeTypes = loadBinaryMimeTypes()
+  }
+  return binaryMimeTypes ? !binaryMimeTypes.has(mimeType) : true // If we aren't sure it's binary, consider it text
+}
+
+// Load the binary mimetypes.  We remember the binary ones rather than the text ones because we expect they are fewer in number
+function loadBinaryMimeTypes(): Set<string> {
+  const db: mimedb.MimeDatabase = require('mime-db')
+  const entries = Object.entries(db)
+  const ans = new Set<string>()
+  entries.forEach(entry => {
+    if (entry[1].compressible === false) { // only consider false if explicitly (boolean) false ... default if omitted is true
+      ans.add(entry[0])
+    }
+  })
+  debug('%d binary mime-types were found in the database', ans.size)
+  return ans
 }
 
 // Convert an array of pairs with old and new names to an array of WebResources, where the new name is (in general) a truncation of the old name
