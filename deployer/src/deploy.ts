@@ -189,7 +189,7 @@ export async function actionWrap(res: WebResource, reader: ProjectReader): Promi
   const name = res.simpleName.endsWith('.html') ? res.simpleName.replace('.html', '') : res.simpleName
   let bodyExpr = `  const body = '${body}'`
   if (isTextType(res.mimeType)) {
-    bodyExpr = "  const body = `${Buffer.from(" + body + ", 'base64').toString('utf-8').split('\\\\\\\\').join('\\\\').split('`').join('\\\\`')}`"
+    bodyExpr = "  const body = `${Buffer.from('" + body + "', 'base64').toString('utf-8').split('\\\\').join('\\\\\\\\').split('`').join('\\\\`')}`"
   }
   let code = `function main() {
     ${bodyExpr}
