@@ -50,7 +50,13 @@ export default class ProjectCreate extends NimBaseCommand {
 
   async init():Promise<any> {
     const { flags } = this.parse(ProjectCreate)
-    ProjectCreate.flags = Object.assign(ProjectCreate.flags, (this.getCommand(flags.type) || '').flags)
+    const pluginFlags = (this.getCommand(flags.type) || '').flags
+    for (const key in pluginFlags) {
+      if (pluginFlags[key].type === 'boolean') {
+        pluginFlags[key].parse = (b: any, _: any) => b
+      }
+    }
+    ProjectCreate.flags = Object.assign(ProjectCreate.flags, pluginFlags)
   }
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger):Promise<any> {
