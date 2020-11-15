@@ -245,7 +245,8 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
   debug('credentials.ow: %O', credentials.ow)
   // We have valid credentials but now we must check that we are allowed to deploy to the namespace according to the ownership rules.
   if (credentials.project) {
-    if (credentials.project !== path.resolve(inputSpec.filePath)) {
+    const apparentProject = getBestProjectName(inputSpec)
+    if (credentials.project !== apparentProject) {
       return errorStructure(new Error(`Deployment to namespace '${credentials.namespace}' must be from project '${credentials.project}'`))
     }
     if (isTest && credentials.production) {
@@ -259,7 +260,7 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
   }
   // Record ownership if it is declared.  At this point we know it is legal and non-conflicting.
   if (isTest || isProduction) {
-    recordNamespaceOwnership(await getBestProjectName(inputSpec), credentials.namespace, credentials.ow.apihost, isProduction, persister)
+    recordNamespaceOwnership(getBestProjectName(inputSpec), credentials.namespace, credentials.ow.apihost, isProduction, persister)
   }
   // Merge and save credentials information
   const wskoptions = Object.assign({}, credentials.ow, owOptions || {})
