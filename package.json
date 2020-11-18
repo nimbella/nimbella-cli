@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com//nimbella/nimbella-cli.git"
+    "url": "https://github.com/nimbella/nimbella-cli.git"
   },
   "bin": {
     "nim": "./bin/run"
