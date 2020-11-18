@@ -28,7 +28,7 @@ export {
   switchGithubAccount, getPostmanKeys, deletePostmanKey, switchPostmanKey, addPostmanKey, getPostmanCurrentKey, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser
 } from './credentials'
 export { computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page } from './deploy-to-bucket'
-export { extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName } from './util'
+export { extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName, isTextType } from './util'
 export { GithubDef, isGithubRef, parseGithubRef, fetchProject } from './github'
 export { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger } from './NimBaseCommand'
 export { deleteSlice } from './slice-reader'

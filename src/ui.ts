@@ -17,15 +17,25 @@
 import { inBrowser } from 'nimbella-deployer'
 
 let kuiPrompt: (msg: string) => Promise<string>
+let kuiOpen: (url: string) => Promise<any>
 let cli;
+
+// Allow the cloud-workbench to install a kui-friendly 'open' (uses the sidecar)
+export function setKuiOpen(opener: (url: string) => Promise<any>) {
+    kuiOpen = opener
+}
 
 // Open a URL in 'the' browser or the system default browser
 // Note: this is reliable for http[s] absolute URLs.  It won't work on file URLs in the browser.
 // Whether or not it works on relative URLs in the browser depends on how the files are packaged by webpack.
 // If the files are buried in webpack bundles this function will not work for them.
-export function open(url: string) {
+export function open(url: string, sidecar: boolean = false) {
     if (inBrowser) {
-        return window.open(url)
+        if (sidecar && kuiOpen) {
+            return kuiOpen(url)
+        } else {
+            return window.open(url)
+        }
     } else {
         return require('open')(url)
     }

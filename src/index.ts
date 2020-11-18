@@ -28,3 +28,4 @@ export { CaptureLogger }
 // Remaining exports are just for workbench incorporation and are not supported API
 export { setHelpHelper } from 'nimbella-deployer/lib/NimBaseCommand'
 export { setKuiPrompter } from './ui'
+export { setKuiOpen } from './ui'
