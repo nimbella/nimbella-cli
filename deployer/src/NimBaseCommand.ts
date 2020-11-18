@@ -339,7 +339,15 @@ export async function disambiguateNamespace(namespace: string, apihost: string|u
       if (matches.every(cred => cred.namespace === matches[0].namespace)) {
         return matches[0].namespace
       } else if (choicePrompter) {
-        return choicePrompter(matches.map(match => match.namespace))
+        let choices: string[]
+        if (apihost) {
+          // Already filtered by apihost
+          choices = matches.map(match => match.namespace)
+        } else {
+          // Might be heterogeneous by API host so include in prompt
+          choices = matches.map(match => `${match.namespace} on ${match.apihost}`)
+        }
+        return (await choicePrompter(choices)).split(' on ')[0]
       } else {
         throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
       }
