@@ -35,6 +35,10 @@ export default class AuthRefresh extends NimBaseCommand {
         namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
     }
 
+    if (host && !args.namespace) {
+      logger.handleError(`The '--apihost' flag is only to be used when specifying a namespace explicitly`)
+    }
+
     const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister) :
         getCredentials(authPersister)).catch(err => logger.handleError('', err))
     logger.log('Contacting the backend')
