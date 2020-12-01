@@ -15,7 +15,8 @@ import { NimBaseCommand, NimLogger, inBrowser, CaptureLogger } from 'nimbella-de
 import { flags } from '@oclif/command'
 import { Action } from 'openwhisk'
 import { open } from '../../ui'
-import { RuntimeBaseCommand, createKeyValueArrayFromFlag, createKeyValueArrayFromFile } from '@adobe/aio-cli-plugin-runtime'
+import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
+import { createKeyValueArrayFromFlag, createKeyValueArrayFromFile } from '@adobe/aio-lib-runtime'
 import * as makeDebug from 'debug'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/invoke')
 const ActionGet: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/get')
