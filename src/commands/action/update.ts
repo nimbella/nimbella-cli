@@ -12,7 +12,7 @@
  */
 
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
+import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 import { screenLegal, default as ActionCreate } from './create'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/update')
 

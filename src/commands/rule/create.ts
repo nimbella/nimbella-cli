@@ -12,7 +12,7 @@
  */
 
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
+import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/rule/create')
 
 export default class RuleCreate extends NimBaseCommand {
