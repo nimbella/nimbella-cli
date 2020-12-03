@@ -28,6 +28,7 @@ export default class ActionInvoke extends NimBaseCommand {
     // Ensure correct results in the workbench
     if (inBrowser) {
       this.debug('flags: %O', flags)
+      AioCommand.extraLoggingHeader = false // suppress header that causes CORS issues for us
       // Impose oclif convention that boolean flags are really boolean, since action invoke logic depends on this.
       // Perhaps this should be done earlier since it represents a difference between kui and oclif.  Kui also
       // handles the '--no-' prefix differently: --no-wait will set --wait to false, not --no-wait to true.  On the
