@@ -27,7 +27,7 @@ export default class DeleteKey extends NimBaseCommand {
 
     static args = [{ name: 'key', description: 'The key to be deleted', required: true }]
 
-    static aliases = ['kv:del', 'kv:delete']
+    static aliases = ['key-value:delete']
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
         await queryKVStore(queryCommand, args, flags, authPersister)
