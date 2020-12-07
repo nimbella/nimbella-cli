@@ -39,7 +39,7 @@ export default class Get extends NimBaseCommand {
             logger.log(res.value)
           }
         })
-      // Log the error returned by the action.
+        // Log the error returned by the action.
         .catch(err =>
           logger.handleError(
               err.error?.response?.result?.error || err.message
