@@ -205,11 +205,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
       cmd.table = this.saveTable(logger)
       logger.command = this.command
       debug('aio capture intercepts installed')
-      let omitNamespace = true
-      if (this.command.length === 2 && this.command[0].startsWith('activation') && this.command[1] === 'logs') {
-        omitNamespace = false
-      }
-      cmd.setNamespaceHeaderOmission(omitNamespace)
+      cmd.setNamespaceHeaderOmission(true)
       await cmd.run()
     } else {
       cmd.handleError = this.handleError.bind(cmd)
