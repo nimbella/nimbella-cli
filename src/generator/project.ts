@@ -22,12 +22,13 @@ export async function createOrUpdateProject(updating: boolean, args: any, flags:
   const { target, clean, config } = flags
   const { kind, sampleText } = languageToKindAndSample(flags.language, logger)
   let projectConfig: DeployStructure = config ? configTemplate() : (target || clean) ? {} : undefined
-  const configFile = path.join(args.name, 'project.yml')
-  const defaultPackage = path.join(args.name, 'packages', 'default')
-  if (fs.existsSync(args.name)) {
+  const configFile = path.join(args.project, 'project.yml')
+  const defaultPackage = path.join(args.project, 'packages', 'default')
+  if (fs.existsSync(args.project)) {
+    const isEmpty = fs.readdirSync(args.project).length === 0
     if (updating || flags.overwrite) {
       // TODO this code is not being exercised due to test above.  When it is re-enabled it will require change
-      if (seemsToBeProject(args.name)) {
+      if (seemsToBeProject(args.project)) {
         if (fs.existsSync(configFile)) {
           const configContents = String(fs.readFileSync(configFile))
           if (configContents.includes('${')) {
@@ -42,16 +43,18 @@ export async function createOrUpdateProject(updating: boolean, args: any, flags:
           fs.mkdirSync(defaultPackage, { recursive: true })
         }
       } else {
-        logger.handleError(`A directory or file '${args.name}' does not appear to be a project`)
+        logger.handleError(`A directory or file '${args.project}' does not appear to be a project`)
       }
+    } else if (isEmpty) {
+      createProject(defaultPackage, args)
+    } else if (seemsToBeProject(args.project)) {
+      logger.handleError(`Cannot create project because '${args.project}' already exists in the file system, use '-o' to overwrite`)
     } else {
-      logger.handleError(`Cannot create project because '${args.name}' already exists in the file system, use '-o' to overwrite`)
+      logger.handleError(`Cannot create project because '${args.project}' already exists in the file system and is non empty`)
     }
   } else {
     // Create the project from scratch
-    fs.mkdirSync(defaultPackage, { recursive: true })
-    const web = path.join(args.name, 'web')
-    fs.mkdirSync(web)
+    createProject(defaultPackage, args)
   }
   // Add material to the project.
   if (target) {
@@ -70,7 +73,13 @@ export async function createOrUpdateProject(updating: boolean, args: any, flags:
     const data = yaml.safeDump(projectConfig)
     fs.writeFileSync(configFile, data)
   }
-  logger.log(`project ${updating ? 'updated' : 'created'} at ${args.name}`)
+  logger.log(`project ${updating ? 'updated' : 'created'} at ${args.project}`)
+}
+
+function createProject(defaultPackage: string, args: any) {
+  fs.mkdirSync(defaultPackage, { recursive: true })
+  const web = path.join(args.project, 'web')
+  fs.mkdirSync(web)
 }
 
 // Make a more fully populated config (with defaults filled in and comments)
@@ -126,17 +135,17 @@ function generateSample(kind: string, config: DeployStructure | undefined, sampl
 function mapLanguage(kind: string) {
   let [language, variant] = kind.split(':')
   switch (language) {
-  case 'js':
-    language = 'nodejs'
-    break
-  case 'ts':
-    language = 'typescript'
-    break
-  case 'py':
-    language = 'python'
-    break
-  default:
-    break
+    case 'js':
+      language = 'nodejs'
+      break
+    case 'ts':
+      language = 'typescript'
+      break
+    case 'py':
+      language = 'python'
+      break
+    default:
+      break
   }
   return `${language}:${variant}`
 }
