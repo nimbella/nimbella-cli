@@ -135,21 +135,21 @@ function generateSample(kind: string, config: DeployStructure | undefined, sampl
 function mapLanguage(kind: string) {
   let [language, variant] = kind.split(':')
   switch (language) {
-    case 'js':
+  case 'js':
   case 'javascript':
-      language = 'nodejs'
-      break
-    case 'ts':
-      language = 'typescript'
-      break
-    case 'py':
-      language = 'python'
+    language = 'nodejs'
+    break
+  case 'ts':
+    language = 'typescript'
+    break
+  case 'py':
+    language = 'python'
     break
   case 'golang':
     language = 'go'
-      break
-    default:
-      break
+    break
+  default:
+    break
   }
   return `${language}:${variant}`
 }

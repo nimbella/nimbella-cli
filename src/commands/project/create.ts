@@ -31,8 +31,8 @@ export default class ProjectCreate extends NimBaseCommand {
     language: flags.string({
       char: 'l',
       description: 'Language for the project (creates sample project unless source is specified)',
-        options: ['go', 'golang', 'js', 'javascript', 'ts', 'typescript', 'py', 'python', 'java', 'swift', 'php'],
-        default: 'js'
+      options: ['go', 'golang', 'js', 'javascript', 'ts', 'typescript', 'py', 'python', 'java', 'swift', 'php'],
+      default: 'js'
     }),
     overwrite: flags.boolean({ char: 'o', description: 'Overwrites the existing file(s)' }),
     ...NimBaseCommand.flags
