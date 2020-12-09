@@ -13,7 +13,7 @@
 
 import { NimBaseCommand, NimLogger, CaptureLogger, authPersister, getCredentials, getCredentialsForNamespace } from 'nimbella-deployer'
 import { inBrowser } from 'nimbella-deployer'
-import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
+import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/get')
 
 export default class ActionGet extends NimBaseCommand {

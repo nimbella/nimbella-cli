@@ -15,7 +15,8 @@ import { NimBaseCommand, NimLogger, inBrowser, CaptureLogger } from 'nimbella-de
 import { flags } from '@oclif/command'
 import { Action } from 'openwhisk'
 import { open } from '../../ui'
-import { RuntimeBaseCommand, createKeyValueArrayFromFlag, createKeyValueArrayFromFile } from '@adobe/aio-cli-plugin-runtime'
+import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import { createKeyValueArrayFromFlag, createKeyValueArrayFromFile } from '@adobe/aio-lib-runtime'
 import * as makeDebug from 'debug'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/invoke')
 const ActionGet: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/get')
@@ -27,6 +28,7 @@ export default class ActionInvoke extends NimBaseCommand {
     // Ensure correct results in the workbench
     if (inBrowser) {
       this.debug('flags: %O', flags)
+      AioCommand.extraLoggingHeader = false // suppress header that causes CORS issues for us
       // Impose oclif convention that boolean flags are really boolean, since action invoke logic depends on this.
       // Perhaps this should be done earlier since it represents a difference between kui and oclif.  Kui also
       // handles the '--no-' prefix differently: --no-wait will set --wait to false, not --no-wait to true.  On the
