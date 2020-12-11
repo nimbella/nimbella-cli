@@ -23,7 +23,6 @@ import {
 import { openBucketClient } from './deploy-to-bucket'
 import { buildAllActions, buildWeb } from './finder-builder'
 import * as openwhisk from 'openwhisk'
-import * as path from 'path'
 import { getCredentialsForNamespace, getCredentials, Persister, recordNamespaceOwnership } from './credentials'
 import { makeIncluder } from './includer'
 import * as makeDebug from 'debug'
@@ -306,13 +305,13 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
   const { web, packages } = inputSpec
   if (web && web.length > 0 && inputSpec.actionWrapPackage) {
     try {
+      const wrapPackage = inputSpec.actionWrapPackage
       const wrapping = web.map(res => {
         if (!res.mimeType) {
           throw new Error(`Could not deploy web resource ${res.filePath}; mime type cannot be determined`)
         }
-        return actionWrap(res, inputSpec.reader)
+        return actionWrap(res, inputSpec.reader, wrapPackage)
       })
-      const wrapPackage = inputSpec.actionWrapPackage
       return Promise.all(wrapping).then(wrapped => {
         // If wrapPackage is already in the inputSpec, add the new actions to it.  Otherwise, make a new PackageSpec
         const existing: PackageSpec[] = packages.filter(pkg => pkg.name === wrapPackage)

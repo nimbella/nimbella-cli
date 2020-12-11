@@ -126,7 +126,8 @@ function generateSample(kind: string, config: DeployStructure | undefined, sampl
       parameters: {},
       environment: {},
       annotations: {},
-      limits: {}
+      limits: {},
+      package: 'default'
     }
     defPkg.actions.push(action)
   }
@@ -135,17 +136,17 @@ function generateSample(kind: string, config: DeployStructure | undefined, sampl
 function mapLanguage(kind: string) {
   let [language, variant] = kind.split(':')
   switch (language) {
-    case 'js':
-      language = 'nodejs'
-      break
-    case 'ts':
-      language = 'typescript'
-      break
-    case 'py':
-      language = 'python'
-      break
-    default:
-      break
+  case 'js':
+    language = 'nodejs'
+    break
+  case 'ts':
+    language = 'typescript'
+    break
+  case 'py':
+    language = 'python'
+    break
+  default:
+    break
   }
   return `${language}:${variant}`
 }

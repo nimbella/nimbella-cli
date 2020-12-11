@@ -442,6 +442,11 @@ function validateActionSpec(arg: Record<string, any>): string {
         return `'${item}' member of an 'action' must be a boolean`
       }
       break
+    case 'sequence':
+      if (!Array.isArray(arg[item]) || arg[item].length === 0 || (typeof arg[item][0]) !== 'string') {
+        return `'${item}' member of an 'action' must be an array of one or more strings naming actions`
+      }
+      break
     case 'web':
       if (!(typeof arg[item] === 'boolean' || arg[item] === 'raw')) {
         return `${item} member of an 'action' must be a boolean or the string 'raw'`

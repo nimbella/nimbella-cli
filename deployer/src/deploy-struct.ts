@@ -49,6 +49,7 @@ export interface PackageSpec {
 // Describes one action
 export interface ActionSpec {
     name: string // The name of the action
+    package: string // The name of the package where action appears ('default' if no package)
     // The following are used to assemble 'exec'.  Currently, you can't specify exec directly
     file?: string // The path to the file comprising the action (possibly a zip file)
     displayFile?: string // The file path to display in messages
@@ -58,6 +59,7 @@ export interface ActionSpec {
     binary?: boolean // Indicates the need for base64 encoding
     zipped?: boolean // (Ignored unless binary) indicates that the binary object is a zip archive
     // End of 'exec' properties
+    sequence?: string[] // Indicates that this action is a sequence and provides its components.  Mutually exclusive with the 'exec' options
     web?: any // like --web on the CLI; expands to multiple annotations.  Project reader assigns true unless overridden.
     webSecure?: any // like --web-secure on the CLI.  False unless overridden
     annotations?: Dict // 'web' and 'webSecure' are merged with what's here iff present
@@ -152,6 +154,7 @@ export interface DeployStructure {
     error?: Error // Records an error in reading or preparing, or a terminal error in building; the structure should not be used
     webBuildError?: Error // Indicates an error in building the web component; the structure is usable but the failure should be reported
     webBuildResult?: string // activation id of remote build
+    sequences?: ActionSpec[] // detected during action deployment and deferred until ordinary actions are deployed
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)
