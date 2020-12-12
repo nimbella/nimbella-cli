@@ -206,7 +206,7 @@ export async function actionWrap(res: WebResource, reader: ProjectReader, pkgNam
 export async function deployPackage(pkg: PackageSpec, spec: DeployStructure): Promise<DeployResponse> {
   const {
     parameters: projectParams, environment: projectEnv, cleanNamespace: namespaceIsClean, versions,
-    owClient: wsk, deployerAnnotation
+    owClient: wsk, deployerAnnotation, flags
   } = spec
   if (pkg.name === 'default') {
     return Promise.all(pkg.actions.map(action => deployAction(action, spec, namespaceIsClean)))
@@ -216,7 +216,7 @@ export async function deployPackage(pkg: PackageSpec, spec: DeployStructure): Pr
   // VersionInfo.   That is needed so that the new versions.json will have the information in it.
   let pkgResponse: DeployResponse
   const digest = digestPackage(pkg)
-  if (versions && versions.packageVersions && versions.packageVersions[pkg.name] && digest === versions.packageVersions[pkg.name].digest) {
+  if (flags.incremental && versions.packageVersions && versions.packageVersions[pkg.name] && digest === versions.packageVersions[pkg.name].digest) {
     const packageVersions = {}
     packageVersions[pkg.name] = versions.packageVersions[pkg.name]
     pkgResponse = { successes: [], failures: [], ignored: [], packageVersions, actionVersions: {}, namespace: undefined }
@@ -253,6 +253,7 @@ function deployAction(action: ActionSpec, spec: DeployStructure, pkgIsClean: boo
   const { owClient: wsk, feedback, reader } = spec
   const prefix = action.package === 'default' ? '' : action.package + '/'
   const context = `action '${prefix}${action.name}'`
+  debug('deploying %s', context)
   if (action.buildError) {
     return Promise.resolve(wrapError(action.buildError, context))
   }
@@ -260,7 +261,8 @@ function deployAction(action: ActionSpec, spec: DeployStructure, pkgIsClean: boo
     return processRemoteResponse(action.buildResult, wsk, action.name, feedback)
   }
   if (action.code) {
-    return deployActionFromCodeOrSequence(action, spec, action.code, pkgIsClean)
+    debug('action already has code')
+    return deployActionFromCodeOrSequence(action, spec, action.code, undefined, pkgIsClean)
   }
   if (action.sequence) {
     const error = checkForLegalSequence(action)
@@ -275,10 +277,11 @@ function deployAction(action: ActionSpec, spec: DeployStructure, pkgIsClean: boo
   }
   const codeFile = action.file
   if (codeFile) {
+    debug('reading action code from %s', codeFile)
     return reader.readFileContents(codeFile).then(data => {
       const code = action.binary ? data.toString('base64') : String(data)
       return code
-    }).then((code: string) => deployActionFromCodeOrSequence(action, spec, code, pkgIsClean))
+    }).then((code: string) => deployActionFromCodeOrSequence(action, spec, code, undefined, pkgIsClean))
       .catch(err => Promise.resolve(wrapError(err, context)))
   } else {
     return Promise.resolve(wrapError(new Error('Action is not a sequence and does not appear in the project structure'), context))
@@ -311,7 +314,7 @@ function deploySequences(todeploy: DeployStructure): Promise<DeployResponse>[] {
       }
     })
     const exec: openwhisk.Sequence = { kind: 'sequence', components: members }
-    result.push(deployActionFromCodeOrSequence(seq, todeploy, exec, isCleanPkg(todeploy, seq.package)))
+    result.push(deployActionFromCodeOrSequence(seq, todeploy, undefined, exec, isCleanPkg(todeploy, seq.package)))
   }
   return result
 }
@@ -358,16 +361,15 @@ function encodeParameters(normalParms: openwhisk.Dict, envParms: openwhisk.Dict)
   return ans
 }
 
-// Deploy an action when the code has already been read from a file or constructed programmatically.  The code and file members
-// of the ActionSpec are ignored but the rest of the ActionSpec is intepreted here.
+// Deploy an action when the code has already been read from a file or constructed programmatically or when the
+// action is a sequence (Sequence passed in lieu of code).
 async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeployStructure,
-  codeOrSequence: string|openwhisk.Sequence, pkgIsClean: boolean): Promise<DeployResponse> {
-  const code: string = (typeof codeOrSequence) === 'string' ? codeOrSequence as string : undefined
-  const sequence: openwhisk.Sequence = code ? undefined : codeOrSequence as openwhisk.Sequence
+  code: string, sequence: openwhisk.Sequence, pkgIsClean: boolean): Promise<DeployResponse> {
   const name = action.package && action.package !== 'default' ? `${action.package}/${action.name}` : action.name
   const { versions, flags, deployerAnnotation, owClient: wsk } = spec
   const deployerAnnot = Object.assign({}, deployerAnnotation)
 
+  debug('deploying %s using %s', name, !sequence ? 'code' : 'sequence info')
   if (code && !action.runtime) {
     return Promise.resolve(wrapError(new Error(`Action '${name}' not deployed: runtime type could not be determined`), `action ${name}`))
   }
@@ -375,16 +377,19 @@ async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeploySt
   // VersionInfo.   That is needed so that the new versions.json will have the information in it.  We don't digest
   // or skip deployment for sequences.
   let digest: string
-  if (code) {
+  if (!sequence) { // test for absence of sequence, not presence of code; code may be the empty string
     digest = digestAction(action, code)
+    debug('computed digest for %s', name)
     if (flags.incremental && versions.actionVersions && versions.actionVersions[name] &&
       digest === versions.actionVersions[name].digest) {
       // Skipping deployment
+      debug('matched digest for %s', name)
       const actionVersions = {}
       actionVersions[name] = versions.actionVersions[name]
       return Promise.resolve(wrapSuccess(name, 'action', true, undefined, actionVersions, undefined))
     }
     // Record
+    debug('recording digest for %s', name)
     deployerAnnot.digest = digest.substring(0, 8)
   }
   // Will be deployed
@@ -433,7 +438,9 @@ async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeploySt
   const deployParams = { name, action: actionBody }
   return wsk.actions.update(deployParams).then(response => {
     const map = {}
-    if (digest) { map[name] = { version: response.version, digest } }
+    if (digest) { 
+      map[name] = { version: response.version, digest }
+    }
     const namespace = response.namespace.split('/')[0]
     return Promise.resolve(wrapSuccess(name, 'action', false, action.wrapping, map, namespace))
   }).catch(err => {
