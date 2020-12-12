@@ -93,9 +93,13 @@ export function doAdminLogin(apihost: string): Promise<Credentials> {
         reject(new Error(`Improper administrative login.  Expected valid user info but got '${input}'`))
       }
       const auth = nimInput.uuid + ':' + nimInput.key
-      const creds = await addCredentialAndSave(apihost, auth, nimInput.storage, !!nimInput.redis, fileSystemPersister, nimInput.namespace, true)
-      fileSystemPersister.saveLegacyInfo(apihost, auth)
-      resolve(creds)
+      try {
+        const creds = await addCredentialAndSave(apihost, auth, nimInput.storage, !!nimInput.redis, fileSystemPersister, nimInput.namespace, true)
+        fileSystemPersister.saveLegacyInfo(apihost, auth)
+        resolve(creds)
+      } catch (err) {
+        reject(err)
+      }
     })
     process.stdin.on('error', reject)
   })

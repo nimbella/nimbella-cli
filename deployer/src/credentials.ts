@@ -368,6 +368,9 @@ function getUniqueCredentials(namespace: string, apihost: string|undefined, stor
 
 // Turn a raw storage string into the form used internally.
 function parseStorageString(storage: string, namespace: string): CredentialStorageEntry {
+  if (storage === 'yes') {
+    throw new Error(`Storage was not fully initialized for namespace '${namespace}'`)
+  }
   let parsedStorage: { client_email: string, project_id: string, private_key: string }
   try {
     parsedStorage = JSON.parse(storage)
