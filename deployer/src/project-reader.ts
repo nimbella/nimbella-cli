@@ -216,6 +216,9 @@ function mergePackages(fs: PackageSpec[], config: PackageSpec[]): PackageSpec[] 
     if (already) {
       merge[pkg.name] = mergePackage(already, pkg)
     } else {
+      (pkg.actions || []).forEach(action => {
+        action.package = pkg.name
+      })
       merge[pkg.name] = pkg
     }
   })
@@ -234,7 +237,7 @@ function mergePackage(fs: PackageSpec, config: PackageSpec): PackageSpec {
   const ans = Object.assign({}, fs, config)
   if (fsActions && fsActions.length > 0) {
     if (cfgActions && cfgActions.length > 0) {
-      ans.actions = mergeActions(fsActions, cfgActions)
+      ans.actions = mergeActions(fsActions, cfgActions, config.name)
     } else {
       ans.actions = fsActions
     }
@@ -261,7 +264,7 @@ function adjustWebExportFlags(pkgs: PackageSpec[]) {
 
 // Merge the actions portion of a PackageSpec in config, if any, into the corresponding PackageSpec actions read from the file system.
 // The merge key is the action name.
-function mergeActions(fs: ActionSpec[], config: ActionSpec[]): ActionSpec[] {
+function mergeActions(fs: ActionSpec[], config: ActionSpec[], pkgName: string): ActionSpec[] {
   const merge = {}
   fs.forEach(action => {
     merge[action.name] = action
@@ -271,6 +274,7 @@ function mergeActions(fs: ActionSpec[], config: ActionSpec[]): ActionSpec[] {
     if (already) {
       merge[action.name] = mergeAction(already, action)
     } else {
+      action.package = pkgName
       merge[action.name] = action
     }
   })

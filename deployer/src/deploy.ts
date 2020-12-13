@@ -284,7 +284,7 @@ function deployAction(action: ActionSpec, spec: DeployStructure, pkgIsClean: boo
     }).then((code: string) => deployActionFromCodeOrSequence(action, spec, code, undefined, pkgIsClean))
       .catch(err => Promise.resolve(wrapError(err, context)))
   } else {
-    return Promise.resolve(wrapError(new Error('Action is not a sequence and does not appear in the project structure'), context))
+    return Promise.resolve(wrapError(new Error('Action is named in the config but does not exist in the project'), context))
   }
 }
 
