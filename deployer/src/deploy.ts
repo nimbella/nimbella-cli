@@ -62,7 +62,7 @@ export async function cleanOrLoadVersions(todeploy: DeployStructure): Promise<De
 }
 
 // Do the actual deployment (after testing the target namespace and cleaning)
-export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
+export async function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   let webLocal: string
   if (todeploy.flags.webLocal) {
     webLocal = ensureWebLocal(todeploy.flags.webLocal)
@@ -78,15 +78,14 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
       todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
   }
   const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy))
-  const strays = straysToResponse(todeploy.strays)
-  const sequencePromises = deploySequences(todeploy)
-  return Promise.all(webPromises.concat(actionPromises).concat(sequencePromises)).then(responses => {
-    responses.push(strays)
-    const response = combineResponses(responses)
-    response.apihost = todeploy.credentials.ow.apihost
-    if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
-    return response
-  })
+  const responses: DeployResponse[] = await Promise.all(webPromises.concat(actionPromises))
+  responses.push(straysToResponse(todeploy.strays))
+  const sequenceResponses = await Promise.all(deploySequences(todeploy, todeploy.feedback))
+  responses.push(...sequenceResponses)
+  const response = combineResponses(responses)
+  response.apihost = todeploy.credentials.ow.apihost
+  if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
+  return response
 }
 
 // Process the remote result when something has been built remotely
@@ -300,17 +299,27 @@ function checkForLegalSequence(action: ActionSpec): any {
 }
 
 // Deploy the sequences of the project, if any.  These were identified while deploying the
-// actions.  Sequence actions were lightly checked, then deferred.
-function deploySequences(todeploy: DeployStructure): Promise<DeployResponse>[] {
+// actions.  Sequence actions were lightly checked, then deferred.   We do some deeper checks here.
+// We don't permit a sequence of the project to be a member of another.  And we warn if any of the
+// member actions are in the same namespace but not present in the deployment.  The first restriction
+// is temporary: we should ultimately do a topo-sort of dependencies, deploy sequences in a workable
+// order, and only reject cycles.
+function deploySequences(todeploy: DeployStructure, feedback: Feedback): Promise<DeployResponse>[] {
   const sequences = todeploy.sequences || []
-  const sequenceNames = sequences.map(sequence => fqnFromActionSpec(sequence, todeploy.credentials.namespace))
+  const { credentials: { namespace }} = todeploy
+  const sequenceNames = sequences.map(sequence => fqnFromActionSpec(sequence, namespace))
   const result: Promise<DeployResponse>[] = []
+  const actionFqns = getAllActionFqns(todeploy, namespace)
+  const thisNsPrefix = '/' + namespace + '/'
   for (const seq of (todeploy.sequences || [])) {
-    const members = seq.sequence.map(action => fqn(action, todeploy.credentials.namespace))
+    const members = seq.sequence.map(action => fqn(action, namespace))
     debug('Sequence \'%s\' has members \'%O\'', seq.name, members)
     members.forEach(action => {
       if (sequenceNames.includes(action)) {
         return wrapError(new Error('Temporary restriction: sequences in a project cannot refer to other sequences in the same project'), 'sequences')
+      }
+      if (action.startsWith(thisNsPrefix) && !actionFqns.includes(action)) {
+        feedback.warn(`Sequence '%s' contains action '%s' which is in the same namespace but not part of the deployment`, seq.name, action)
       }
     })
     const exec: openwhisk.Sequence = { kind: 'sequence', components: members }
@@ -330,12 +339,23 @@ function isCleanPkg(spec: DeployStructure, pkgName: string): boolean {
 }
 
 // Compute a fully qualified OW name from an ActionSpec plus a default namespace
-function fqnFromActionSpec(spec: ActionSpec, namespace: string) {
+function fqnFromActionSpec(spec: ActionSpec, namespace: string): string {
   let name = spec.name
   if (spec.package && spec.package !== 'default') {
     name = `${spec.package}/${name}`
   }
   return `/${namespace}/${name}`
+}
+
+// Get the fqns of all actions in the spec
+function getAllActionFqns(spec: DeployStructure, namespace: string): string[] {
+  const ans: string[] = []
+  for (const pkg of spec.packages) {
+    if (pkg.actions) {
+      ans.push(...pkg.actions.map(action => fqnFromActionSpec(action, namespace )))
+    }
+  }
+  return ans
 }
 
 // Convert an OW resource name to fqn form (it may already be in that form)
