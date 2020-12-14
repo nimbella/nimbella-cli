@@ -27,6 +27,7 @@ const js = `function main(args) {
     return {"body": greeting}
   }
   `
+const javascript = js
 
 const ts = `export function main(args: {}): {} {
     let name: string = args['name'] || 'stranger'
@@ -35,6 +36,7 @@ const ts = `export function main(args: {}): {} {
     return { body: greeting }
   }
   `
+const typescript = ts
 
 const py = `def main(args):
       name = args.get("name", "stranger")
@@ -42,6 +44,7 @@ const py = `def main(args):
       print(greeting)
       return {"body": greeting}
   `
+const python = py
 
 const swift = `func main(args: [String:Any]) -> [String:Any] {
       if let name = args["name"] as? String {
@@ -93,4 +96,6 @@ const go = `package main
     return msg
   }
   `
-export const samples = { js, py, php, swift, java, go, ts }
+const golang = go
+
+export const samples = { js, javascript, py, python, php, swift, java, go, golang, ts, typescript }

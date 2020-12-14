@@ -101,7 +101,7 @@ function languageToKindAndSample(language: string, logger: any): { kind: string,
   }
   // TODO the following should be coordinated with the runtime table and some common source of samples used by playground,
   // cloud editor, and this code
-  if (['go', 'js', 'ts', 'py', 'java', 'php', 'swift'].includes(language)) { return { kind: language + ':default', sampleText: samples[language] } }
+  if (['go', 'golang', 'js', 'javascript', 'ts', 'typescript', 'py', 'python', 'java', 'swift', 'php'].includes(language)) { return { kind: language + ':default', sampleText: samples[language] } }
   logger.handleError(`${language} is not a supported language`)
 }
 
@@ -137,6 +137,7 @@ function mapLanguage(kind: string) {
   let [language, variant] = kind.split(':')
   switch (language) {
   case 'js':
+  case 'javascript':
     language = 'nodejs'
     break
   case 'ts':
@@ -144,6 +145,9 @@ function mapLanguage(kind: string) {
     break
   case 'py':
     language = 'python'
+    break
+  case 'golang':
+    language = 'go'
     break
   default:
     break
