@@ -146,7 +146,6 @@ function mapLanguage(kind: string) {
   case 'py':
     language = 'python'
     break
-  case 'go':
   case 'golang':
     language = 'go'
     break
