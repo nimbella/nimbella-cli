@@ -12,7 +12,7 @@
  */
 
 import {
-  DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, DeployerAnnotation, VersionEntry,
+  DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, VersionEntry,
   ProjectReader, OWOptions, KeyVal, Feedback
 } from './deploy-struct'
 import {
@@ -62,7 +62,7 @@ export async function cleanOrLoadVersions(todeploy: DeployStructure): Promise<De
 }
 
 // Do the actual deployment (after testing the target namespace and cleaning)
-export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
+export async function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
   let webLocal: string
   if (todeploy.flags.webLocal) {
     webLocal = ensureWebLocal(todeploy.flags.webLocal)
@@ -77,16 +77,15 @@ export function doDeploy(todeploy: DeployStructure): Promise<DeployResponse> {
     webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
       todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
   }
-  const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy.owClient, todeploy.deployerAnnotation, todeploy.parameters,
-    todeploy.environment, todeploy.cleanNamespace, todeploy.flags.incremental ? todeploy.versions : undefined, todeploy.reader, todeploy.feedback))
-  const strays = straysToResponse(todeploy.strays)
-  return Promise.all(webPromises.concat(actionPromises)).then(responses => {
-    responses.push(strays)
-    const response = combineResponses(responses)
-    response.apihost = todeploy.credentials.ow.apihost
-    if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
-    return response
-  })
+  const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy))
+  const responses: DeployResponse[] = await Promise.all(webPromises.concat(actionPromises))
+  responses.push(straysToResponse(todeploy.strays))
+  const sequenceResponses = await Promise.all(deploySequences(todeploy, todeploy.feedback))
+  responses.push(...sequenceResponses)
+  const response = combineResponses(responses)
+  response.apihost = todeploy.credentials.ow.apihost
+  if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
+  return response
 }
 
 // Process the remote result when something has been built remotely
@@ -184,14 +183,14 @@ export function deployWebResource(res: WebResource, actionWrapPackage: string, s
 }
 
 // Wrap a web resource in an action.   Returns a promise of the resulting ActionSpec
-export async function actionWrap(res: WebResource, reader: ProjectReader): Promise<ActionSpec> {
+export async function actionWrap(res: WebResource, reader: ProjectReader, pkgName: string): Promise<ActionSpec> {
   const body = (await reader.readFileContents(res.filePath)).toString('base64')
   const name = res.simpleName.endsWith('.html') ? res.simpleName.replace('.html', '') : res.simpleName
   let bodyExpr = `  const body = '${body}'`
   if (isTextType(res.mimeType)) {
     bodyExpr = "  const body = Buffer.from('" + body + "', 'base64').toString('utf-8')"
   }
-  let code = `function main() {
+  const code = `function main() {
     ${bodyExpr}
     return {
        statusCode: 200,
@@ -199,22 +198,24 @@ export async function actionWrap(res: WebResource, reader: ProjectReader): Promi
        body
     }
 }`
-  return { name, file: res.filePath, runtime: 'nodejs:default', binary: false, web: true, code, wrapping: res.filePath }
+  return { name, file: res.filePath, runtime: 'nodejs:default', binary: false, web: true, code, wrapping: res.filePath, package: pkgName }
 }
 
 // Deploy a package, then deploy everything in it (currently just actions)
-export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, deployerAnnot: DeployerAnnotation,
-  projectParams: openwhisk.Dict, projectEnv: openwhisk.Dict, namespaceIsClean: boolean, versions: VersionEntry,
-  reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
+export async function deployPackage(pkg: PackageSpec, spec: DeployStructure): Promise<DeployResponse> {
+  const {
+    parameters: projectParams, environment: projectEnv, cleanNamespace: namespaceIsClean, versions,
+    owClient: wsk, deployerAnnotation, flags
+  } = spec
   if (pkg.name === 'default') {
-    return Promise.all(pkg.actions.map(action => deployAction(action, wsk, '', deployerAnnot, namespaceIsClean, versions, reader, feedback)))
+    return Promise.all(pkg.actions.map(action => deployAction(action, spec, namespaceIsClean)))
       .then(combineResponses)
   }
   // Check whether the package metadata needs to be deployed; if so, deploy it.  If not, make a vacuous response with the existing package
   // VersionInfo.   That is needed so that the new versions.json will have the information in it.
   let pkgResponse: DeployResponse
   const digest = digestPackage(pkg)
-  if (versions && versions.packageVersions && versions.packageVersions[pkg.name] && digest === versions.packageVersions[pkg.name].digest) {
+  if (flags.incremental && versions.packageVersions && versions.packageVersions[pkg.name] && digest === versions.packageVersions[pkg.name].digest) {
     const packageVersions = {}
     packageVersions[pkg.name] = versions.packageVersions[pkg.name]
     pkgResponse = { successes: [], failures: [], ignored: [], packageVersions, actionVersions: {}, namespace: undefined }
@@ -225,7 +226,7 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
     }
     const oldAnnots = former && former.annotations ? makeDict(former.annotations) : {}
     delete oldAnnots.deployerAnnot // remove unwanted legacy from undetected earlier error
-    const deployer = deployerAnnot
+    const deployer = deployerAnnotation
     deployer.digest = digest.substring(0, 8)
     const annotDict = Object.assign({}, oldAnnots, pkg.annotations, { deployer })
     const annotations = keyVal(annotDict)
@@ -242,30 +243,127 @@ export async function deployPackage(pkg: PackageSpec, wsk: openwhisk.Client, dep
     })
   }
   // Now deploy (or skip) the actions of the package
-  const prefix = pkg.name + '/'
-  const promises = pkg.actions.map(action => deployAction(action, wsk, prefix, deployerAnnot, pkg.clean || namespaceIsClean,
-    versions, reader, feedback)).concat(Promise.resolve(pkgResponse))
+  const promises = pkg.actions.map(action => deployAction(action, spec, pkg.clean || namespaceIsClean)).concat(Promise.resolve(pkgResponse))
   return Promise.all(promises).then(responses => combineResponses(responses))
 }
 
 // Deploy an action
-function deployAction(action: ActionSpec, wsk: openwhisk.Client, prefix: string, deplAnnot: DeployerAnnotation,
-  actionIsClean: boolean, versions: VersionEntry, reader: ProjectReader, feedback: Feedback): Promise<DeployResponse> {
+function deployAction(action: ActionSpec, spec: DeployStructure, pkgIsClean: boolean): Promise<DeployResponse> {
+  const { owClient: wsk, feedback, reader } = spec
+  const prefix = action.package === 'default' ? '' : action.package + '/'
+  const context = `action '${prefix}${action.name}'`
+  debug('deploying %s', context)
   if (action.buildError) {
-    return Promise.resolve(wrapError(action.buildError, `action '${prefix}${action.name}'`))
+    return Promise.resolve(wrapError(action.buildError, context))
   }
   if (action.buildResult) {
     return processRemoteResponse(action.buildResult, wsk, action.name, feedback)
   }
   if (action.code) {
-    return deployActionFromCode(action, prefix, action.code, wsk, deplAnnot, actionIsClean, versions)
+    debug('action already has code')
+    return deployActionFromCodeOrSequence(action, spec, action.code, undefined, pkgIsClean)
+  }
+  if (action.sequence) {
+    const error = checkForLegalSequence(action)
+    if (error) {
+      return Promise.resolve(wrapError(error, context))
+    }
+    if (!spec.sequences) {
+      spec.sequences = []
+    }
+    spec.sequences.push(action)
+    return Promise.resolve(emptyResponse())
   }
   const codeFile = action.file
-  return reader.readFileContents(codeFile).then(data => {
-    const code = action.binary ? data.toString('base64') : String(data)
-    return code
-  }).then((code: string) => deployActionFromCode(action, prefix, code, wsk, deplAnnot, actionIsClean, versions))
-    .catch(err => Promise.resolve(wrapError(err, `action '${prefix}${action.name}'`)))
+  if (codeFile) {
+    debug('reading action code from %s', codeFile)
+    return reader.readFileContents(codeFile).then(data => {
+      const code = action.binary ? data.toString('base64') : String(data)
+      return code
+    }).then((code: string) => deployActionFromCodeOrSequence(action, spec, code, undefined, pkgIsClean))
+      .catch(err => Promise.resolve(wrapError(err, context)))
+  } else {
+    return Promise.resolve(wrapError(new Error('Action is named in the config but does not exist in the project'), context))
+  }
+}
+
+// The ActionSpec is known to include the sequence member but may still not be consistent
+function checkForLegalSequence(action: ActionSpec): any {
+  if (action.file) {
+    return new Error('An action cannot be a sequence and also exist in the project directory structure')
+  }
+  if (action.runtime || action.binary || action.main) {
+    return new Error('An action cannot be a sequence and also have the runtime, binary, or main attributes')
+  }
+  return false
+}
+
+// Deploy the sequences of the project, if any.  These were identified while deploying the
+// actions.  Sequence actions were lightly checked, then deferred.   We do some deeper checks here.
+// We don't permit a sequence of the project to be a member of another.  And we warn if any of the
+// member actions are in the same namespace but not present in the deployment.  The first restriction
+// is temporary: we should ultimately do a topo-sort of dependencies, deploy sequences in a workable
+// order, and only reject cycles.
+function deploySequences(todeploy: DeployStructure, feedback: Feedback): Promise<DeployResponse>[] {
+  const sequences = todeploy.sequences || []
+  const { credentials: { namespace }} = todeploy
+  const sequenceNames = sequences.map(sequence => fqnFromActionSpec(sequence, namespace))
+  const result: Promise<DeployResponse>[] = []
+  const actionFqns = getAllActionFqns(todeploy, namespace)
+  const thisNsPrefix = '/' + namespace + '/'
+  for (const seq of (todeploy.sequences || [])) {
+    const members = seq.sequence.map(action => fqn(action, namespace))
+    debug('Sequence \'%s\' has members \'%O\'', seq.name, members)
+    members.forEach(action => {
+      if (sequenceNames.includes(action)) {
+        return wrapError(new Error('Temporary restriction: sequences in a project cannot refer to other sequences in the same project'), 'sequences')
+      }
+      if (action.startsWith(thisNsPrefix) && !actionFqns.includes(action)) {
+        feedback.warn(`Sequence '%s' contains action '%s' which is in the same namespace but not part of the deployment`, seq.name, action)
+      }
+    })
+    const exec: openwhisk.Sequence = { kind: 'sequence', components: members }
+    result.push(deployActionFromCodeOrSequence(seq, todeploy, undefined, exec, isCleanPkg(todeploy, seq.package)))
+  }
+  return result
+}
+
+// Lookup a package in the DeployStructure and answer whether it is cleaned.  If the spec is cleaning
+// the namespace that counts and we return true.
+function isCleanPkg(spec: DeployStructure, pkgName: string): boolean {
+  if (spec.cleanNamespace) {
+    return true
+  }
+  const pkg = (spec.packages || []).find(pkg => pkg.name === pkgName)
+  return !!pkg?.clean
+}
+
+// Compute a fully qualified OW name from an ActionSpec plus a default namespace
+function fqnFromActionSpec(spec: ActionSpec, namespace: string): string {
+  let name = spec.name
+  if (spec.package && spec.package !== 'default') {
+    name = `${spec.package}/${name}`
+  }
+  return `/${namespace}/${name}`
+}
+
+// Get the fqns of all actions in the spec
+function getAllActionFqns(spec: DeployStructure, namespace: string): string[] {
+  const ans: string[] = []
+  for (const pkg of spec.packages) {
+    if (pkg.actions) {
+      ans.push(...pkg.actions.map(action => fqnFromActionSpec(action, namespace )))
+    }
+  }
+  return ans
+}
+
+// Convert an OW resource name to fqn form (it may already be in that form)
+function fqn(name: string, namespace: string): string {
+  if (name.startsWith('/')) {
+    return name
+  }
+  return `/${namespace}/${name}`
 }
 
 function encodeParameters(normalParms: openwhisk.Dict, envParms: openwhisk.Dict): KeyVal[] {
@@ -283,31 +381,42 @@ function encodeParameters(normalParms: openwhisk.Dict, envParms: openwhisk.Dict)
   return ans
 }
 
-// Deploy an action when the code has already been read from a file or constructed programmatically.  The code and file members
-// of the ActionSpec are ignored but the rest of the ActionSpec is intepreted here.
-async function deployActionFromCode(action: ActionSpec, prefix: string, code: string, wsk: openwhisk.Client, deployerAnnot: DeployerAnnotation,
-  actionIsClean: boolean, versions: VersionEntry): Promise<DeployResponse> {
-  const name = prefix + action.name
-  const runtime = action.runtime
-  if (!runtime) {
+// Deploy an action when the code has already been read from a file or constructed programmatically or when the
+// action is a sequence (Sequence passed in lieu of code).
+async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeployStructure,
+  code: string, sequence: openwhisk.Sequence, pkgIsClean: boolean): Promise<DeployResponse> {
+  const name = action.package && action.package !== 'default' ? `${action.package}/${action.name}` : action.name
+  const { versions, flags, deployerAnnotation, owClient: wsk } = spec
+  const deployerAnnot = Object.assign({}, deployerAnnotation)
+
+  debug('deploying %s using %s', name, !sequence ? 'code' : 'sequence info')
+  if (code && !action.runtime) {
     return Promise.resolve(wrapError(new Error(`Action '${name}' not deployed: runtime type could not be determined`), `action ${name}`))
   }
   // Check whether the action needs to be deployed; if so, deploy it.  If not, make a vacuous response with the existing package
-  // VersionInfo.   That is needed so that the new versions.json will have the information in it.
-  const digest = digestAction(action, code)
-  if (versions && versions.actionVersions && versions.actionVersions[name] && digest === versions.actionVersions[name].digest) {
-    // Skipping deployment
-    const actionVersions = {}
-    actionVersions[name] = versions.actionVersions[name]
-    return Promise.resolve(wrapSuccess(name, 'action', true, undefined, actionVersions, undefined))
+  // VersionInfo.   That is needed so that the new versions.json will have the information in it.  We don't digest
+  // or skip deployment for sequences.
+  let digest: string
+  if (!sequence) { // test for absence of sequence, not presence of code; code may be the empty string
+    digest = digestAction(action, code)
+    debug('computed digest for %s', name)
+    if (flags.incremental && versions.actionVersions && versions.actionVersions[name] &&
+      digest === versions.actionVersions[name].digest) {
+      // Skipping deployment
+      debug('matched digest for %s', name)
+      const actionVersions = {}
+      actionVersions[name] = versions.actionVersions[name]
+      return Promise.resolve(wrapSuccess(name, 'action', true, undefined, actionVersions, undefined))
+    }
+    // Record
+    debug('recording digest for %s', name)
+    deployerAnnot.digest = digest.substring(0, 8)
   }
   // Will be deployed
   // Compute the annotations that we will definitely be adding
+  deployerAnnot.zipped = action.zipped
   const annotations = action.annotations || {}
-  const deployer = deployerAnnot
-  deployer.digest = digest.substring(0, 8)
-  deployer.zipped = action.zipped
-  annotations.deployer = deployer
+  annotations.deployer = deployerAnnot
   if (action.web === true) {
     annotations['web-export'] = true
     annotations.final = true
@@ -328,7 +437,7 @@ async function deployActionFromCode(action: ActionSpec, prefix: string, code: st
   }
   // Get the former annotations of the action if any
   let former: openwhisk.Action
-  if (!action.clean && !actionIsClean) {
+  if (!action.clean && !pkgIsClean) {
     const options = { name, code: false }
     former = await wsk.actions.get(options).catch(() => undefined)
   }
@@ -341,7 +450,7 @@ async function deployActionFromCode(action: ActionSpec, prefix: string, code: st
   }
   // Compute the complete Action value for the call
   const params = encodeParameters(action.parameters, action.environment)
-  const exec = { code, binary: action.binary, kind: runtime, main: action.main } // Actually legal but openwhisk.Exec doesn't think so
+  const exec = sequence || { code, binary: action.binary, kind: action.runtime, main: action.main } // Actually legal but openwhisk.Exec doesn't think so
   const actionBody: openwhisk.Action = { annotations: keyVal(annotDict), parameters: params, exec: exec as openwhisk.Exec }
   if (action.limits) {
     actionBody.limits = action.limits
@@ -349,7 +458,9 @@ async function deployActionFromCode(action: ActionSpec, prefix: string, code: st
   const deployParams = { name, action: actionBody }
   return wsk.actions.update(deployParams).then(response => {
     const map = {}
-    map[name] = { version: response.version, digest }
+    if (digest) { 
+      map[name] = { version: response.version, digest }
+    }
     const namespace = response.namespace.split('/')[0]
     return Promise.resolve(wrapSuccess(name, 'action', false, action.wrapping, map, namespace))
   }).catch(err => {

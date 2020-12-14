@@ -216,8 +216,10 @@ function mergePackages(fs: PackageSpec[], config: PackageSpec[]): PackageSpec[] 
     if (already) {
       merge[pkg.name] = mergePackage(already, pkg)
     } else {
-      // For now, a package cannot be declared _only_ in the config
-      throw new Error(`Package '${pkg.name}' is named in the config but does not exist in the project`)
+      (pkg.actions || []).forEach(action => {
+        action.package = pkg.name
+      })
+      merge[pkg.name] = pkg
     }
   })
   const ans: PackageSpec[] = []
@@ -235,7 +237,7 @@ function mergePackage(fs: PackageSpec, config: PackageSpec): PackageSpec {
   const ans = Object.assign({}, fs, config)
   if (fsActions && fsActions.length > 0) {
     if (cfgActions && cfgActions.length > 0) {
-      ans.actions = mergeActions(fsActions, cfgActions)
+      ans.actions = mergeActions(fsActions, cfgActions, config.name)
     } else {
       ans.actions = fsActions
     }
@@ -262,7 +264,7 @@ function adjustWebExportFlags(pkgs: PackageSpec[]) {
 
 // Merge the actions portion of a PackageSpec in config, if any, into the corresponding PackageSpec actions read from the file system.
 // The merge key is the action name.
-function mergeActions(fs: ActionSpec[], config: ActionSpec[]): ActionSpec[] {
+function mergeActions(fs: ActionSpec[], config: ActionSpec[], pkgName: string): ActionSpec[] {
   const merge = {}
   fs.forEach(action => {
     merge[action.name] = action
@@ -272,8 +274,8 @@ function mergeActions(fs: ActionSpec[], config: ActionSpec[]): ActionSpec[] {
     if (already) {
       merge[action.name] = mergeAction(already, action)
     } else {
-      // For now, an action cannot be declared _only_ in the config
-      throw new Error(`Action '${action.name}' is named in the config but does not exist in the project`)
+      action.package = pkgName
+      merge[action.name] = action
     }
   })
   const ans: ActionSpec[] = []
@@ -365,7 +367,7 @@ function readPackage(pkgPath: string, displayPath: string, pkgName: string, incl
           throw duplicateName(name, before, runtime)
         }
         seen[name] = runtime
-        promises.push(Promise.resolve({ name, file, displayFile, runtime, binary, zipped }))
+        promises.push(Promise.resolve({ name, file, displayFile, runtime, binary, zipped, package: pkgName }))
       } else if (item.isDirectory) {
         // Build-dependent action or renamed action
         if (!includer.isActionIncluded(pkgName, item.name)) continue
@@ -375,7 +377,7 @@ function readPackage(pkgPath: string, displayPath: string, pkgName: string, incl
         }
         seen[item.name] = '*'
         promises.push(getBuildForAction(file, reader).then(build => {
-          return { name: item.name, file, displayFile, build }
+          return { name: item.name, file, displayFile, build, package: pkgName }
         }))
       }
     }
