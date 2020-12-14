@@ -14,7 +14,7 @@
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
 import { inBrowser } from 'nimbella-deployer'
 import { flags } from '@oclif/command'
-import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
+import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/create')
 
 export default class ActionCreate extends NimBaseCommand {

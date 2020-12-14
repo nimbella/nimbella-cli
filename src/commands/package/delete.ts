@@ -12,7 +12,7 @@
  */
 
 import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
-import { RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime'
+import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 import { flags } from '@oclif/command'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/package/delete')
 import { getCredentials, wipePackage, authPersister } from 'nimbella-deployer'

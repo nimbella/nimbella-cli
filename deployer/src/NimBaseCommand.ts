@@ -126,6 +126,7 @@ class AioCommand extends Command {
   logJSON(_hdr: string, _entity: Record<string, unknown>) { /* no-op */ }
   table(data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}) { /* no-op */ }
   async run(_argv?: string[]) { /* no-op */ }
+  setNamespaceHeaderOmission(_newValue: boolean) { /* no-op */ }
 }
 
 // The base for all our commands, including the ones that delegate to aio.  There are methods designed to be called from the
@@ -204,6 +205,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
       cmd.table = this.saveTable(logger)
       logger.command = this.command
       debug('aio capture intercepts installed')
+      cmd.setNamespaceHeaderOmission(true)
       await cmd.run()
     } else {
       cmd.handleError = this.handleError.bind(cmd)

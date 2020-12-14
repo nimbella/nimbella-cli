@@ -126,7 +126,8 @@ function generateSample(kind: string, config: DeployStructure | undefined, sampl
       parameters: {},
       environment: {},
       annotations: {},
-      limits: {}
+      limits: {},
+      package: 'default'
     }
     defPkg.actions.push(action)
   }
@@ -145,6 +146,7 @@ function mapLanguage(kind: string) {
   case 'py':
     language = 'python'
     break
+  case 'go':
   case 'golang':
     language = 'go'
     break
