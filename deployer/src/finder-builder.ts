@@ -891,11 +891,12 @@ function build(cmd: string, args: string[], realPath: string, displayPath: strin
   errorTag: string, verbose: boolean, feedback: Feedback): Promise<any> {
   debug('building with realPath=%s and displayPath=%s', realPath, displayPath)
   let result = ''
-  const time = Date.now()
+  let time = Date.now()
   function statusUpdate(data: { toString: () => string }) {
     result += data.toString()
     const newTime = Date.now()
     if ((newTime - time) > 5000) {
+      time = newTime
       feedback.progress('Still running', infoMsg, 'in', displayPath)
     }
   }
