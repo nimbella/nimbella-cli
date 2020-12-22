@@ -11,10 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 
@@ -37,7 +36,7 @@ export default class WebContentDelete extends NimBaseCommand {
         await this.deleteFile(args.webContentName, client, logger).catch((err: Error) => logger.handleError('', err));
     }
 
-    async deleteFile(webContentName: string, client: Bucket, logger: NimLogger) {
+    async deleteFile(webContentName: string, client: StorageClient, logger: NimLogger) {
         const loader = await spinner();
         loader.start(`searching ${webContentName}`, 'deleting', { stdout: true })
         await client.file(webContentName).delete().then(_ => loader.stop('done'));

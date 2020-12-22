@@ -12,7 +12,6 @@
  */
 
 import { Dict, Client, Limits, KeyVal as OWKeyVal } from 'openwhisk'
-import { Bucket } from '@google-cloud/storage'
 
 // Contains the primary type definition for the deployer structure.
 // The structure consists of the contents of a 'project' (its file and folder structure) along
@@ -146,7 +145,7 @@ export interface DeployStructure {
     filePath?: string // The location of the project on disk
     githubPath?: string // The original github path specified, if deploying from github
     owClient?: Client // The openwhisk client for deploying actions and packages
-    bucketClient?: Bucket // The gcloud storage client for deploying to a bucket
+    bucketClient?: StorageClient // The client for deploying to a bucket
     includer?: Includer // The 'includer' for deciding which packages, actions, web are included in the deploy
     reader?: ProjectReader // The project reader to use
     versions?: VersionEntry // The VersionEntry for credentials.namespace on the selected API host if available
@@ -155,6 +154,27 @@ export interface DeployStructure {
     webBuildError?: Error // Indicates an error in building the web component; the structure is usable but the failure should be reported
     webBuildResult?: string // activation id of remote build
     sequences?: ActionSpec[] // detected during action deployment and deferred until ordinary actions are deployed
+}
+
+// Part of StorageClient interface
+export interface RemoteFile {
+    save: (data: Buffer, options: Record<string, any>) => Promise<any>
+    setMetadata: (meta: Record<string, any>) => Promise<any>
+    getMetadata: () => Promise<Record<string, any>>
+    exists: () => Promise<boolean>
+    delete: () => Promise<any>
+    download: (options?: Record<string, any>) => Promise<Buffer>
+    getSignedUrl: (options?: Record<string, any>) => Promise<string>
+}
+
+// The behaviors required of a storage client.
+export interface StorageClient {
+    name: string
+    setMetadata: (meta: Record<string, any>) => Promise<any>
+    deleteFiles: (options?: Record<string, any>) => Promise<any>
+    upload: (path: string, options?: Record<string, any>) => Promise<any>
+    file: (destination: string) => RemoteFile
+    getFiles: (options?: Record<string, any>) => Promise<RemoteFile[]>        
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)

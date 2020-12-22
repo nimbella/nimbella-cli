@@ -1,0 +1,36 @@
+{
+  "name": "nimbella-gcsprovider",
+  "version": "1.10.2",
+  "description": "The google cloud storage provider for nimbella-cli",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nimbella/nimbella-cli.git"
+  },
+  "keywords": [],
+  "author": "Nimbella Corporation",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@google-cloud/storage": "5.3.0"
+  },
+  "devDependencies": {
+    "@types/swagger-schema-official": "2.0.15",
+    "nimbella-deployer": "file:../deployer/nimbella-deployer-1.10.2.tgz",
+    "rimraf": "^3.0.1",
+    "typescript": "^3.4.3"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "files": [
+    "/lib",
+    "/LICENSE",
+    "/package.json"
+  ],
+  "scripts": {
+    "prepack": "rimraf lib && tsc -b && npm run minify",
+    "test": "echo NO TESTS",
+    "minify": "test $NO_MINIFY || for i in `find lib -type f -name \\*.js`; do npx minify $i > minified; mv minified $i; done"
+  },
+  "types": "lib/index.d.ts"
+}

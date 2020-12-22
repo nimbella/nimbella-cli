@@ -14,8 +14,7 @@
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
 import { getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace, computeBucketStorageName,
-     cleanBucket, Credentials } from 'nimbella-deployer'
-import { Storage } from '@google-cloud/storage'
+     cleanBucket, Credentials, makeStorageClient } from 'nimbella-deployer'
 import { prompt, choicePrompter } from '../../ui'
 
 export default class NamespaceClean extends NimBaseCommand {
@@ -50,7 +49,7 @@ export default class NamespaceClean extends NimBaseCommand {
         }
         let auth: string
         let apihost: string
-        let storageKey: {}
+        let storageKey: Record<string, any>
         if (flags.auth && flags.apihost) {
             // Bypass credential fetching (used by `nimadmin` when cleaning up a namespace)
             auth = flags.auth
@@ -71,8 +70,7 @@ export default class NamespaceClean extends NimBaseCommand {
             return
         }
         const bucketName = computeBucketStorageName(apihost, namespace)
-        const storage = new Storage(storageKey)
-        const client = storage.bucket(bucketName)
+        const client = makeStorageClient(bucketName, storageKey)
         const msg = await cleanBucket(client, undefined, creds.ow)
         if (msg) {
             logger.log(msg)

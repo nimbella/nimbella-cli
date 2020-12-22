@@ -11,13 +11,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { Storage, Bucket } from '@google-cloud/storage'
-import { getCredentials, getCredentialsForNamespace, computeBucketStorageName, Credentials } from 'nimbella-deployer'
+import { StorageClient, getCredentials, getCredentialsForNamespace, computeBucketStorageName, 
+  makeStorageClient, Credentials } from 'nimbella-deployer'
 
 type StorageClientResponse = {
     bucketName: string
-    storage: Storage
-    client: Bucket
+    client: StorageClient
     creds: Credentials
 }
 async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix = ''): Promise<StorageClientResponse> {
@@ -34,11 +33,10 @@ async function getStorageClient(args: any, flags: any, authPersister: any, bucke
   const storageKey = creds.storageKey
   const bucketName = computeBucketStorageName(apiHost, namespace)
   if (!storageKey) {
-    return { bucketName, storage: undefined, client: undefined, creds: undefined }
+    return { bucketName, client: undefined, creds: undefined }
   }
-  const storage = new Storage(storageKey)
-  const client = storage.bucket(bucketPrefix + bucketName)
-  return { bucketName, storage, client, creds }
+  const client = makeStorageClient(bucketPrefix + bucketName, storageKey)
+  return { bucketName, client, creds }
 }
 
 export async function getWebStorageClient(args: any, flags: any, authPersister: any): Promise<StorageClientResponse> {

@@ -13,14 +13,13 @@
 
 import {
   DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, VersionEntry,
-  ProjectReader, OWOptions, KeyVal, Feedback
+  ProjectReader, OWOptions, KeyVal, Feedback, StorageClient
 } from './deploy-struct'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse, isTextType,
   straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions, waitForActivation
 } from './util'
 import * as openwhisk from 'openwhisk'
-import { Bucket } from '@google-cloud/storage'
 import { deployToBucket, cleanBucket } from './deploy-to-bucket'
 import { ensureWebLocal, deployToWebLocal } from './web-local'
 import * as rimrafOrig from 'rimraf'
@@ -169,7 +168,7 @@ export async function cleanPackage(client: openwhisk.Client, name: string, versi
 // which is assumed to exist (it should have been created already).  Otherwise, if bucketClient is specified, this
 // is a traditional deploy to the bucket.  Otherwise (none specified) it is an error.
 export function deployWebResource(res: WebResource, actionWrapPackage: string, spec: BucketSpec,
-  bucketClient: Bucket, versions: VersionEntry, webLocal: string, reader: ProjectReader, owOptions: OWOptions): Promise<DeployResponse> {
+  bucketClient: StorageClient, versions: VersionEntry, webLocal: string, reader: ProjectReader, owOptions: OWOptions): Promise<DeployResponse> {
   // We can rely on the fact that prepareToDeploy would have rejected the deployment if action wrapping failed.
   if (actionWrapPackage) {
     return Promise.resolve(emptyResponse())

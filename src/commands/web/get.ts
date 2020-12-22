@@ -11,9 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 import { existsSync } from 'fs';
@@ -43,7 +42,7 @@ export default class WebContentGet extends NimBaseCommand {
         if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
         if (flags.url) {
             // check if file exists, otherwise catch error and report non-availability
-            const [exists] = await client.file(args.webContentName).exists()
+            const exists = await client.file(args.webContentName).exists()
             if (exists) {
                 const url = new URL(creds.ow.apihost)
                 logger.log(`https://${creds.namespace}-${url.hostname}/${args.webContentName}`)
@@ -55,7 +54,7 @@ export default class WebContentGet extends NimBaseCommand {
             await this.downloadFile(args.webContentName, args.destination, client, logger, flags.saveAs, flags.save).catch((err: Error) => logger.handleError('', err));
     }
 
-    async downloadFile(webContentName: string, destination: string, client: Bucket, logger: NimLogger, saveAs: string, save: boolean = false) {
+    async downloadFile(webContentName: string, destination: string, client: StorageClient, logger: NimLogger, saveAs: string, save: boolean = false) {
         if (!existsSync(destination)) {
             logger.handleError(`${destination} doesn't exist`)
         }
@@ -66,17 +65,15 @@ export default class WebContentGet extends NimBaseCommand {
             await client.file(webContentName).download({ destination: join(destination, (saveAs ? saveAs : fileName)) }).then(_ => loader.stop('done'));
         }
         else {
-            client.file(webContentName).download(function (err, contents) {
-                if (err) {
-                    loader.stop(`couldn't print content`)
-                    errorHandler(err, logger, webContentName);
-                }
-                else {
-                    loader.stop()
-                    logger.log('\n')
-                    logger.log(String.fromCharCode.apply(null, contents))
-                }
-            });
+            try {
+                const contents = client.file(webContentName).download()
+                loader.stop()
+                logger.log('\n')
+                logger.log(String.fromCharCode.apply(null, contents))
+            } catch (err) {
+                loader.stop(`couldn't print content`)
+                errorHandler(err, logger, webContentName);
+            }
         }
     }
 }

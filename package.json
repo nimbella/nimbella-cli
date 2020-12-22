@@ -17,7 +17,6 @@
     "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#v2020-12-11-1",
     "@adobe/aio-lib-core-config": "^1.0.15",
     "@adobe/aio-lib-runtime": "^1.2.1",
-    "@google-cloud/storage": "5.3.0",
     "@oclif/command": "^1",
     "@oclif/config": "^1",
     "@oclif/plugin-autocomplete": "^0.1.5",

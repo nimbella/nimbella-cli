@@ -37,7 +37,7 @@ export default class ObjectUrl extends NimBaseCommand {
         if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
 
         try {
-            const file = await client.file(args.objectName)
+            const file = client.file(args.objectName)
             const expiration = flags.ttl * 60 * 1000
             const options = {
                 version: 'v4' as 'v2' | 'v4',

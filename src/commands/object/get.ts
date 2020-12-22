@@ -11,9 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getObjectStorageClient } from '../../storage/clients'
 import { existsSync } from 'fs'
@@ -43,7 +42,7 @@ export default class ObjectGet extends NimBaseCommand {
         await this.downloadFile(args.objectName, args.destination, client, logger, flags.saveAs, flags.save).catch((err: Error) => logger.handleError('', err));
     }
 
-    async downloadFile(objectName: string, destination: string, client: Bucket, logger: NimLogger, saveAs: string, save: boolean = false) {
+    async downloadFile(objectName: string, destination: string, client: StorageClient, logger: NimLogger, saveAs: string, save: boolean = false) {
         if (!existsSync(destination)) {
             logger.handleError(`${destination} doesn't exist`)
         }
@@ -54,17 +53,15 @@ export default class ObjectGet extends NimBaseCommand {
             await client.file(objectName).download({ destination: join(destination, (saveAs ? saveAs : fileName)) }).then(_ => loader.stop('done'));
         }
         else {
-            client.file(objectName).download(function (err, contents) {
-                if (err) {
-                    loader.stop(`couldn't print content`)
-                    errorHandler(err, logger, objectName);
-                }
-                else {
-                    loader.stop()
-                    logger.log('\n')
-                    logger.log(String.fromCharCode.apply(null, contents))
-                }
-            });
+            try {
+                const contents = client.file(objectName).download()
+                loader.stop()
+                logger.log('\n')
+                logger.log(String.fromCharCode.apply(null, contents))
+            } catch (err) {
+                loader.stop(`couldn't print content`)
+                errorHandler(err, logger, objectName);
+            }
         }
     }
 }
