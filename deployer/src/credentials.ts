@@ -141,6 +141,32 @@ export async function switchNamespace(namespace: string, apihost: string|undefin
   return answer
 }
 
+// Get a valid Credentials object by finding the information in the environment.   This will generally not work in the
+// CLI context but is designed to work via the deployer API when running in actions.  It may be especially
+// useful in shared packages, where the credentials in the environment will vary by invoking user.
+// For the information to be fully usable the environment must include __OW_API_KEY, which is only present when
+// the action is annotated with provide-api-key=true.
+// If the environment is inadequate to support this API, an error is generally not indicated.  Instead,
+// an incomplete Credentials object is returned.
+export function getCredentialsFromEnvironment(): Credentials {
+  const storeCreds = process.env.__NIM_STORAGE_KEY
+  const apihost = process.env.__OW_API_HOST
+  const namespace = process.env.__OW_NAMESPACE
+  const api_key = process.env.__OW_API_KEY
+  const redis = !!process.env.__NIM_REDIS_PASSWORD
+  let storageKey: CredentialStorageEntry
+  if (storeCreds) {
+    try {
+      const storage = JSON.parse(storeCreds)
+      const { client_email, private_key, project_id } = storage
+      storageKey = { credentials: { client_email, private_key }, project_id }
+    } catch (_) {
+      // Assume no storage if can't be parsed
+    }
+  }
+  return { namespace, ow: { api_key, apihost }, redis, storageKey }
+}
+
 // Get the credentials for a namespace.  Similar logic to switchNamespace but does not change which
 // namespace is considered current.
 export async function getCredentialsForNamespace(namespace: string, apihost: string|undefined, persister: Persister): Promise<Credentials> {
