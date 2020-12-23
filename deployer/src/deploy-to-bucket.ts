@@ -13,7 +13,7 @@
 
 import {
   Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader,
-  OWOptions, StorageClient
+  OWOptions, StorageClient, StorageProvider
 } from './deploy-struct'
 import { wrapSuccess, wrapError, inBrowser } from './util'
 import axios from 'axios'
@@ -21,7 +21,6 @@ import * as openwhisk from 'openwhisk'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
-import * as URL from 'url-parse'
 import * as makeDebug from 'debug'
 const debug = makeDebug('nim:deployer:deploy-to-bucket')
 
@@ -29,16 +28,10 @@ const debug = makeDebug('nim:deployer:deploy-to-bucket')
 // to the bucket associated with the credentials.  Assumes credentials have sufficient information.
 type BucketClientOptions = BucketSpec | 'data'
 export async function openBucketClient(credentials: Credentials, options: BucketClientOptions): Promise<StorageClient> {
-  let bucketSpec: BucketSpec
-  let namePrefix = 'data-'
-  if (options !== 'data') {
-    bucketSpec = options as BucketSpec
-    namePrefix = ''
-  }
+  const web = options !== 'data'
+  const bucketSpec: BucketSpec = web ? options as BucketSpec : undefined
   debug('bucket client open')
-  const bucketName = namePrefix + computeBucketStorageName(credentials.ow.apihost, credentials.namespace)
-  debug('computed bucket name %s', bucketName)
-  const bucket = await makeStorageClient(bucketName, credentials.storageKey)
+  const bucket = makeStorageClient(credentials.namespace, credentials.ow.apihost, web, credentials.storageKey)
   if (bucketSpec) {
     await addWebMeta(bucket, bucketSpec)
   }
@@ -63,11 +56,11 @@ function addWebMeta(bucket: StorageClient, bucketSpec: BucketSpec): Promise<Stor
 }
 
 // Make a Bucket (client to access a bucket)
-export function makeStorageClient(bucketName: string, options: Record<string, any>): StorageClient {
+export function makeStorageClient(namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>): StorageClient {
   debug('entered makeClient')
-  const storage = require("nimbella-gcsprovider") // TODO this should be configurable
+  const storage: StorageProvider = require("nimbella-gcsprovider") // TODO this should be configurable
   debug('loaded impl')
-  return storage.makeClient(bucketName, options)
+  return storage.getClient(namespace, apiHost, web, credentials)
 }
 
 // Deploy a single resource to the bucket
@@ -117,7 +110,7 @@ export async function deployToBucket(resource: WebResource, client: StorageClien
     debug('an error occurred: %O', err)
     return wrapError(err, `web resource '${resource.simpleName}' (${phaseTracker[0]})`)
   }
-  const item = `https://${client.name}/${destination}`
+  const item = `${client.getURL()}/${destination}`
   const response = wrapSuccess(item, 'web', false, undefined, {}, undefined)
   response.webHashes = {}
   response.webHashes[resource.filePath] = digest
@@ -159,17 +152,6 @@ async function doUpload(owOptions: OWOptions, client: StorageClient, destination
     const remoteFile = client.file(destination)
     await remoteFile.save(data, { metadata })
   }
-}
-
-// Compute the actual name of a bucket as viewed by google storage
-export function computeBucketStorageName(apiHost: string, namespace: string): string {
-  return computeBucketDomainName(apiHost, namespace).split('.').join('-')
-}
-
-// Compute the external domain name corresponding to a web bucket
-export function computeBucketDomainName(apiHost: string, namespace: string): string {
-  const url = URL(apiHost)
-  return namespace + '-' + url.hostname
 }
 
 // Clean the resources from a bucket starting at the root or at the prefixPath.

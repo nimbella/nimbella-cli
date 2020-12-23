@@ -156,7 +156,24 @@ export interface DeployStructure {
     sequences?: ActionSpec[] // detected during action deployment and deferred until ordinary actions are deployed
 }
 
-// Part of StorageClient interface
+// The top-level signature of a storage provider
+export interface StorageProvider {
+    getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => StorageClient
+    getImplementation: () => any
+}
+
+// The behaviors required of a storage client (part of storage provider)
+export interface StorageClient {
+    getURL: () => string
+    setMetadata: (meta: Record<string, any>) => Promise<any>
+    deleteFiles: (options?: Record<string, any>) => Promise<any>
+    upload: (path: string, options?: Record<string, any>) => Promise<any>
+    file: (destination: string) => RemoteFile
+    getFiles: (options?: Record<string, any>) => Promise<RemoteFile[]>
+    getImplementation: () => any        
+}
+
+// The behaviors required of a file handle (part of storage provider)
 export interface RemoteFile {
     save: (data: Buffer, options: Record<string, any>) => Promise<any>
     setMetadata: (meta: Record<string, any>) => Promise<any>
@@ -165,16 +182,7 @@ export interface RemoteFile {
     delete: () => Promise<any>
     download: (options?: Record<string, any>) => Promise<Buffer>
     getSignedUrl: (options?: Record<string, any>) => Promise<string>
-}
-
-// The behaviors required of a storage client.
-export interface StorageClient {
-    name: string
-    setMetadata: (meta: Record<string, any>) => Promise<any>
-    deleteFiles: (options?: Record<string, any>) => Promise<any>
-    upload: (path: string, options?: Record<string, any>) => Promise<any>
-    file: (destination: string) => RemoteFile
-    getFiles: (options?: Record<string, any>) => Promise<RemoteFile[]>        
+    getImplementation: () => any
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)

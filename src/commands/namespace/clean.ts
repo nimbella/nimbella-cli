@@ -13,7 +13,7 @@
 
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
-import { getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace, computeBucketStorageName,
+import { getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace,
      cleanBucket, Credentials, makeStorageClient } from 'nimbella-deployer'
 import { prompt, choicePrompter } from '../../ui'
 
@@ -69,12 +69,11 @@ export default class NamespaceClean extends NimBaseCommand {
         if (flags.justwhisk || !storageKey) {
             return
         }
-        const bucketName = computeBucketStorageName(apihost, namespace)
-        const client = makeStorageClient(bucketName, storageKey)
+        const client = makeStorageClient(namespace, apihost, true, storageKey)
         const msg = await cleanBucket(client, undefined, creds.ow)
         if (msg) {
             logger.log(msg)
         }
-        logger.log(`Web content removed from https://${bucketName}`)
+        logger.log(`Web content removed from ${client.getURL()}`)
      }
 }

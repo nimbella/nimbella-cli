@@ -11,15 +11,19 @@
  * governing permissions and limitations under the License.
  */
 
- import { StorageClient } from 'nimbella-deployer'
- import { Storage, Bucket, File, GetSignedUrlConfig } from '@google-cloud/storage'
- import { RemoteFile } from 'nimbella-deployer'
-
+import { StorageProvider, StorageClient, RemoteFile } from 'nimbella-deployer'
+import { Storage, Bucket, File, GetSignedUrlConfig } from '@google-cloud/storage'
+import * as URL from 'url-parse'
+ 
  class GCSRemoteFile implements RemoteFile {
 	 private file: File
 
 	 constructor(file: File) {
 		 this.file = file
+	 }
+
+	 getImplementation(): any {
+		 return this.file
 	 }
 
 	 save( data: Buffer, options: Record<string, any>): Promise<any> {
@@ -56,15 +60,22 @@
  }
 
  class GCSClient implements StorageClient {
-    private bucket: Bucket
+	private bucket: Bucket
+	private url: string
 	 
-	constructor(bucket: Bucket) {
+	constructor(bucket: Bucket, url: string) {
 		this.bucket = bucket
-		this.name = bucket.name
+		this.url = url
 	}
 
-	name: string
+	getImplementation(): any {
+		return this.bucket
+	}
 
+    getURL(): string {
+		return this.url
+	}
+	
 	setMetadata(meta: Record<string, any>): Promise<any> {
 		return this.bucket.setMetadata(meta)
 	}
@@ -87,9 +98,31 @@
 	}
  }
 
- export function makeClient(bucketName: string, options: Record<string,any>): StorageClient {
-	const storage: Storage = new Storage(options)
-	const bucket = storage.bucket(bucketName)
-	return new GCSClient(bucket)
- }
- 
+// Compute the actual name of a bucket as viewed by google storage
+function computeBucketStorageName(apiHost: string, namespace: string): string {
+  return computeBucketDomainName(apiHost, namespace).split('.').join('-')
+}
+
+// Compute the external domain name corresponding to a web bucket
+function computeBucketDomainName(apiHost: string, namespace: string): string {
+  const url = URL(apiHost)
+  return namespace + '-' + url.hostname
+}
+
+const provider: StorageProvider = {
+	getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
+		const storage: Storage = new Storage(credentials)
+		let bucketName = computeBucketStorageName(apiHost, namespace)
+		let url: string
+		if (web) {
+			url = computeBucketDomainName(apiHost, namespace)
+		} else {
+			bucketName = 'data-' + bucketName
+		}
+		const bucket = storage.bucket(bucketName)
+		return new GCSClient(bucket, url)
+	},
+	getImplementation: () => null 
+}
+
+export default provider

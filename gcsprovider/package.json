@@ -1,6 +1,6 @@
 {
-  "name": "nimbella-gcsprovider",
-  "version": "1.10.2",
+  "name": "@nimbella/storage-gcs",
+  "version": "0.0.1",
   "description": "The google cloud storage provider for nimbella-cli",
   "main": "lib/index.js",
   "repository": {
