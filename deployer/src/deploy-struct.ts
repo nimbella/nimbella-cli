@@ -12,6 +12,7 @@
  */
 
 import { Dict, Client, Limits, KeyVal as OWKeyVal } from 'openwhisk'
+import { StorageClient } from '@nimbella/storage-provider'
 
 // Contains the primary type definition for the deployer structure.
 // The structure consists of the contents of a 'project' (its file and folder structure) along
@@ -154,35 +155,6 @@ export interface DeployStructure {
     webBuildError?: Error // Indicates an error in building the web component; the structure is usable but the failure should be reported
     webBuildResult?: string // activation id of remote build
     sequences?: ActionSpec[] // detected during action deployment and deferred until ordinary actions are deployed
-}
-
-// The top-level signature of a storage provider
-export interface StorageProvider {
-    getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => StorageClient
-    getImplementation: () => any
-}
-
-// The behaviors required of a storage client (part of storage provider)
-export interface StorageClient {
-    getURL: () => string
-    setMetadata: (meta: Record<string, any>) => Promise<any>
-    deleteFiles: (options?: Record<string, any>) => Promise<any>
-    upload: (path: string, options?: Record<string, any>) => Promise<any>
-    file: (destination: string) => RemoteFile
-    getFiles: (options?: Record<string, any>) => Promise<RemoteFile[]>
-    getImplementation: () => any        
-}
-
-// The behaviors required of a file handle (part of storage provider)
-export interface RemoteFile {
-    save: (data: Buffer, options: Record<string, any>) => Promise<any>
-    setMetadata: (meta: Record<string, any>) => Promise<any>
-    getMetadata: () => Promise<Record<string, any>>
-    exists: () => Promise<boolean>
-    delete: () => Promise<any>
-    download: (options?: Record<string, any>) => Promise<Buffer>
-    getSignedUrl: (options?: Record<string, any>) => Promise<string>
-    getImplementation: () => any
 }
 
 // Structure declaring ownership of the targetNamespace by this project.  Ownership is recorded only locally (in the credential store)

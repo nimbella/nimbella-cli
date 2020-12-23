@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { StorageProvider, StorageClient, RemoteFile } from 'nimbella-deployer'
+import { StorageProvider, StorageClient, RemoteFile } from '@nimbella/storage-provider'
 import { Storage, Bucket, File, GetSignedUrlConfig } from '@google-cloud/storage'
 import * as URL from 'url-parse'
  
