@@ -13,8 +13,9 @@
 
 import {
   DeployStructure, DeployResponse, ActionSpec, PackageSpec, WebResource, BucketSpec, VersionEntry,
-  ProjectReader, OWOptions, KeyVal, Feedback, StorageClient
+  ProjectReader, OWOptions, KeyVal, Feedback
 } from './deploy-struct'
+import { StorageClient } from '@nimbella/storage-provider'
 import {
   combineResponses, wrapError, wrapSuccess, keyVal, emptyResponse, isTextType,
   straysToResponse, wipe, makeDict, digestPackage, digestAction, loadVersions, waitForActivation

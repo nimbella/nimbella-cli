@@ -19,9 +19,11 @@ export {
 } from './api'
 export {
   DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, CredentialStorageEntry, Flags, PackageSpec, ActionSpec,
-  CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider, StorageProvider, StorageClient,
-  RemoteFile
+  CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider
 } from './deploy-struct'
+export {
+  StorageProvider, StorageClient, RemoteFile
+} from '@nimbella/storage-provider'
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'
 export {
   addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace, getCurrentNamespace,
