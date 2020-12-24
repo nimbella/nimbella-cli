@@ -17,9 +17,11 @@ import * as URL from 'url-parse'
  
  class GCSRemoteFile implements RemoteFile {
 	 private file: File
+	 name: string
 
 	 constructor(file: File) {
 		 this.file = file
+		 this.name = file.name
 	 }
 
 	 getImplementation(): any {
@@ -81,7 +83,7 @@ import * as URL from 'url-parse'
 	}
 
 	deleteFiles(options?: Record<string, any>): Promise<any> {
-		return this.deleteFiles(options)
+		return this.bucket.deleteFiles(options)
 	}
 
 	file(destination: string): RemoteFile {
@@ -115,14 +117,13 @@ const provider: StorageProvider = {
 		let bucketName = computeBucketStorageName(apiHost, namespace)
 		let url: string
 		if (web) {
-			url = computeBucketDomainName(apiHost, namespace)
+			url = "https://" + computeBucketDomainName(apiHost, namespace)
 		} else {
 			bucketName = 'data-' + bucketName
 		}
 		const bucket = storage.bucket(bucketName)
 		return new GCSClient(bucket, url)
-	},
-	getImplementation: () => null 
+	}
 }
 
 export default provider

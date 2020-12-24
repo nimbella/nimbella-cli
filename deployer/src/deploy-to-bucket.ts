@@ -59,8 +59,8 @@ function addWebMeta(bucket: StorageClient, bucketSpec: BucketSpec): Promise<Stor
 // Make a Bucket (client to access a bucket)
 export function makeStorageClient(namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>): StorageClient {
   debug('entered makeClient')
-  const storage: StorageProvider = require('nimbella-gcsprovider') // TODO this should be configurable
-  debug('loaded impl')
+  const storage: StorageProvider = require('@nimbella/storage-gcs').default // TODO this should be configurable
+  debug('loaded impl: %O', storage)
   return storage.getClient(namespace, apiHost, web, credentials)
 }
 

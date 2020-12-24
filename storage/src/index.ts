@@ -14,7 +14,6 @@
 // The top-level signature of a storage provider
 export interface StorageProvider {
     getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => StorageClient
-    getImplementation: () => any
 }
 
 // The behaviors required of a storage client (part of storage provider)
@@ -30,6 +29,7 @@ export interface StorageClient {
 
 // The behaviors required of a file handle (part of storage provider)
 export interface RemoteFile {
+    name: string
     save: (data: Buffer, options: Record<string, any>) => Promise<any>
     setMetadata: (meta: Record<string, any>) => Promise<any>
     getMetadata: () => Promise<Record<string, any>>

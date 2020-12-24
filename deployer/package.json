@@ -12,6 +12,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@nimbella/sdk": "^1.1.0",
+    "@nimbella/storage-gcs": "0.0.3",
     "@nimbella/storage-provider": "0.0.1",
     "@oclif/command": "^1",
     "@octokit/rest": "16.36.0",
