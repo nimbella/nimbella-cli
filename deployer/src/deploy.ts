@@ -306,7 +306,7 @@ function checkForLegalSequence(action: ActionSpec): any {
 // order, and only reject cycles.
 function deploySequences(todeploy: DeployStructure, feedback: Feedback): Promise<DeployResponse>[] {
   const sequences = todeploy.sequences || []
-  const { credentials: { namespace }} = todeploy
+  const { credentials: { namespace } } = todeploy
   const sequenceNames = sequences.map(sequence => fqnFromActionSpec(sequence, namespace))
   const result: Promise<DeployResponse>[] = []
   const actionFqns = getAllActionFqns(todeploy, namespace)
@@ -319,7 +319,7 @@ function deploySequences(todeploy: DeployStructure, feedback: Feedback): Promise
         return wrapError(new Error('Temporary restriction: sequences in a project cannot refer to other sequences in the same project'), 'sequences')
       }
       if (action.startsWith(thisNsPrefix) && !actionFqns.includes(action)) {
-        feedback.warn(`Sequence '%s' contains action '%s' which is in the same namespace but not part of the deployment`, seq.name, action)
+        feedback.warn('Sequence \'%s\' contains action \'%s\' which is in the same namespace but not part of the deployment', seq.name, action)
       }
     })
     const exec: openwhisk.Sequence = { kind: 'sequence', components: members }
@@ -352,7 +352,7 @@ function getAllActionFqns(spec: DeployStructure, namespace: string): string[] {
   const ans: string[] = []
   for (const pkg of spec.packages) {
     if (pkg.actions) {
-      ans.push(...pkg.actions.map(action => fqnFromActionSpec(action, namespace )))
+      ans.push(...pkg.actions.map(action => fqnFromActionSpec(action, namespace)))
     }
   }
   return ans
@@ -458,7 +458,7 @@ async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeploySt
   const deployParams = { name, action: actionBody }
   return wsk.actions.update(deployParams).then(response => {
     const map = {}
-    if (digest) { 
+    if (digest) {
       map[name] = { version: response.version, digest }
     }
     const namespace = response.namespace.split('/')[0]
