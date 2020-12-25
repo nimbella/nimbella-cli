@@ -11,31 +11,96 @@
  * governing permissions and limitations under the License.
  */
 
+ // Model the StorageKey type that is to be stored in the credential store.  Only the 'provider' member has specified
+ // semantics.  The rest is at the convenience of the provider.
+export type StorageKey = {
+        provider?: string  // Assume '@nimbella/storage-gcs' if omitted
+    } & {
+        [prop: string]: any
+    }
+
+// Options that may be passed to deleteFiles
+export interface DeleteFilesOptions {
+    force?: boolean
+    prefix?: string
+}
+
+// Options that may be passed to upload
+export interface UploadOptions {
+    destination?: string
+    gzip?: boolean
+    metadata?: Record<string, any>
+}
+
+// Options that may be passed to getFiles
+export interface GetFilesOptions {
+    prefix?: string
+}
+
+// Options that may be passed to save
+export interface SaveOptions {
+    metadata?: Record<string, any>
+}
+
+// Options that may be passed to download
+export interface DownloadOptions {
+    destination?: string
+}
+
+// Options that may be passed to getSignedUrl
+export interface SignedUrlOptions {
+    version: 'v2' | 'v4'
+    action: string
+    expires: number
+    contentType?: string
+}
+
 // The top-level signature of a storage provider
 export interface StorageProvider {
-    getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => StorageClient
+    // Provide the appropriate client handle for accessing a type file store (web or data) in a particular namespace
+    getClient: (namespace: string, apiHost: string, web: boolean, credentials: StorageKey) => StorageClient
+    // Convert an object containing credentials as stored in couchdb into the proper form for the credential store
+    // Except for GCS, which is grandfathered as the default, the result must include a 'provider' field denoting
+    // a valid npm-installable package
+    prepareCredentials: (original: Record<string,any>) => StorageKey
 }
 
 // The behaviors required of a storage client (part of storage provider)
 export interface StorageClient {
+    // Get the root URL if the client is for web storage (return falsey for data storage)
     getURL: () => string
+    // Set 'bucket level' metadata (RemoteFile has the call for per-object metadata)
     setMetadata: (meta: Record<string, any>) => Promise<any>
-    deleteFiles: (options?: Record<string, any>) => Promise<any>
-    upload: (path: string, options?: Record<string, any>) => Promise<any>
+    // Delete files from the store
+    deleteFiles: (options?: DeleteFilesOptions) => Promise<any>
+    // Add a local file (specified by path)
+    upload: (path: string, options?: UploadOptions) => Promise<any>
+    // Obtain a file handle in the store.  The file may or may not exist
     file: (destination: string) => RemoteFile
-    getFiles: (options?: Record<string, any>) => Promise<RemoteFile[]>
+    // Get files from the store
+    getFiles: (options?: GetFilesOptions) => Promise<RemoteFile[]>
+    // Get the underlying implementation for provider-dependent operations
     getImplementation: () => any        
 }
 
 // The behaviors required of a file handle (part of storage provider)
 export interface RemoteFile {
+    // The name of the file
     name: string
-    save: (data: Buffer, options: Record<string, any>) => Promise<any>
+    // Save data into the file
+    save: (data: Buffer, options: SaveOptions) => Promise<any>
+    // Set the file metadata
     setMetadata: (meta: Record<string, any>) => Promise<any>
+    // Get the file metadata
     getMetadata: () => Promise<Record<string, any>>
+    // Test whether file exists
     exists: () => Promise<boolean>
+    // Delete the file
     delete: () => Promise<any>
-    download: (options?: Record<string, any>) => Promise<Buffer>
-    getSignedUrl: (options?: Record<string, any>) => Promise<string>
+    // Obtain the contents of the file
+    download: (options?: DownloadOptions) => Promise<Buffer>
+    // Get a signed URL to the file
+    getSignedUrl: (options?: SignedUrlOptions) => Promise<string>
+    // Get the underlying implementation for provider-dependent operations
     getImplementation: () => any
 }

@@ -12,10 +12,9 @@
  */
 
 import {
-  Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader,
-  OWOptions
+  Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader, OWOptions
 } from './deploy-struct'
-import { StorageClient, StorageProvider } from '@nimbella/storage-provider'
+import { StorageClient, StorageProvider, StorageKey } from '@nimbella/storage-provider'
 import { wrapSuccess, wrapError, inBrowser } from './util'
 import axios from 'axios'
 import * as openwhisk from 'openwhisk'
@@ -57,9 +56,10 @@ function addWebMeta(bucket: StorageClient, bucketSpec: BucketSpec): Promise<Stor
 }
 
 // Make a Bucket (client to access a bucket)
-export function makeStorageClient(namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>): StorageClient {
-  debug('entered makeClient')
-  const storage: StorageProvider = require('@nimbella/storage-gcs').default // TODO this should be configurable
+export function makeStorageClient(namespace: string, apiHost: string, web: boolean, credentials: StorageKey): StorageClient {
+  debug('entered makeStorageClient')
+  const provider = credentials.provider || '@nimbella/storage-gcs'
+  const storage: StorageProvider = require(provider).default
   debug('loaded impl: %O', storage)
   return storage.getClient(namespace, apiHost, web, credentials)
 }

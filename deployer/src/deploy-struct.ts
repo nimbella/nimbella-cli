@@ -301,25 +301,18 @@ export interface CredentialNSMap {
 // we assume that a user keeps only one credential set for that namespace.
 export interface CredentialEntry {
     api_key: string
-    storageKey: CredentialStorageEntry
+    storageKey: any
     redis: boolean
     project?: string
     production?: boolean
     commander?: Record<string, unknown>
 }
 
-// Part of CredentialStore for the storage credentials.  THese are organized for convenience in initializing a Storage
-// object.
-export interface CredentialStorageEntry {
-    project_id: string
-    credentials: { client_email: string, private_key: string }
-}
-
 // The Result of a credential lookup
 export interface Credentials {
     namespace: string|undefined
     ow: OWOptions
-    storageKey: CredentialStorageEntry|undefined
+    storageKey: any
     redis: boolean
     project?: string
     production?: boolean

@@ -11,7 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { StorageProvider, StorageClient, RemoteFile } from '@nimbella/storage-provider'
+import { StorageProvider, StorageClient, RemoteFile, DeleteFilesOptions, DownloadOptions, GetFilesOptions,
+	SaveOptions, SignedUrlOptions, UploadOptions, StorageKey } from '@nimbella/storage-provider'
 import { Storage, Bucket, File, GetSignedUrlConfig } from '@google-cloud/storage'
 import * as URL from 'url-parse'
  
@@ -28,7 +29,7 @@ import * as URL from 'url-parse'
 		 return this.file
 	 }
 
-	 save( data: Buffer, options: Record<string, any>): Promise<any> {
+	 save( data: Buffer, options: SaveOptions): Promise<any> {
 		 return this.file.save(data, options)
 	 }
 
@@ -50,12 +51,12 @@ import * as URL from 'url-parse'
 		return this.file.delete()
 	}
 	
-	async download(options?: Record<string, any>): Promise<Buffer> {
+	async download(options?: DownloadOptions): Promise<Buffer> {
 		const response = await this.file.download(options)
 		return response[0]
 	}
 
-	async getSignedUrl(options?: Record<string, any>): Promise<string> {
+	async getSignedUrl(options?: SignedUrlOptions): Promise<string> {
 		const result = await this.file.getSignedUrl(options as GetSignedUrlConfig)
 		return result[0]
 	}
@@ -82,7 +83,7 @@ import * as URL from 'url-parse'
 		return this.bucket.setMetadata(meta)
 	}
 
-	deleteFiles(options?: Record<string, any>): Promise<any> {
+	deleteFiles(options?: DeleteFilesOptions): Promise<any> {
 		return this.bucket.deleteFiles(options)
 	}
 
@@ -90,11 +91,11 @@ import * as URL from 'url-parse'
 		return new GCSRemoteFile(this.bucket.file(destination))
 	}
 
-	upload(path: string, options?: Record<string, any>): Promise<any> {
+	upload(path: string, options?: UploadOptions): Promise<any> {
 		return this.bucket.upload(path, options)
 	}
 
-	async getFiles(options?: Record<string, any>): Promise<RemoteFile[]> {
+	async getFiles(options?: GetFilesOptions): Promise<RemoteFile[]> {
 		const files = (await this.bucket.getFiles(options))[0]
 		return files.map(file => new GCSRemoteFile(file))
 	}
@@ -112,6 +113,10 @@ function computeBucketDomainName(apiHost: string, namespace: string): string {
 }
 
 const provider: StorageProvider = {
+	prepareCredentials: (original: Record<string, any>): StorageKey => {
+      	const { client_email, private_key, project_id } = original
+        return { credentials: { client_email, private_key }, project_id, provider: '@nimbella/storage-gcs' }
+	},
 	getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
 		const storage: Storage = new Storage(credentials)
 		let bucketName = computeBucketStorageName(apiHost, namespace)
