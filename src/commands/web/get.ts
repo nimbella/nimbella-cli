@@ -66,7 +66,7 @@ export default class WebContentGet extends NimBaseCommand {
         }
         else {
             try {
-                const contents = client.file(webContentName).download()
+                const contents = await client.file(webContentName).download()
                 loader.stop()
                 logger.log('\n')
                 logger.log(String.fromCharCode.apply(null, contents))

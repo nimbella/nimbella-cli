@@ -54,7 +54,7 @@ export default class ObjectGet extends NimBaseCommand {
         }
         else {
             try {
-                const contents = client.file(objectName).download()
+                const contents = await client.file(objectName).download()
                 loader.stop()
                 logger.log('\n')
                 logger.log(String.fromCharCode.apply(null, contents))
