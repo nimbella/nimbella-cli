@@ -29,7 +29,7 @@ export interface DeleteFilesOptions {
 export interface UploadOptions {
     destination?: string
     gzip?: boolean
-    metadata?: Record<string, any>
+    metadata?: SettableFileMetadata
 }
 
 // Options that may be passed to getFiles
@@ -39,7 +39,7 @@ export interface GetFilesOptions {
 
 // Options that may be passed to save
 export interface SaveOptions {
-    metadata?: Record<string, any>
+    metadata?: SettableFileMetadata
 }
 
 // Options that may be passed to download
@@ -50,9 +50,30 @@ export interface DownloadOptions {
 // Options that may be passed to getSignedUrl
 export interface SignedUrlOptions {
     version: 'v2' | 'v4'
-    action: string
+    action: 'read' | 'write' | 'delete'
     expires: number
     contentType?: string
+}
+
+// Options for setting website characteristics
+export interface WebsiteOptions {
+    mainPageSuffix?: string
+    notFoundPage?: string
+}
+
+// Per object (file) metadata
+export interface FileMetadata {
+    name: string
+    storageClass: string
+    size: string
+    etag: string
+    updated: string
+}
+
+// Metadata that can be set on a file
+export interface SettableFileMetadata {
+    contentType?: string
+    cacheControl?: string
 }
 
 // The top-level signature of a storage provider
@@ -69,8 +90,8 @@ export interface StorageProvider {
 export interface StorageClient {
     // Get the root URL if the client is for web storage (return falsey for data storage)
     getURL: () => string
-    // Set 'bucket level' metadata (RemoteFile has the call for per-object metadata)
-    setMetadata: (meta: Record<string, any>) => Promise<any>
+    // Set website information
+    setWebsite: (website: WebsiteOptions) => Promise<any>
     // Delete files from the store
     deleteFiles: (options?: DeleteFilesOptions) => Promise<any>
     // Add a local file (specified by path)
@@ -90,9 +111,9 @@ export interface RemoteFile {
     // Save data into the file
     save: (data: Buffer, options: SaveOptions) => Promise<any>
     // Set the file metadata
-    setMetadata: (meta: Record<string, any>) => Promise<any>
+    setMetadata: (meta: SettableFileMetadata) => Promise<any>
     // Get the file metadata
-    getMetadata: () => Promise<Record<string, any>>
+    getMetadata: () => Promise<FileMetadata>
     // Test whether file exists
     exists: () => Promise<boolean>
     // Delete the file
@@ -100,7 +121,7 @@ export interface RemoteFile {
     // Obtain the contents of the file
     download: (options?: DownloadOptions) => Promise<Buffer>
     // Get a signed URL to the file
-    getSignedUrl: (options?: SignedUrlOptions) => Promise<string>
+    getSignedUrl: (options: SignedUrlOptions) => Promise<string>
     // Get the underlying implementation for provider-dependent operations
     getImplementation: () => any
 }
