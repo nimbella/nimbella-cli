@@ -12,7 +12,7 @@
  */
 
 import { StorageProvider, StorageClient, RemoteFile, DeleteFilesOptions, DownloadOptions, GetFilesOptions,
-	SaveOptions, SignedUrlOptions, UploadOptions, StorageKey } from '@nimbella/storage-provider'
+	SaveOptions, SignedUrlOptions, UploadOptions, StorageKey, FileMetadata, WebsiteOptions, SettableFileMetadata } from '@nimbella/storage-provider'
 import { Storage, Bucket, File, GetSignedUrlConfig } from '@google-cloud/storage'
 import * as URL from 'url-parse'
  
@@ -29,15 +29,15 @@ import * as URL from 'url-parse'
 		 return this.file
 	 }
 
-	 save( data: Buffer, options: SaveOptions): Promise<any> {
+	 save(data: Buffer, options: SaveOptions): Promise<any> {
 		 return this.file.save(data, options)
 	 }
 
-	 setMetadata(meta: Record<string, any>): Promise<any> {
+	 setMetadata(meta: SettableFileMetadata): Promise<any> {
 		 return this.file.setMetadata(meta)
 	 }
 
-    async getMetadata(): Promise<Record<string, any>> {
+    async getMetadata(): Promise<FileMetadata> {
 		const data = await this.file.getMetadata()
 		return data[0]
 	}
@@ -56,7 +56,7 @@ import * as URL from 'url-parse'
 		return response[0]
 	}
 
-	async getSignedUrl(options?: SignedUrlOptions): Promise<string> {
+	async getSignedUrl(options: SignedUrlOptions): Promise<string> {
 		const result = await this.file.getSignedUrl(options as GetSignedUrlConfig)
 		return result[0]
 	}
@@ -79,8 +79,8 @@ import * as URL from 'url-parse'
 		return this.url
 	}
 	
-	setMetadata(meta: Record<string, any>): Promise<any> {
-		return this.bucket.setMetadata(meta)
+	setWebsite(website: WebsiteOptions): Promise<any> {
+		return this.bucket.setMetadata({ website })
 	}
 
 	deleteFiles(options?: DeleteFilesOptions): Promise<any> {
