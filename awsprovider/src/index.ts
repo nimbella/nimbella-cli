@@ -40,8 +40,8 @@ class S3RemoteFile implements RemoteFile {
 	}
 
 	save(data: Buffer, options?: SaveOptions): Promise<any> {
-		const { contentType: ContentType, cacheControl: CacheControl } = options?.metadata
-		const cmd = new PutObjectCommand({ Bucket: this.bucketName, Key: this.name, Body: data, ContentType, CacheControl })
+		const cmd = new PutObjectCommand({ Bucket: this.bucketName, Key: this.name, Body: data, 
+			ContentType: options?.metadata?.contentType, CacheControl: options?.metadata?.cacheControl })
 		return this.s3.send(cmd)
 	}
 
@@ -168,9 +168,9 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
 
 	upload(path: string, options?: UploadOptions): Promise<any> {
 		const data = createReadStream(path)
-		const { contentType: ContentType, cacheControl: CacheControl } = options?.metadata
 		const Key = options?.destination || path
-		const cmd = new PutObjectCommand({ Bucket: this.bucketName, Key, ContentType, CacheControl, Body: data })
+		const cmd = new PutObjectCommand({ Bucket: this.bucketName, Key, ContentType: options?.metadata?.contentType,
+			CacheControl: options?.metadata?.cacheControl, Body: data })
 		return this.s3.send(cmd)
 	}
 
