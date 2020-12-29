@@ -33,7 +33,7 @@ export async function fileMetaLong(files: any, client: StorageClient, logger: Ni
     const meta = await client.file(file.name).getMetadata()
     const fileName = meta.name
     let sizePad = ''
-    const size = humanFileSize(meta.size)
+    const size = humanFileSize(+meta.size)
     if (size.length < SIZE_LEN) {
       sizePad = ' '.repeat(SIZE_LEN - size.length)
     }

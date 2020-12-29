@@ -52,7 +52,7 @@ function addWebMeta(bucket: StorageClient, bucketSpec: BucketSpec): Promise<Stor
   }
   debug('Setting mainPageSuffix to %s and notFoundPage to %s', mainPageSuffix, notFoundPage)
   const website = { mainPageSuffix, notFoundPage }
-  return bucket.setMetadata({ website }).then(() => bucket)
+  return bucket.setWebsite(website).then(() => bucket)
 }
 
 // Make a Bucket (client to access a bucket)
