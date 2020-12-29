@@ -157,6 +157,9 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
 		// The multi-object delete takes a list of objects.  So this takes two round trips.
 		const listCmd = new ListObjectsCommand({ Bucket: this.bucketName, Prefix: options?.prefix })
 		const listResult = await this.s3.send(listCmd)
+		if (!listResult.Contents) {
+			return true
+		}
 		const Objects = listResult.Contents.map(obj => ({ Key: obj.Key }))
 		const deleteCmd = new DeleteObjectsCommand({ Bucket: this.bucketName, Delete: { Objects } })
 		return this.s3.send(deleteCmd)
@@ -177,7 +180,7 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
 	async getFiles(options?: GetFilesOptions): Promise<RemoteFile[]> {
 		const cmd = new ListObjectsCommand({ Bucket: this.bucketName, Prefix:options?.prefix })
 		const response = await this.s3.send(cmd)
-		return response.Contents.map(obj => new S3RemoteFile(this.s3, this.bucketName, obj.Key))
+		return (response.Contents || []).map(obj => new S3RemoteFile(this.s3, this.bucketName, obj.Key))
 	}
  }
 
