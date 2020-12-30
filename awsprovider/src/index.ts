@@ -48,7 +48,7 @@ class S3RemoteFile implements RemoteFile {
 	setMetadata(meta: SettableFileMetadata): Promise<any> {
 		const CopySource = `${this.bucketName}/${this.name}`
 		const { cacheControl: CacheControl, contentType: ContentType } = meta
-		const cmd = new CopyObjectCommand({ CopySource, Bucket: this.bucketName, Key: this.name, CacheControl, ContentType })
+		const cmd = new CopyObjectCommand({ CopySource, Bucket: this.bucketName, Key: this.name, CacheControl, ContentType, MetadataDirective: 'REPLACE' })
 		return this.s3.send(cmd)
 	}
 
@@ -205,6 +205,12 @@ const provider: StorageProvider = {
 	},
 	getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
 		const s3 = new S3Client(credentials)
+		s3.middlewareStack.add(
+  			(next) => async (args: any) => {
+    			delete args.request.headers['content-type']
+    			return next(args)
+  			},
+  			{step: 'build'})
 		let bucketName = computeBucketStorageName(apiHost, namespace)
 		let url: string
 		if (web) {
