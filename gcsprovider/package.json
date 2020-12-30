@@ -11,11 +11,14 @@
   "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@google-cloud/storage": "5.3.0"
+    "@google-cloud/storage": "5.3.0",
+    "url-parse": "^1.4.7"
   },
   "devDependencies": {
     "@nimbella/storage-provider": "0.0.6",
+    "@types/node": "^14.14.16",
     "rimraf": "^3.0.1",
+    "tslib": "^2.0.3",
     "typescript": "^3.4.3"
   },
   "engines": {
