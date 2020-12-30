@@ -1,6 +1,6 @@
 {
   "name": "@nimbella/storage-provider",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "The types that must be implemented by every Nimbella storage provider",
   "main": "lib/index.js",
   "repository": {
