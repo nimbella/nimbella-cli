@@ -11,6 +11,7 @@
   "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/node": "^14.14.16",
     "rimraf": "^3.0.1",
     "typescript": "^3.4.3"
   },
