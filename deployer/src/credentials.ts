@@ -401,8 +401,18 @@ function parseStorageString(storage: string, namespace: string): any {
   } catch {
     throw new Error(`Corrupt storage string for namespace '${namespace}'`)
   }
-  const providerName: string = parsedStorage.provider || '@nimbella/storage-gcs' 
-  const provider: StorageProvider = require(providerName).default
+  // Don't try to make the following more elegant.  
+  // The static require is needed for webpacking the workbench correctly.
+  // Even so, it only supports one storage provider.
+  let provider: StorageProvider
+  if (parsedStorage.provider && parsedStorage.provider != '@nimbella/storage-gcs') {
+    // This will not work in the workbench currently.  We need to use static requires for
+    // all storage providers.
+    provider = require(parsedStorage.provider).default
+  } else {
+    // But this should work fine in the workbench
+    provider = require('@nimbella/storage-gcs').default
+  }
   return provider.prepareCredentials(parsedStorage)
 }
 
