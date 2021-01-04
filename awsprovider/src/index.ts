@@ -22,17 +22,20 @@ import { createWriteStream, createReadStream } from 'fs'
 import { WritableStream } from 'memory-streams'
 import * as makeDebug from 'debug'
 const debug = makeDebug('nim:storage-s3')
+import * as URL from 'url-parse'
  
 class S3RemoteFile implements RemoteFile {
 	private s3: S3Client
 	private bucketName: string
+	private web: boolean
 	name: string
 
-    constructor(s3: S3Client, bucketName: string, fileName: string) {
+    constructor(s3: S3Client, bucketName: string, fileName: string, web: boolean) {
 		debug('created file handle for %s', fileName)
 		this.s3 = s3
 		this.bucketName = bucketName
 		this.name = fileName
+		this.web = web
 	}
 
 	getImplementation(): any {
@@ -40,8 +43,10 @@ class S3RemoteFile implements RemoteFile {
 	}
 
 	save(data: Buffer, options?: SaveOptions): Promise<any> {
+		// Set public read iff web bucket
+		const ACL = this.web ? 'public-read' : undefined
 		const cmd = new PutObjectCommand({ Bucket: this.bucketName, Key: this.name, Body: data, 
-			ContentType: options?.metadata?.contentType, CacheControl: options?.metadata?.cacheControl })
+			ContentType: options?.metadata?.contentType, CacheControl: options?.metadata?.cacheControl, ACL })
 		return this.s3.send(cmd)
 	}
 
@@ -129,7 +134,7 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
  class NimS3Client implements StorageClient {
 	private s3: S3Client
 	private bucketName: string
-	private url: string
+	private url: string // defined iff web
 	 
 	constructor(s3: S3Client, bucketName: string, url: string) {
 		debug('s3client: %O, bucketName=%s, url=%s', s3.config, bucketName, url)
@@ -166,21 +171,23 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
 	}
 
 	file(destination: string): RemoteFile {
-		return new S3RemoteFile(this.s3, this.bucketName, destination)
+		return new S3RemoteFile(this.s3, this.bucketName, destination, !!this.url)
 	}
 
 	upload(path: string, options?: UploadOptions): Promise<any> {
 		const data = createReadStream(path)
 		const Key = options?.destination || path
+		// Set public read iff web bucket
+		const ACL = this.url ? 'public-read' : undefined
 		const cmd = new PutObjectCommand({ Bucket: this.bucketName, Key, ContentType: options?.metadata?.contentType,
-			CacheControl: options?.metadata?.cacheControl, Body: data })
+			CacheControl: options?.metadata?.cacheControl, Body: data, ACL })
 		return this.s3.send(cmd)
 	}
 
 	async getFiles(options?: GetFilesOptions): Promise<RemoteFile[]> {
 		const cmd = new ListObjectsCommand({ Bucket: this.bucketName, Prefix:options?.prefix })
 		const response = await this.s3.send(cmd)
-		return (response.Contents || []).map(obj => new S3RemoteFile(this.s3, this.bucketName, obj.Key))
+		return (response.Contents || []).map(obj => new S3RemoteFile(this.s3, this.bucketName, obj.Key, !!this.url))
 	}
  }
 
@@ -190,11 +197,14 @@ function computeBucketStorageName(apiHost: string, namespace: string): string {
   return namespace + '-nimbella-io'
 }
 
-// Compute the external domain name corresponding to a web bucket
-function computeBucketDomainName(apiHost: string, namespace: string): string {
-	// There is no general answer for s3 ... it is going to depend on the installation
-	// This may have to be pluggable in some way
-	return undefined
+// Compute the website URL corresponding to a web bucket.  Note the algorithm here
+// works on one test installation (using scality ring) but is not really quite correct 
+// for AWS itself (where the website endpoint is distinct from the REST endpoint).  Also
+// this does not take into account additional layers that an installation may have to provide
+// https etc.  More work probably needed on this detail.
+function computeBucketUrl(endpoint: string, namespace: string): string {
+	const url = new URL(endpoint)
+	return `http://${namespace}-nimbella-io.${url.hostname}`
 }
 
 const provider: StorageProvider = {
@@ -205,6 +215,7 @@ const provider: StorageProvider = {
 	},
 	getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
 		const s3 = new S3Client(credentials)
+		// The following is a recommended workaround for https://github.com/aws/aws-sdk-js-v3/issues/1800
 		s3.middlewareStack.add(
   			(next) => async (args: any) => {
     			delete args.request.headers['content-type']
@@ -214,7 +225,7 @@ const provider: StorageProvider = {
 		let bucketName = computeBucketStorageName(apiHost, namespace)
 		let url: string
 		if (web) {
-			url = "https://" + computeBucketDomainName(apiHost, namespace)
+			url = computeBucketUrl(credentials.endpoint, namespace)
 		} else {
 			bucketName = 'data-' + bucketName
 		}
