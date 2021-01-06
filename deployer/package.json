@@ -17,7 +17,7 @@
     "@octokit/rest": "16.36.0",
     "adm-zip": "^0.4.16",
     "archiver": "^3.0.0",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "debug": "^4.1.1",
     "dotenv": "7.0.0",
     "expand-home-dir": "0.0.3",
