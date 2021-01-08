@@ -16,11 +16,11 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import {
-  CredentialStore, CredentialStorageEntry, CredentialEntry, CredentialHostMap, Credentials,
-  CredentialRow, Feedback
+  CredentialStore, CredentialEntry, CredentialHostMap, Credentials, CredentialRow, Feedback
 } from './deploy-struct'
 import * as createDebug from 'debug'
 import { wskRequest, inBrowser } from './util'
+import { StorageProvider } from '@nimbella/storage-provider'
 const debug = createDebug('nimbella.cli')
 
 // Non-exported constants
@@ -82,7 +82,7 @@ export function addCredential(store: CredentialStore, apihost: string, namespace
     nsMap = {}
     store.credentials[apihost] = nsMap
   }
-  const storageKey: CredentialStorageEntry = storage ? parseStorageString(storage, namespace) : undefined
+  const storageKey = storage ? parseStorageString(storage, namespace) : undefined
   nsMap[namespace] = { api_key, storageKey, redis }
   store.currentHost = apihost
   store.currentNamespace = namespace
@@ -154,12 +154,10 @@ export function getCredentialsFromEnvironment(): Credentials {
   const namespace = process.env.__OW_NAMESPACE
   const api_key = process.env.__OW_API_KEY
   const redis = !!process.env.__NIM_REDIS_PASSWORD
-  let storageKey: CredentialStorageEntry
+  let storageKey
   if (storeCreds) {
     try {
-      const storage = JSON.parse(storeCreds)
-      const { client_email, private_key, project_id } = storage
-      storageKey = { credentials: { client_email, private_key }, project_id }
+      storageKey = parseStorageString(storeCreds, namespace)
     } catch (_) {
       // Assume no storage if can't be parsed
     }
@@ -393,18 +391,29 @@ function getUniqueCredentials(namespace: string, apihost: string|undefined, stor
 }
 
 // Turn a raw storage string into the form used internally.
-function parseStorageString(storage: string, namespace: string): CredentialStorageEntry {
+function parseStorageString(storage: string, namespace: string): any {
   if (storage === 'yes') {
     throw new Error(`Storage was not fully initialized for namespace '${namespace}'`)
   }
-  let parsedStorage: { client_email: string, project_id: string, private_key: string }
+  let parsedStorage
   try {
     parsedStorage = JSON.parse(storage)
   } catch {
     throw new Error(`Corrupt storage string for namespace '${namespace}'`)
   }
-  const { client_email, project_id, private_key } = parsedStorage
-  return { project_id, credentials: { client_email, private_key } }
+  // Don't try to make the following more elegant.  
+  // The static require is needed for webpacking the workbench correctly.
+  // Even so, it only supports one storage provider.
+  let provider: StorageProvider
+  if (parsedStorage.provider && parsedStorage.provider != '@nimbella/storage-gcs') {
+    // This will not work in the workbench currently.  We need to use static requires for
+    // all storage providers.
+    provider = require(parsedStorage.provider).default
+  } else {
+    // But this should work fine in the workbench
+    provider = require('@nimbella/storage-gcs').default
+  }
+  return provider.prepareCredentials(parsedStorage)
 }
 
 // Commander section

@@ -12,7 +12,7 @@
  */
 
 import { Dict, Client, Limits, KeyVal as OWKeyVal } from 'openwhisk'
-import { Bucket } from '@google-cloud/storage'
+import { StorageClient } from '@nimbella/storage-provider'
 
 // Contains the primary type definition for the deployer structure.
 // The structure consists of the contents of a 'project' (its file and folder structure) along
@@ -146,7 +146,7 @@ export interface DeployStructure {
     filePath?: string // The location of the project on disk
     githubPath?: string // The original github path specified, if deploying from github
     owClient?: Client // The openwhisk client for deploying actions and packages
-    bucketClient?: Bucket // The gcloud storage client for deploying to a bucket
+    bucketClient?: StorageClient // The client for deploying to a bucket
     includer?: Includer // The 'includer' for deciding which packages, actions, web are included in the deploy
     reader?: ProjectReader // The project reader to use
     versions?: VersionEntry // The VersionEntry for credentials.namespace on the selected API host if available
@@ -301,25 +301,18 @@ export interface CredentialNSMap {
 // we assume that a user keeps only one credential set for that namespace.
 export interface CredentialEntry {
     api_key: string
-    storageKey: CredentialStorageEntry
+    storageKey: any
     redis: boolean
     project?: string
     production?: boolean
     commander?: Record<string, unknown>
 }
 
-// Part of CredentialStore for the storage credentials.  THese are organized for convenience in initializing a Storage
-// object.
-export interface CredentialStorageEntry {
-    project_id: string
-    credentials: { client_email: string, private_key: string }
-}
-
 // The Result of a credential lookup
 export interface Credentials {
     namespace: string|undefined
     ow: OWOptions
-    storageKey: CredentialStorageEntry|undefined
+    storageKey: any
     redis: boolean
     project?: string
     production?: boolean

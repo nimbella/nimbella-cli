@@ -18,16 +18,19 @@ export {
   wipeNamespace, wipePackage, getUserAgent
 } from './api'
 export {
-  DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, CredentialStorageEntry, Flags, PackageSpec, ActionSpec,
+  DeployStructure, DeployResponse, DeploySuccess, OWOptions, Credentials, CredentialRow, Flags, PackageSpec, ActionSpec,
   CredentialHostMap, CredentialNSMap, DeployerAnnotation, VersionMap, Feedback, DefaultFeedback, FullCredentials, IdProvider
 } from './deploy-struct'
+export {
+  StorageProvider, StorageClient, RemoteFile
+} from '@nimbella/storage-provider'
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'
 export {
   addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace, getCurrentNamespace,
   getApiHosts, Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount, getGithubAuth, getCredentialsFromEnvironment,
   switchGithubAccount, getPostmanKeys, deletePostmanKey, switchPostmanKey, addPostmanKey, getPostmanCurrentKey, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser
 } from './credentials'
-export { computeBucketStorageName, computeBucketDomainName, cleanBucket, restore404Page } from './deploy-to-bucket'
+export { cleanBucket, restore404Page, makeStorageClient } from './deploy-to-bucket'
 export { extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName, isTextType } from './util'
 export { GithubDef, isGithubRef, parseGithubRef, fetchProject } from './github'
 export { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger } from './NimBaseCommand'

@@ -17,7 +17,7 @@ import * as makeDebug from 'debug'
 import * as Zip from 'adm-zip'
 import * as rimraf from 'rimraf'
 import { Credentials, DeployStructure } from './deploy-struct'
-import { Bucket } from '@google-cloud/storage'
+import { StorageClient } from '@nimbella/storage-provider'
 import { getCredentials, authPersister } from './credentials'
 const debug = makeDebug('nim:deployer:slice-reader')
 const TEMP = process.platform === 'win32' ? process.env.TEMP : '/tmp'
@@ -28,7 +28,7 @@ const BUCKET_BUILDER_PREFIX = '.nimbella/builds'
 // This is the anchor for the nimbella sdk.  It is included dynamically instead of statically due to
 // webpack considerations in the workbench.  We do not want the dependency followed during module
 // initialization but only on demand.
-let nim: { storage: () => Bucket | PromiseLike<Bucket> }
+let nim: { storage: () => StorageClient | PromiseLike<StorageClient> }
 
 // Get the cache area
 function cacheArea() {
@@ -58,7 +58,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
   }
   debug('Making cache directory: %s', cache)
   fs.mkdirSync(cache, { recursive: true })
-  const bucket: Bucket = await getNim().storage()
+  const bucket: StorageClient = await getNim().storage()
   debug('have bucket client')
   const remoteFile = bucket.file(sliceName)
   debug('have remote file for %s', sliceName)
@@ -76,7 +76,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
     return ''
   }
   debug('have valid download response')
-  const zip = new Zip(response[0])
+  const zip = new Zip(response)
   for (const entry of zip.getEntries().filter(entry => !entry.isDirectory)) {
     const target = path.join(cache, entry.entryName)
     const parent = path.dirname(target)
@@ -95,7 +95,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
 export async function deleteSlice(project: DeployStructure): Promise<void> {
   const sliceName = path.relative(cacheArea(), project.filePath)
   const slicePath = path.join(BUCKET_BUILDER_PREFIX, sliceName)
-  const bucket: Bucket = await getNim().storage()
+  const bucket: StorageClient = await getNim().storage()
   const remoteFile = bucket.file(slicePath)
   await remoteFile.delete()
 }

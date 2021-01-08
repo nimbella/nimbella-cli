@@ -11,9 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, makeStorageClient } from 'nimbella-deployer'
 import { flags } from '@oclif/command'
-import { getCredentials, computeBucketDomainName, authPersister } from 'nimbella-deployer'
+import { getCredentials, authPersister } from 'nimbella-deployer'
 
 export default class AuthInspect extends NimBaseCommand {
   static description = 'Get current namespace with optional details'
@@ -53,7 +53,8 @@ export default class AuthInspect extends NimBaseCommand {
     }
     if (web) {
         if (!!creds.storageKey) {
-            ans.web = `https://${computeBucketDomainName(creds.ow.apihost, creds.namespace)}`
+            const storageClient = makeStorageClient(creds.namespace, creds.ow.apihost, true, creds.storageKey)
+            ans.web = `${storageClient.getURL()}`
         } else {
             ans.web = 'Not available, upgrade your account.'
         }

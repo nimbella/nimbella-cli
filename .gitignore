@@ -1,6 +1,6 @@
 node_modules
 package-lock.json
-/lib
+lib/
 /docs
 /deployer/lib
 version.json

@@ -11,12 +11,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
 import { basename, isAbsolute, join } from 'path'
 import { existsSync, lstatSync } from 'fs'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getObjectStorageClient } from '../../storage/clients'
 
@@ -40,7 +39,7 @@ export default class ObjectUpdate extends NimBaseCommand {
         await this.uploadFile(args.objectPath,  flags.destination, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
-    async uploadFile(objectPath: string, destination: string, client: Bucket, logger: NimLogger) {
+    async uploadFile(objectPath: string, destination: string, client: StorageClient, logger: NimLogger) {
         if (!existsSync(objectPath)){
             logger.handleError(`${objectPath} doesn't exist`)
         }
@@ -55,7 +54,7 @@ export default class ObjectUpdate extends NimBaseCommand {
 
         const loader = await spinner()
 
-        const [exists] = await client.file(targetPath).exists()
+        const exists = await client.file(targetPath).exists()
         if (!exists) {
             logger.handleError(`${targetPath} doesn't exist, use 'object:add' to add it. e.g. nim object add ${objectName}`)
         }

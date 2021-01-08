@@ -11,9 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 import { fileMetaLong, fileMetaShort } from '../../storage/util'
@@ -38,8 +37,8 @@ export default class WebList extends NimBaseCommand {
         await this.listFiles(client, logger, flags.long, args.prefix).catch((err: Error) => logger.handleError('', err));
     }
 
-    async listFiles(client: Bucket, logger: NimLogger, isLongFormat: boolean, prefix: string): Promise<void> {
-        const [files] = await client.getFiles({
+    async listFiles(client: StorageClient, logger: NimLogger, isLongFormat: boolean, prefix: string): Promise<void> {
+        const files = await client.getFiles({
             prefix: prefix,
         });
         if (files.length === 0) { return logger.log(`No content available ${prefix ? `matching prefix '${prefix}'` : ''}`); }

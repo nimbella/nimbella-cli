@@ -11,10 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 import { prompt } from '../../ui'
 import { authPersister, restore404Page, OWOptions } from 'nimbella-deployer'
@@ -45,7 +44,7 @@ export default class WebContentClean extends NimBaseCommand {
         await this.cleanup(client, creds.ow, logger).catch((err: Error) => logger.handleError('', err));
     }
 
-    async cleanup(client: Bucket, ow: OWOptions, logger: NimLogger) {
+    async cleanup(client: StorageClient, ow: OWOptions, logger: NimLogger) {
         const loader = await spinner();
         loader.start(`deleting web content`, '', { stdout: true })
         await client.deleteFiles().then(_ => restore404Page(client, ow)).then(_ => loader.stop('done')).catch(e => logger.handleError('', e));

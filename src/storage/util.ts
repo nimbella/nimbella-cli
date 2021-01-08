@@ -11,8 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
-import { NimLogger } from 'nimbella-deployer'
+import { NimLogger, StorageClient } from 'nimbella-deployer'
 import { bold } from 'chalk'
 
 // Constants used in formatting the file list
@@ -21,27 +20,25 @@ const LIST_SHORT_HEADER = 'Name'
 const LIST_LONG_HEADER = `Size${' '.repeat(SIZE_LEN - 4)} Updated${' '.repeat(17)} Name`
 const MAYBE = '-?-'
 
-export async function fileMetaShort(files: any, client: Bucket, logger: NimLogger): Promise<void> {
+export async function fileMetaShort(files: any, _client: StorageClient, logger: NimLogger): Promise<void> {
   logger.log(bold(LIST_SHORT_HEADER))
   for (const file of files) {
     logger.log(`${file.name}`)
   }
 }
 
-export async function fileMetaLong(files: any, client: Bucket, logger: NimLogger): Promise<void> {
+export async function fileMetaLong(files: any, client: StorageClient, logger: NimLogger): Promise<void> {
   logger.log(bold(LIST_LONG_HEADER))
   for (const file of files) {
-    await client.file(file.name).getMetadata().then(function(data) {
-      const meta = data[0]
-      const fileName = meta.name
-      let sizePad = ''
-      const size = humanFileSize(meta.size)
-      if (size.length < SIZE_LEN) {
-        sizePad = ' '.repeat(SIZE_LEN - size.length)
-      }
-      const updated = meta.updated || MAYBE
-      logger.log(`${size}${sizePad} ${updated} ${fileName}`)
-    })
+    const meta = await client.file(file.name).getMetadata()
+    const fileName = meta.name
+    let sizePad = ''
+    const size = humanFileSize(+meta.size)
+    if (size.length < SIZE_LEN) {
+      sizePad = ' '.repeat(SIZE_LEN - size.length)
+    }
+    const updated = meta.updated || MAYBE
+    logger.log(`${size}${sizePad} ${updated} ${fileName}`)
   }
 }
 

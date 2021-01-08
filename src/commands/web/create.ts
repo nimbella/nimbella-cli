@@ -11,12 +11,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { Bucket } from '@google-cloud/storage'
 import { flags } from '@oclif/command'
 import { basename, isAbsolute, join } from 'path'
 import { existsSync, lstatSync } from 'fs'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
 import { authPersister } from 'nimbella-deployer'
 import { getWebStorageClient } from '../../storage/clients'
 
@@ -43,7 +42,7 @@ export default class WebContentCreate extends NimBaseCommand {
         await this.uploadFile(args.webContentPath, flags.destination, flags.cache, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
-    async uploadFile(webContentPath: string, destination: string, cache: number, client: Bucket, logger: NimLogger) {
+    async uploadFile(webContentPath: string, destination: string, cache: number, client: StorageClient, logger: NimLogger) {
         if (!existsSync(webContentPath)) {
             logger.handleError(`${webContentPath} doesn't exist`)
         }
@@ -63,7 +62,7 @@ export default class WebContentCreate extends NimBaseCommand {
 
         const loader = await spinner()
 
-        const [exists] = await client.file(targetPath).exists()
+        const exists = await client.file(targetPath).exists()
         if (exists) {
             logger.handleError(`${targetPath} already exists, use 'web:update' to update it. e.g. nim web update ${contentName}`)
         }

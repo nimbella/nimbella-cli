@@ -11,16 +11,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { Storage, Bucket } from '@google-cloud/storage'
-import { getCredentials, getCredentialsForNamespace, computeBucketStorageName, Credentials } from 'nimbella-deployer'
+import { StorageClient, getCredentials, getCredentialsForNamespace, makeStorageClient, Credentials } from 'nimbella-deployer'
 
 type StorageClientResponse = {
-    bucketName: string
-    storage: Storage
-    client: Bucket
+    client: StorageClient
     creds: Credentials
 }
-async function getStorageClient(args: any, flags: any, authPersister: any, bucketPrefix = ''): Promise<StorageClientResponse> {
+async function getStorageClient(args: any, flags: any, authPersister: any, web: boolean): Promise<StorageClientResponse> {
   let namespace = flags.namespace
   let creds: Credentials
   let apiHost: string = flags.apihost
@@ -32,19 +29,17 @@ async function getStorageClient(args: any, flags: any, authPersister: any, bucke
   }
   apiHost = creds.ow.apihost
   const storageKey = creds.storageKey
-  const bucketName = computeBucketStorageName(apiHost, namespace)
   if (!storageKey) {
-    return { bucketName, storage: undefined, client: undefined, creds: undefined }
+    return { client: undefined, creds: undefined }
   }
-  const storage = new Storage(storageKey)
-  const client = storage.bucket(bucketPrefix + bucketName)
-  return { bucketName, storage, client, creds }
+  const client = makeStorageClient(namespace, apiHost, web, storageKey)
+  return { client, creds }
 }
 
 export async function getWebStorageClient(args: any, flags: any, authPersister: any): Promise<StorageClientResponse> {
-  return await getStorageClient(args, flags, authPersister)
+  return await getStorageClient(args, flags, authPersister, true)
 }
 
 export async function getObjectStorageClient(args: any, flags: any, authPersister: any): Promise<StorageClientResponse> {
-  return await getStorageClient(args, flags, authPersister, 'data-')
+  return await getStorageClient(args, flags, authPersister, false)
 }

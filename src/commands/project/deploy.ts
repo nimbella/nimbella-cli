@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
   readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
-  computeBucketDomainName, isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice } from 'nimbella-deployer';
+  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice } from 'nimbella-deployer';
 import * as path from 'path'
 import { choicePrompter } from '../../ui';
 
@@ -140,7 +140,8 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
     }
     return success
   }
-  return displayResult(result, watching, cmdFlags.webLocal, logger)
+  const bucketURL = todeploy.bucketClient?.getURL()
+  return displayResult(result, watching, cmdFlags. webLocal, bucketURL, logger)
 }
 
 // Display the deployment "header" (what we are about to deploy)
@@ -178,7 +179,7 @@ function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback
 }
 
 // Display the result of a successful run
-function displayResult(result: DeployResponse, watching: boolean, webLocal: string, logger: NimLogger): boolean {
+function displayResult(result: DeployResponse, watching: boolean, webLocal: string, bucketURL: string, logger: NimLogger): boolean {
   let success = true
   if (result.successes.length == 0 && result.failures.length == 0) {
       logger.log("\nNothing deployed")
@@ -212,14 +213,18 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
           if (webLocal) {
             bucketClause = ` to ${webLocal}`
           } else if (result.apihost) {
-              bucketClause = ` to\n  https://${computeBucketDomainName(result.apihost, result.namespace)}`
+              bucketClause = ` to\n  ${bucketURL}`
           }
           logger.log(`Deployed ${deployedWeb} web content items${bucketClause}`)
       }
       if (skippedWeb > 0) {
           let bucketClause = ""
           if (watching && result.apihost) {
-              bucketClause = ` on\n  https://${computeBucketDomainName(result.apihost, result.namespace)}`
+            if (webLocal) {
+                bucketClause = ` in ${webLocal}`
+            } else {
+                bucketClause = ` on\n  https://${bucketURL}`
+            }
           }
           logger.log(`Skipped ${skippedWeb} unchanged web resources${bucketClause}`)
       }

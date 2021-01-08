@@ -11,35 +11,27 @@
  * governing permissions and limitations under the License.
  */
 
-import { Storage, Bucket } from '@google-cloud/storage'
 import {
-  Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader,
-  CredentialStorageEntry, OWOptions
+  Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader, OWOptions
 } from './deploy-struct'
+import { StorageClient, StorageProvider, StorageKey } from '@nimbella/storage-provider'
 import { wrapSuccess, wrapError, inBrowser } from './util'
 import axios from 'axios'
 import * as openwhisk from 'openwhisk'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
-import * as URL from 'url-parse'
 import * as makeDebug from 'debug'
 const debug = makeDebug('nim:deployer:deploy-to-bucket')
 
 // Open a "bucket client" (object of type Bucket) to use in deploying web resources or object resources
 // to the bucket associated with the credentials.  Assumes credentials have sufficient information.
 type BucketClientOptions = BucketSpec | 'data'
-export async function openBucketClient(credentials: Credentials, options: BucketClientOptions): Promise<Bucket> {
-  let bucketSpec: BucketSpec
-  let namePrefix = 'data-'
-  if (options !== 'data') {
-    bucketSpec = options as BucketSpec
-    namePrefix = ''
-  }
+export async function openBucketClient(credentials: Credentials, options: BucketClientOptions): Promise<StorageClient> {
+  const web = options !== 'data'
+  const bucketSpec: BucketSpec = web ? options as BucketSpec : undefined
   debug('bucket client open')
-  const bucketName = namePrefix + computeBucketStorageName(credentials.ow.apihost, credentials.namespace)
-  debug('computed bucket name %s', bucketName)
-  const bucket = await makeClient(bucketName, credentials.storageKey)
+  const bucket = makeStorageClient(credentials.namespace, credentials.ow.apihost, web, credentials.storageKey)
   if (bucketSpec) {
     await addWebMeta(bucket, bucketSpec)
   }
@@ -47,7 +39,7 @@ export async function openBucketClient(credentials: Credentials, options: Bucket
 }
 
 // Add web metadata after Bucket created but before returning it
-function addWebMeta(bucket: Bucket, bucketSpec: BucketSpec): Promise<Bucket> {
+function addWebMeta(bucket: StorageClient, bucketSpec: BucketSpec): Promise<StorageClient> {
   let mainPageSuffix = 'index.html'
   let notFoundPage = '404.html'
   if (bucketSpec) {
@@ -60,19 +52,30 @@ function addWebMeta(bucket: Bucket, bucketSpec: BucketSpec): Promise<Bucket> {
   }
   debug('Setting mainPageSuffix to %s and notFoundPage to %s', mainPageSuffix, notFoundPage)
   const website = { mainPageSuffix, notFoundPage }
-  return bucket.setMetadata({ website }).then(() => bucket)
+  return bucket.setWebsite(website).then(() => bucket)
 }
 
 // Make a Bucket (client to access a bucket)
-async function makeClient(bucketName: string, options: CredentialStorageEntry): Promise<Bucket> {
-  debug('entered makeClient')
-  const storage = new Storage(options)
-  debug('made Storage handle')
-  return storage.bucket(bucketName)
+export function makeStorageClient(namespace: string, apiHost: string, web: boolean, credentials: StorageKey): StorageClient {
+  debug('entered makeStorageClient')
+  // Don't try to make the following more elegant.  
+  // The static require is needed for webpacking the workbench correctly.
+  // Even so, it only supports one storage provider.
+  let provider: StorageProvider
+  if (credentials.provider && credentials.provider != '@nimbella/storage-gcs') {
+    // This will not work in the workbench currently.  We need to use static requires for
+    // all storage providers.
+    provider = require(credentials.provider).default
+  } else {
+    // But this should work fine in the workbench
+    provider = require('@nimbella/storage-gcs').default
+  }
+  debug('loaded impl: %O', provider)
+  return provider.getClient(namespace, apiHost, web, credentials)
 }
 
 // Deploy a single resource to the bucket
-export async function deployToBucket(resource: WebResource, client: Bucket, spec: BucketSpec, versions: VersionEntry,
+export async function deployToBucket(resource: WebResource, client: StorageClient, spec: BucketSpec, versions: VersionEntry,
   reader: ProjectReader, owOptions: OWOptions): Promise<DeployResponse> {
   // Determine if something will be uploaded or if that will be avoided due to a digest match in incremental mode
   // The 'versions' argument is always defined in incremental mode.
@@ -118,7 +121,7 @@ export async function deployToBucket(resource: WebResource, client: Bucket, spec
     debug('an error occurred: %O', err)
     return wrapError(err, `web resource '${resource.simpleName}' (${phaseTracker[0]})`)
   }
-  const item = `https://${client.name}/${destination}`
+  const item = `${client.getURL()}/${destination}`
   const response = wrapSuccess(item, 'web', false, undefined, {}, undefined)
   response.webHashes = {}
   response.webHashes[resource.filePath] = digest
@@ -127,7 +130,7 @@ export async function deployToBucket(resource: WebResource, client: Bucket, spec
 }
 
 // Subroutine to upload some data to a destination
-async function doUpload(owOptions: OWOptions, client: Bucket, destination: string, data: Buffer, metadata: any, phaseTracker: string[]) {
+async function doUpload(owOptions: OWOptions, client: StorageClient, destination: string, data: Buffer, metadata: any, phaseTracker: string[]) {
   if (inBrowser) {
     // Some google storage client functions misbehave in a browser.  In that environment, we use an action to obtain a signed URL
     // and PUT to the result.  The client call to upload directly will fail, as will the client code to obtain the signed URL directly.
@@ -162,22 +165,11 @@ async function doUpload(owOptions: OWOptions, client: Bucket, destination: strin
   }
 }
 
-// Compute the actual name of a bucket as viewed by google storage
-export function computeBucketStorageName(apiHost: string, namespace: string): string {
-  return computeBucketDomainName(apiHost, namespace).split('.').join('-')
-}
-
-// Compute the external domain name corresponding to a web bucket
-export function computeBucketDomainName(apiHost: string, namespace: string): string {
-  const url = URL(apiHost)
-  return namespace + '-' + url.hostname
-}
-
 // Clean the resources from a bucket starting at the root or at the prefixPath.
 // Note: we use 'force' to make sure deletion is attempted for every file
 // Note: we don't throw errors since cleaning the bucket is a "best effort" feature.
 // Return (promise of) empty string on success, warning message if problems.
-export async function cleanBucket(client: Bucket, spec: BucketSpec, owOptions: OWOptions): Promise<string> {
+export async function cleanBucket(client: StorageClient, spec: BucketSpec, owOptions: OWOptions): Promise<string> {
   let prefix = spec ? spec.prefixPath : undefined
   if (prefix && !prefix.endsWith('/')) {
     prefix += '/'
@@ -195,7 +187,7 @@ export async function cleanBucket(client: Bucket, spec: BucketSpec, owOptions: O
 }
 
 // Restore the 404.html page after wiping the bucket
-export async function restore404Page(client: Bucket, owOptions: OWOptions): Promise<string> {
+export async function restore404Page(client: StorageClient, owOptions: OWOptions): Promise<string> {
   let our404: Buffer
   if (inBrowser) {
     our404 = require('../404.html').default
