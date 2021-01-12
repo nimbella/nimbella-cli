@@ -197,11 +197,10 @@ function computeBucketStorageName(apiHost: string, namespace: string): string {
   return namespace + '-nimbella-io'
 }
 
-// Compute the website URL corresponding to a web bucket.  Note the algorithm here
-// works on one test installation (using scality ring) but is not really quite correct 
-// for AWS itself (where the website endpoint is distinct from the REST endpoint).  Also
-// this does not take into account additional layers that an installation may have to provide
-// https etc.  More work probably needed on this detail.
+// Compute a possibly adequate website URL when none is provided in the credentials.
+// The algorithm here works on one test installation (using scality ring) but is not likely
+// to yield the best URL in general.  Making a URL part of the credentials is expected
+// to be the case for most installations.
 function computeBucketUrl(endpoint: string, namespace: string): string {
 	const url = new URL(endpoint)
 	return `http://${namespace}-nimbella-io.${url.hostname}`
@@ -225,7 +224,7 @@ const provider: StorageProvider = {
 		let bucketName = computeBucketStorageName(apiHost, namespace)
 		let url: string
 		if (web) {
-			url = computeBucketUrl(credentials.endpoint, namespace)
+			url = credentials.weburl || computeBucketUrl(credentials.endpoint, namespace)
 		} else {
 			bucketName = 'data-' + bucketName
 		}
