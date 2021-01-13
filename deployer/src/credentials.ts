@@ -19,8 +19,8 @@ import {
   CredentialStore, CredentialEntry, CredentialHostMap, Credentials, CredentialRow, Feedback
 } from './deploy-struct'
 import * as createDebug from 'debug'
-import { wskRequest, inBrowser } from './util'
-import { StorageProvider } from '@nimbella/storage-provider'
+import { wskRequest, inBrowser, getStorageProvider } from './util'
+import { StorageKey } from '@nimbella/storage-provider'
 const debug = createDebug('nimbella.cli')
 
 // Non-exported constants
@@ -391,7 +391,7 @@ function getUniqueCredentials(namespace: string, apihost: string|undefined, stor
 }
 
 // Turn a raw storage string into the form used internally.
-function parseStorageString(storage: string, namespace: string): any {
+function parseStorageString(storage: string, namespace: string): StorageKey {
   if (storage === 'yes') {
     throw new Error(`Storage was not fully initialized for namespace '${namespace}'`)
   }
@@ -401,18 +401,7 @@ function parseStorageString(storage: string, namespace: string): any {
   } catch {
     throw new Error(`Corrupt storage string for namespace '${namespace}'`)
   }
-  // Don't try to make the following more elegant.  
-  // The static require is needed for webpacking the workbench correctly.
-  // Even so, it only supports one storage provider.
-  let provider: StorageProvider
-  if (parsedStorage.provider && parsedStorage.provider != '@nimbella/storage-gcs') {
-    // This will not work in the workbench currently.  We need to use static requires for
-    // all storage providers.
-    provider = require(parsedStorage.provider).default
-  } else {
-    // But this should work fine in the workbench
-    provider = require('@nimbella/storage-gcs').default
-  }
+  const provider = getStorageProvider(parsedStorage)
   return provider.prepareCredentials(parsedStorage)
 }
 

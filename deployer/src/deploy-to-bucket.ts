@@ -15,7 +15,7 @@ import {
   Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader, OWOptions
 } from './deploy-struct'
 import { StorageClient, StorageProvider, StorageKey } from '@nimbella/storage-provider'
-import { wrapSuccess, wrapError, inBrowser } from './util'
+import { wrapSuccess, wrapError, inBrowser, getStorageProvider } from './util'
 import axios from 'axios'
 import * as openwhisk from 'openwhisk'
 import * as path from 'path'
@@ -58,18 +58,7 @@ function addWebMeta(bucket: StorageClient, bucketSpec: BucketSpec): Promise<Stor
 // Make a Bucket (client to access a bucket)
 export function makeStorageClient(namespace: string, apiHost: string, web: boolean, credentials: StorageKey): StorageClient {
   debug('entered makeStorageClient')
-  // Don't try to make the following more elegant.  
-  // The static require is needed for webpacking the workbench correctly.
-  // Even so, it only supports one storage provider.
-  let provider: StorageProvider
-  if (credentials.provider && credentials.provider != '@nimbella/storage-gcs') {
-    // This will not work in the workbench currently.  We need to use static requires for
-    // all storage providers.
-    provider = require(credentials.provider).default
-  } else {
-    // But this should work fine in the workbench
-    provider = require('@nimbella/storage-gcs').default
-  }
+  const provider = getStorageProvider(credentials)
   debug('loaded impl: %O', provider)
   return provider.getClient(namespace, apiHost, web, credentials)
 }
