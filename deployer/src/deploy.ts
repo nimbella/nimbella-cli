@@ -26,6 +26,8 @@ import { ensureWebLocal, deployToWebLocal } from './web-local'
 import * as rimrafOrig from 'rimraf'
 import { promisify } from 'util'
 import * as makeDebug from 'debug'
+import * as fs from 'fs'
+import * as path from 'path'
 
 const debug = makeDebug('nim:deployer:deploy')
 const rimraf = promisify(rimrafOrig)
@@ -199,6 +201,45 @@ export async function actionWrap(res: WebResource, reader: ProjectReader, pkgNam
     }
 }`
   return { name, file: res.filePath, runtime: 'nodejs:default', binary: false, web: true, code, wrapping: res.filePath, package: pkgName }
+}
+
+// Wrap a web resource in an action when a router is needed.   Returns a promise of the resulting ActionSpec
+export async function actionWrapWithRouter(res: WebResource, reader: ProjectReader): Promise<ActionSpec> {
+  let tempWrappingDirectory = `${process.cwd()}/${JSON.parse(JSON.stringify(reader)).basepath}/web/tempActionWrapperDirectory`
+  let newWebBuildFolder = `${process.cwd()}/${JSON.parse(JSON.stringify(reader)).basepath}/web/tempActionWrapperDirectory/`
+  let originalWebBuildFolder = `${process.cwd()}/${JSON.parse(JSON.stringify(reader)).basepath}/web/build`
+
+  if(fs.existsSync(tempWrappingDirectory)){
+    deleteRecursive(tempWrappingDirectory)
+  }
+  fs.mkdirSync(tempWrappingDirectory, {recursive: true}); 
+
+  let fileWriter = fs.createWriteStream(tempWrappingDirectory + '/index.js')
+  // let fileWriter = fse.createWriteStream(tempWrappingDirectory + '/index.js')
+  fileWriter.end()
+
+  debug(`CURRENT WORKING DIRECTORY IS : ${process.cwd()}`)
+  // fse.copySync(originalWebBuildFolder, newWebBuildFolder
+  //   , function (err: Error) {
+  //   if (err) {
+  //     // throw error here
+  //   }
+  // }
+  // )
+
+  return { "name":"name", file: "res.filePath", runtime: 'nodejs:default', binary: false, web: true, "code":"code", wrapping: "res.filePath", package: "pkgName" }
+}
+
+function deleteRecursive(tempWrappingDirectory: string) {
+  fs.readdirSync(tempWrappingDirectory).forEach((file) => {
+    const curPath = path.join(tempWrappingDirectory, file);
+    if (fs.lstatSync(curPath).isDirectory()) { 
+      deleteRecursive(curPath);
+    } else {
+      fs.unlinkSync(curPath);
+    }
+  });
+  fs.rmdirSync(tempWrappingDirectory); 
 }
 
 // Deploy a package, then deploy everything in it (currently just actions)

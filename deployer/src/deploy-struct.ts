@@ -131,6 +131,7 @@ export interface DeployStructure {
     cleanNamespace?: boolean // Clears entire namespace prior to deploying
     bucket?: BucketSpec // Information guiding deployment of web resources into an s3 (or s3-like) object store bucket
     actionWrapPackage?: string // The name of a package into which web resources will be action-wrapped.
+    actionWrapPackageWithRouter?: boolean // The name of a package into which web resources will be action-wrapped.
     parameters?: Dict // Parameters to apply to all packages in the project
     environment?: Dict // Environment to apply to all packages in the project
     // The following fields are not documented for inclusion project.yml but may be present in a project slice config (remote build)

@@ -13,7 +13,7 @@
 
 // Contains the main public (library) API of the deployer (some exports in 'util' may also be used externally but are incidental)
 
-import { cleanOrLoadVersions, doDeploy, actionWrap, cleanPackage } from './deploy'
+import { cleanOrLoadVersions, doDeploy, actionWrap, actionWrapWithRouter, cleanPackage } from './deploy'
 import { DeployStructure, DeployResponse, PackageSpec, OWOptions, WebResource, Credentials, Flags, Includer, Feedback, DefaultFeedback } from './deploy-struct'
 import { readTopLevel, buildStructureParts, assembleInitialStructure } from './project-reader'
 import {
@@ -303,7 +303,18 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
   debug('Bucket client created')
   // 4.  Action wrapping
   const { web, packages } = inputSpec
-  if (web && web.length > 0 && inputSpec.actionWrapPackage) {
+  if (web && web.length > 0 && inputSpec.actionWrapPackage && inputSpec.actionWrapPackageWithRouter) {
+    try {
+      const w = web.map(res => {
+        actionWrapWithRouter(res, inputSpec.reader)
+        debug(`INSIDE MAP LOOP WHEN BOTH CONDITIONS MATCH`)
+        debug(`${JSON.stringify(res)}`)
+        return res; 
+      })
+    } catch (err) {
+      return errorStructure(err)
+    }
+  } else if (web && web.length > 0 && inputSpec.actionWrapPackage) {
     try {
       const wrapPackage = inputSpec.actionWrapPackage
       const wrapping = web.map(res => {

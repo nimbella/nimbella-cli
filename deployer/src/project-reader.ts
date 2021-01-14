@@ -166,7 +166,8 @@ export function assembleInitialStructure(parts: DeployStructure[]): DeployStruct
   if (configPart.actionWrapPackage) {
     configPart.web.forEach(res => {
       if (res.simpleName.includes('/')) {
-        throw new Error(`Web resource ${res.simpleName} cannot be deployed with action-wrapping (has nested structure)`)
+        configPart.actionWrapPackageWithRouter = true
+        // throw new Error(`Web resource ${res.simpleName} cannot be deployed with action-wrapping (has nested structure)`)
       }
     })
   }
