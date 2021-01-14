@@ -444,10 +444,6 @@ async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeploySt
   const oldAnnots = former && former.annotations ? makeDict(former.annotations) : {}
   // Merge the annotations
   const annotDict = Object.assign({}, oldAnnots, annotations)
-  // Protect against current controller bug: it barfs on require-whisk-auth === false
-  if (annotDict['require-whisk-auth'] === false) {
-    delete annotDict['require-whisk-auth']
-  }
   // Compute the complete Action value for the call
   const params = encodeParameters(action.parameters, action.environment)
   const exec = sequence || { code, binary: action.binary, kind: action.runtime, main: action.main } // Actually legal but openwhisk.Exec doesn't think so
