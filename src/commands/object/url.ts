@@ -46,7 +46,7 @@ export default class ObjectUrl extends NimBaseCommand {
             }
             if (flags.permission === 'write')
                 options['contentType'] = 'application/octet-stream'
-            const [url] = await file.getSignedUrl(options)
+            const url = await file.getSignedUrl(options)
             logger.log(url)
             return
         } catch (e) {
