@@ -21,6 +21,7 @@ export default class ObjectUrl extends NimBaseCommand {
     static description = 'Generates Signed URL for an Object in the Object Store'
 
     static flags = {
+        namespace: flags.string({ description: 'The namespace to get the object URL from (current namespace if omitted)' }),
         apihost: flags.string({ description: 'API host of the namespace to get object URL from' }),
         permission: flags.string({ char: 'p', description: 'Permission applicable on the URL', options: ['read', 'write'], default: 'read' }),
         ttl: flags.integer({ char: 't', description: 'Expiration time of the URL (in Minutes)', default: 15 }),
@@ -29,7 +30,7 @@ export default class ObjectUrl extends NimBaseCommand {
 
     static args = [
         { name: 'objectName', description: 'The object to get URL for', required: true },
-        { name: 'namespace', description: 'The namespace to get object from (current namespace if omitted)', required: false }
+        { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {

@@ -18,7 +18,7 @@ type StorageClientResponse = {
     creds: Credentials
 }
 async function getStorageClient(args: any, flags: any, authPersister: any, web: boolean): Promise<StorageClientResponse> {
-  let namespace = flags.namespace
+  let namespace = flags.namespace || args.namespace
   let creds: Credentials
   let apiHost: string = flags.apihost
   if (!namespace) {

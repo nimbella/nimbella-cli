@@ -24,6 +24,7 @@ export default class ObjectGet extends NimBaseCommand {
     static description = 'Gets Object from the Object Store'
 
     static flags = {
+        namespace: flags.string({ description: 'The namespace to get the object from (current namespace if omitted)' }),
         apihost: flags.string({ description: 'API host of the namespace to get object from' }),
         save: flags.boolean({ char: 's', description: 'Saves object on file system' }),
         saveAs: flags.string({ description: 'Saves object on file system with the given name' }),
@@ -33,7 +34,7 @@ export default class ObjectGet extends NimBaseCommand {
     static args = [
         { name: 'objectName', description: 'The object to get', required: true },
         { name: 'destination', description: 'The location to write object at', required: true, default: './' },
-        { name: 'namespace', description: 'The namespace to get object from (current namespace if omitted)', required: false }
+        { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {

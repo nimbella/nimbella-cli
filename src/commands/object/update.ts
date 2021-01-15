@@ -23,6 +23,7 @@ export default class ObjectUpdate extends NimBaseCommand {
     static description = 'Updates Object in the Object Store'
 
     static flags = {
+        namespace: flags.string({ description: 'The namespace in which to update the object (current namespace if omitted)' }),
         apihost: flags.string({ description: 'API host of the namespace to update object in' }),
         destination: flags.string({ char: 'd', description: 'Target location in object storage' }),
         ...NimBaseCommand.flags
@@ -30,7 +31,7 @@ export default class ObjectUpdate extends NimBaseCommand {
 
     static args = [
         { name: 'objectPath', description: 'The object to be updated', required: true },
-        { name: 'namespace', description: 'The namespace to update object in (current namespace if omitted)', required: false }
+        { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {

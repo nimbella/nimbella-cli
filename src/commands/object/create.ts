@@ -23,6 +23,7 @@ export default class ObjectCreate extends NimBaseCommand {
     static description = 'Adds Object to the Object Store'
 
     static flags = {
+        namespace: flags.string({ description: 'The namespace to add the object to (current namespace if omitted)' }),
         apihost: flags.string({ description: 'API host of the namespace to add object to' }),
         destination: flags.string({ char: 'd', description: 'Target location in object storage' }),
         ...NimBaseCommand.flags
@@ -30,7 +31,7 @@ export default class ObjectCreate extends NimBaseCommand {
 
     static args = [
         { name: 'objectPath', description: 'The object to be added', required: true },
-        { name: 'namespace', description: 'The namespace to add object to (current namespace if omitted)', required: false }
+        { name: 'namespace', required: false, hidden: true }
     ]
 
     static aliases = ['objects:add', 'object:add']

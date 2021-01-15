@@ -22,13 +22,14 @@ export default class ObjectClean extends NimBaseCommand {
     static description = 'Deletes all objects from the Object Store'
 
     static flags = {
+        namespace: flags.string({ description: 'The namespace to clean (current namespace if omitted)' }),
         apihost: flags.string({ description: 'API host of the namespace to delete objects from' }),
         force: flags.boolean({ char: 'f', description: 'Just do it, omitting confirmatory prompt' }),
         ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'namespace', description: 'The namespace to delete objects from (current namespace if omitted)', required: false }
+        { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {

@@ -23,7 +23,8 @@ export default class WebContentUpdate extends NimBaseCommand {
     static description = 'Updates Content in the Web Storage'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to update content in' }),
+        namespace: flags.string({ description: 'The namespace in which to update content (current namespace if omitted)' }),
+        apihost: flags.string({ description: 'API host of the namespace in which to update content' }),
         destination: flags.string({ char: 'd', description: 'Target location in web storage' }),
         cache: flags.integer({ char: 'c', description: 'Maximum amount of time in seconds, the web content is considered fresh, relative to the time of the request' }),
         ...NimBaseCommand.flags
@@ -31,7 +32,7 @@ export default class WebContentUpdate extends NimBaseCommand {
 
     static args = [
         { name: 'webContentPath', description: 'Path to the content to be updated', required: true },
-        { name: 'namespace', description: 'The namespace to update content in (current namespace if omitted)', required: false }
+        { name: 'namespace', required: false, hidden: true }
     ]
 
 
