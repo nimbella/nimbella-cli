@@ -88,7 +88,7 @@ function isRealBuild(buildField: string): boolean {
 
 // Replace a build field with 'remote' if it is supposed to be remote according to flags, directives, environment
 function locateBuild(buildField: string, remoteRequested: boolean, remoteRequired: boolean, localRequired: boolean) {
-  if (isRealBuild(buildField) && ( inBrowser || remoteRequired || (remoteRequested && !localRequired))) {
+  if (isRealBuild(buildField) && (inBrowser || remoteRequired || (remoteRequested && !localRequired))) {
     return 'remote'
   }
   return buildField
@@ -1344,13 +1344,13 @@ export function wskRequest(url: string, auth: string = undefined): Promise<any> 
 // Subroutine to get the correct storage provider based on what's in StorageKey "candidate"
 // (just a dictionary at this point)
 export function getStorageProvider(rawStorageCreds: Record<string, any>): StorageProvider {
-  const provider = rawStorageCreds.provider 
+  const provider = rawStorageCreds.provider
   // The static requires in the following are needed for webpacking the workbench correctly.
   // Don't try to simplify them out of existence.
-  if (!provider || provider == '@nimbella/storage-gcs') {
+  if (!provider || provider === '@nimbella/storage-gcs') {
     // raw storage keys with no provider are grandfathered as gcs, but explicit is also fine
     return require('@nimbella/storage-gcs').default
-  } else if (provider == '@nimbella/storage-s3') {
+  } else if (provider === '@nimbella/storage-s3') {
     return require('@nimbella/storage-s3').default
   } else {
     // This won't work in the workbench but will work in the CLI when first introducing a new provider

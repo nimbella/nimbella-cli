@@ -14,7 +14,7 @@
 import {
   Credentials, WebResource, DeployResponse, DeploySuccess, BucketSpec, VersionEntry, ProjectReader, OWOptions
 } from './deploy-struct'
-import { StorageClient, StorageProvider, StorageKey } from '@nimbella/storage-provider'
+import { StorageClient, StorageKey } from '@nimbella/storage-provider'
 import { wrapSuccess, wrapError, inBrowser, getStorageProvider } from './util'
 import axios from 'axios'
 import * as openwhisk from 'openwhisk'

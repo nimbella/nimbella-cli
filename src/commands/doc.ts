@@ -14,7 +14,7 @@
 import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
 
 import { open } from '../ui'
-const PUBLIC_DOC = 'https://nimbella.io/downloads/nim/nim.html'
+const PUBLIC_DOC = 'https://docs.nimbella.com'
 
 export default class Doc extends NimBaseCommand {
   static description = 'Display the full documentation of this CLI'
@@ -26,19 +26,11 @@ export default class Doc extends NimBaseCommand {
   static aliases = ['docs']
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
-    try {
-      if (inBrowser) {
-        logger.log('This displays the Nimbella CLI documentation')
-        logger.log('Much of the Nimbella CLI command set also works in the workbench')
-        logger.log('Type "menu" for some more orientation to the workbench')
-        await open(PUBLIC_DOC)
-      } else {
-        const html = require.resolve('../../doc/nim.html')
-        await open(html)
-      }
-    } catch (err) {
-      logger.displayError('', err)
-      logger.log('Packaging error: cannot locate documentation')
+    if (inBrowser) {
+      logger.log('This displays the Nimbella CLI documentation')
+      logger.log('Much of the Nimbella CLI command set also works in the workbench')
+      logger.log('Type "menu" for some more orientation to the workbench')
     }
+    await open(PUBLIC_DOC)
   }
 }
