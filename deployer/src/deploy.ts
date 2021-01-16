@@ -415,7 +415,7 @@ async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeploySt
   // Will be deployed
   // Compute the annotations that we will definitely be adding
   deployerAnnot.zipped = action.zipped
-  const annotations = action.annotations || {}
+  const annotations = Object.assign({}, action.annotations) || {}
   annotations.deployer = deployerAnnot
   if (action.web === true) {
     annotations['web-export'] = true
