@@ -67,18 +67,17 @@ export async function doDeploy(todeploy: DeployStructure): Promise<DeployRespons
   if (todeploy.flags.webLocal) {
     webLocal = ensureWebLocal(todeploy.flags.webLocal)
   }
-  let webPromises: Promise<DeployResponse>[]
+  let webResults: DeployResponse[]
   const remoteResult = todeploy.webBuildResult
   if (remoteResult) {
-    webPromises = [processRemoteResponse(remoteResult, todeploy.owClient, 'web content', todeploy.feedback)]
+    webResults = [await processRemoteResponse(remoteResult, todeploy.owClient, 'web content', todeploy.feedback)]
   } else if (todeploy.webBuildError) {
-    webPromises = [Promise.resolve(wrapError(todeploy.webBuildError, 'web content'))]
+    webResults = [wrapError(todeploy.webBuildError, 'web content')]
   } else {
-    webPromises = todeploy.web.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket, todeploy.bucketClient,
-      todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, todeploy.credentials.ow))
+    webResults = await deployAllWebResources(todeploy, webLocal)
   }
   const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy))
-  const responses: DeployResponse[] = await Promise.all(webPromises.concat(actionPromises))
+  const responses: DeployResponse[] = webResults.concat(await Promise.all(actionPromises))
   responses.push(straysToResponse(todeploy.strays))
   const sequenceResponses = await Promise.all(deploySequences(todeploy, todeploy.feedback))
   responses.push(...sequenceResponses)
@@ -87,6 +86,22 @@ export async function doDeploy(todeploy: DeployStructure): Promise<DeployRespons
   if (!response.namespace) { response.namespace = todeploy.credentials.namespace }
   return response
 }
+
+// Deploy web resources, potentially in chunks to avoid overloading the storage server
+const WEB_CHUNK_MAX=20 //not sure yet how to tune this
+async function deployAllWebResources(todeploy: DeployStructure, webLocal: string): Promise<DeployResponse[]> {
+  let pending = todeploy.web
+  let ans: DeployResponse[] = []
+  while (pending.length > 0) {
+    const chunk = pending.length > WEB_CHUNK_MAX ? pending.slice(0, WEB_CHUNK_MAX) : pending
+    pending = pending.slice(chunk.length)
+    const chunkResults = chunk.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket,
+      todeploy.bucketClient, todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, 
+      todeploy.credentials.ow))
+    ans.push(...await Promise.all(chunkResults))
+  }
+  return ans
+}  
 
 // Process the remote result when something has been built remotely
 async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string, feedback: Feedback): Promise<DeployResponse> {
