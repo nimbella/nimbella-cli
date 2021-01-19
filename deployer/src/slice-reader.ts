@@ -28,7 +28,7 @@ const BUCKET_BUILDER_PREFIX = '.nimbella/builds'
 // This is the anchor for the nimbella sdk.  It is included dynamically instead of statically due to
 // webpack considerations in the workbench.  We do not want the dependency followed during module
 // initialization but only on demand.
-let nim: { storage: () => StorageClient | PromiseLike<StorageClient> }
+let nim: { storageClient: () => StorageClient | PromiseLike<StorageClient> }
 
 // Get the cache area
 function cacheArea() {
@@ -58,25 +58,26 @@ export async function fetchSlice(sliceName: string): Promise<string> {
   }
   debug('Making cache directory: %s', cache)
   fs.mkdirSync(cache, { recursive: true })
-  const bucket: StorageClient = await getNim().storage()
+  const bucket: StorageClient = await getNim().storageClient()
   debug('have bucket client')
   const remoteFile = bucket.file(sliceName)
   debug('have remote file for %s', sliceName)
   const exists = await remoteFile.exists()
   debug('have exists response: %O', exists)
-  if (!exists[0]) {
+  if (!exists) {
     debug('the slice does not exist')
     return ''
   }
   debug('have remote file %s ready to download', sliceName)
   const response = await remoteFile.download()
   debug('have download response: %O', response)
-  if (!response || !response[0]) {
+  if (!response) {
     debug('could not download slice')
     return ''
   }
   debug('have valid download response')
   const zip = new Zip(response)
+  debug('zip file has %d entries', zip.getEntries().length)
   for (const entry of zip.getEntries().filter(entry => !entry.isDirectory)) {
     const target = path.join(cache, entry.entryName)
     const parent = path.dirname(target)
@@ -84,6 +85,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
       fs.mkdirSync(parent, { recursive: true })
     }
     const mode = entry.attr >>> 16
+    debug('storing %s', entry.entryName)
     fs.writeFileSync(target, entry.getData(), { mode })
   }
   return cache
@@ -95,7 +97,7 @@ export async function fetchSlice(sliceName: string): Promise<string> {
 export async function deleteSlice(project: DeployStructure): Promise<void> {
   const sliceName = path.relative(cacheArea(), project.filePath)
   const slicePath = path.join(BUCKET_BUILDER_PREFIX, sliceName)
-  const bucket: StorageClient = await getNim().storage()
+  const bucket: StorageClient = await getNim().storageClient()
   const remoteFile = bucket.file(slicePath)
   await remoteFile.delete()
 }
