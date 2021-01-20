@@ -126,8 +126,7 @@ function generateSample(kind: string, config: DeployStructure | undefined, sampl
       parameters: {},
       environment: {},
       annotations: {},
-      limits: {},
-      package: 'default'
+      limits: {}
     }
     defPkg.actions.push(action)
   }

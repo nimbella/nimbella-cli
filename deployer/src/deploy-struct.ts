@@ -49,7 +49,7 @@ export interface PackageSpec {
 // Describes one action
 export interface ActionSpec {
     name: string // The name of the action
-    package: string // The name of the package where action appears ('default' if no package)
+    package?: string // The name of the package where action appears ('default' if no package)
     // The following are used to assemble 'exec'.  Currently, you can't specify exec directly
     file?: string // The path to the file comprising the action (possibly a zip file)
     displayFile?: string // The file path to display in messages

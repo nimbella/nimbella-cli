@@ -24,9 +24,13 @@ benefits:
 - Build workflows and orchestrate long running tasks.
 
 This repository contains the source to our `nim` command line tool.
-It is possible to contribute.  See [our contribution guide](CONTRIBUTING.md).
+It is possible to contribute. See [our contribution guide](CONTRIBUTING.md).
 
-To Build the code
+## Development 
+
+### Building the project code
+
+To build the code, run the following commands from the project directory.
 
 ```
 cd deployer
@@ -37,10 +41,22 @@ npm install
 npm pack
 ```
 
-This gives you a tarball that can be installed globally or used as a dependency _on the machine on which it was built._  It is not suitable for publication.   To obtain a tarball that can be used more widely
+### Testing in development
+
+If you need to run commands using the local version of the project during development - once you have built the project source code - run the following command:
+
+```
+./bin/run <nim commands>
+```
+
+Remember to re-build the project (`tsc -b`) after making changes before testing.
+
+### Distribution of the package
+
+The build process above gives you a tarball that can be installed globally or used as a dependency _on the machine on which it was built._ It is not suitable for publication. To obtain a tarball that can be used more widely:
 
 1. After building in `deployer` publish the result somewhere (publish to `npm`, place in a web bucket, make it available as static content to a web server, etc.)
 2. Change the dependency on `nimbella-deployer` in `package.json` to reference the published version.
 3. Complete the build.
 
-The current build will create a version of `nim` suitable for use with services on `nimbella.io`.  It presumes the runtime repertoire that is present there, and uses the "error page" (404.html) that is used on `nimbella.io`.   You can change these things by placing your own files `runtimes.json` or `404.html` in the `deployer` directory.
+The current build will create a version of `nim` suitable for use with services on `nimbella.io`. It presumes the runtime repertoire that is present there, and uses the "error page" (404.html) that is used on `nimbella.io`. You can change these things by placing your own files `runtimes.json` or `404.html` in the `deployer` directory.
