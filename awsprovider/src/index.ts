@@ -215,13 +215,6 @@ const provider: StorageProvider = {
 	},
 	getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
 		const s3 = new S3Client(credentials)
-		// The following is a recommended workaround for https://github.com/aws/aws-sdk-js-v3/issues/1800
-		s3.middlewareStack.add(
-  			(next) => async (args: any) => {
-    			delete args.request.headers['content-type']
-    			return next(args)
-  			},
-  			{step: 'build'})
 		let bucketName = computeBucketStorageName(apiHost, namespace)
 		let url: string
 		if (web) {

@@ -14,7 +14,7 @@
     "@nimbella/sdk": "^1.2.4",
     "@nimbella/storage-gcs": "0.0.6",
     "@nimbella/storage-provider": "0.0.8",
-    "@nimbella/storage-s3": "0.0.6",
+    "@nimbella/storage-s3": "0.0.7",
     "@oclif/command": "^1",
     "@octokit/rest": "16.36.0",
     "adm-zip": "^0.4.16",
