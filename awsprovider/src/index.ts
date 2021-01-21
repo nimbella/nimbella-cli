@@ -106,7 +106,8 @@ class S3RemoteFile implements RemoteFile {
 			cmd = new GetObjectCommand({ Bucket: this.bucketName, Key: this.name })
 			break
 		case 'write':
-			cmd = new PutObjectCommand({ Bucket: this.bucketName, Key: this.name, ContentType })
+			const ACL = this.web ? 'public-read' : undefined
+			cmd = new PutObjectCommand({ Bucket: this.bucketName, Key: this.name, ContentType, ACL })
 			break
 		case 'delete':
 			cmd = new DeleteObjectCommand({ Bucket: this.bucketName, Key: this.name })
