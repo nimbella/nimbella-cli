@@ -91,10 +91,7 @@
     "/sensitiveNamespaces.json",
     "/productionProjects.json",
     "/404.html",
-    "/changes.html",
-    "/doc/nim.html",
-    "/doc/*.svg",
-    "/doc/*.css"
+    "/changes.html"
   ],
   "oclif": {
     "commands": "./lib/commands",
@@ -212,7 +209,7 @@
     "version": "oclif-dev readme && git add README.md",
     "lint": "eslint src/**/*.ts deployer/src/**/*.ts --ignore-pattern node_modules",
     "minify": "test $NO_MINIFY || for i in `find lib -type f -name \\*.js`; do npx minify $i > minified; mv minified $i; done",
-    "version-check": "npx check-node-version --node \"\\>=10.0\""
+    "version-check": "npx check-node-version --node \">=10.0\""
   },
   "types": "lib/index.d.ts"
 }
