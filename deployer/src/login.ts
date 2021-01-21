@@ -67,8 +67,9 @@ export async function doLogin(token: string, persister: Persister, host: string 
   } else {
     debug('authorize response: %O', response)
     const auth = response.uuid + ':' + response.key
-    const credentials = await addCredentialAndSave(response.apihost, auth, response.storage, response.redis, persister, response.namespace, true)
-    persister.saveLegacyInfo(response.apihost, auth)
+    const apihost = response.apihost || host
+    const credentials = await addCredentialAndSave(apihost, auth, response.storage, response.redis, persister, response.namespace, true)
+    persister.saveLegacyInfo(apihost, auth)
     return credentials
   }
 }
