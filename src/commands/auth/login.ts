@@ -55,7 +55,7 @@ export default class AuthLogin extends NimBaseCommand {
         .catch((err: Error) => logger.handleError('', err))
       authPersister.saveLegacyInfo(apihost, flags.auth)
     } else {
-      const response = await doOAuthFlow(logger, false, flags.apihost).catch(err => logger.handleError('', err))
+      const response = await doOAuthFlow(logger, false, apihost).catch(err => logger.handleError('', err))
       if (isFullCredentials(response)) {
         credentials = await doInteractiveLogin(response, authPersister).catch(err => logger.handleError('', err))
       } else if (response === true) {
