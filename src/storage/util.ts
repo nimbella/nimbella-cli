@@ -16,18 +16,16 @@ import { bold } from 'chalk'
 
 // Constants used in formatting the file list
 const SIZE_LEN = 10
-const LIST_SHORT_HEADER = 'Name'
 const LIST_LONG_HEADER = `Size${' '.repeat(SIZE_LEN - 4)} Updated${' '.repeat(17)} Name`
 const MAYBE = '-?-'
 
-export async function fileMetaShort(files: any, _client: StorageClient, logger: NimLogger): Promise<void> {
-  logger.log(bold(LIST_SHORT_HEADER))
+async function fileMetaShortTable(files: any, _client: StorageClient, logger: NimLogger): Promise<void> {
   for (const file of files) {
     logger.log(`${file.name}`)
   }
 }
 
-export async function fileMetaLong(files: any, client: StorageClient, logger: NimLogger): Promise<void> {
+async function fileMetaLongTable(files: any, client: StorageClient, logger: NimLogger): Promise<void> {
   logger.log(bold(LIST_LONG_HEADER))
   for (const file of files) {
     const meta = await client.file(file.name).getMetadata()
@@ -40,6 +38,34 @@ export async function fileMetaLong(files: any, client: StorageClient, logger: Ni
     const updated = meta.updated || MAYBE
     logger.log(`${size}${sizePad} ${updated} ${fileName}`)
   }
+}
+
+async function fileMetaShortJson(files: any, _client: StorageClient, logger: NimLogger): Promise<void> {
+  const res = { files: [] }
+  for (const file of files) {
+    res.files.push({ name: file.name })
+  }
+  logger.logJSON(res)
+}
+
+async function fileMetaLongJson(files: any, client: StorageClient, logger: NimLogger): Promise<void> {
+  const res = { files: [] }
+  for (const file of files) {
+    const meta = await client.file(file.name).getMetadata()
+    const name = meta.name
+    const size = humanFileSize(+meta.size)
+    const updated = meta.updated || MAYBE
+    res.files.push({ size, updated, name })
+  }
+  logger.logJSON(res)
+}
+
+export async function fileMetaShort(files: any, _client: StorageClient, outputJSON:boolean, logger: NimLogger): Promise<void> {
+  return outputJSON ? fileMetaShortJson(files, _client, logger) : fileMetaShortTable(files, _client, logger)
+}
+
+export async function fileMetaLong(files: any, _client: StorageClient, outputJSON:boolean, logger: NimLogger): Promise<void> {
+  return outputJSON ? fileMetaLongJson(files, _client, logger) : fileMetaLongTable(files, _client, logger)
 }
 
 export function humanFileSize(bytes: number | undefined, si: boolean | undefined = undefined): string {

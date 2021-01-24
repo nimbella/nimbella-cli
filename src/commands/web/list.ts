@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
+
 import { getWebStorageClient } from '../../storage/clients'
 import { fileMetaLong, fileMetaShort } from '../../storage/util'
 
@@ -21,32 +21,32 @@ export default class WebList extends NimBaseCommand {
     static description = 'Lists Web Content'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to list web content from' }),
-        long: flags.boolean({ char: 'l', description: 'Displays additional file info such as last update, owner and md5hash' }),
-        namespace: flags.string({ description: 'The namespace to list web content from (current namespace if omitted)' }),
-        ...NimBaseCommand.flags
+      apihost: flags.string({ description: 'API host of the namespace to list web content from' }),
+      long: flags.boolean({ char: 'l', description: 'Displays additional file info such as last update, owner and md5hash' }),
+      json: flags.boolean({ char: 'j', description: 'Displays output in JSON form' }),
+      namespace: flags.string({ description: 'The namespace to list web content from (current namespace if omitted)' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'prefix', description: 'Prefix to match the content against', required: false, default: '' }
+      { name: 'prefix', description: 'Prefix to match the content against', required: false, default: '' }
     ]
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        const { client } = await getWebStorageClient(args, flags, authPersister);
-        if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${flags.namespace || 'current'} namespace`);
-        await this.listFiles(client, logger, flags.long, args.prefix).catch((err: Error) => logger.handleError('', err));
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
+      const { client } = await getWebStorageClient(args, flags, authPersister)
+      if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${flags.namespace || 'current'} namespace`)
+      await this.listFiles(client, logger, args.prefix, flags.long, flags.json).catch((err: Error) => logger.handleError('', err))
     }
 
-    async listFiles(client: StorageClient, logger: NimLogger, isLongFormat: boolean, prefix: string): Promise<void> {
-        const files = await client.getFiles({
-            prefix: prefix,
-        });
-        if (files.length === 0) { return logger.log(`No content available ${prefix ? `matching prefix '${prefix}'` : ''}`); }
-        if (isLongFormat) {
-            await fileMetaLong(files, client, logger).catch(err => logger.handleError(err))
-        }
-        else {
-            await fileMetaShort(files, client, logger).catch(err => logger.handleError(err))
-        }
+    async listFiles(client: StorageClient, logger: NimLogger, prefix: string, isLongFormat: boolean, isJSON: boolean): Promise<void> {
+      const files = await client.getFiles({
+        prefix: prefix
+      })
+      if (files.length === 0) { return }
+      if (isLongFormat) {
+        await fileMetaLong(files, client, isJSON, logger).catch(err => logger.handleError(err))
+      } else {
+        await fileMetaShort(files, client, isJSON, logger).catch(err => logger.handleError(err))
+      }
     }
 }
