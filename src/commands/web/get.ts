@@ -26,7 +26,8 @@ export default class WebContentGet extends NimBaseCommand {
       namespace: flags.string({ description: 'The namespace from which to get web content (current namespace if omitted)' }),
       apihost: flags.string({ description: 'API host of the namespace from which to get web content' }),
       save: flags.boolean({ char: 's', description: 'Saves content on file system', default: true }),
-      saveAs: flags.string({ description: 'Saves content on file system with the given name', exclusive: ['save'] }),
+      'save-as': flags.string({ description: 'Saves content on file system with the given name', exclusive: ['save', 'saveAs'] }),
+      saveAs: flags.string({ description: 'Saves content on file system with the given name', exclusive: ['save', 'save-as'] }),
       print: flags.boolean({ char: 'p', description: 'Prints content on terminal' }),
       url: flags.boolean({ char: 'r', description: 'Get web content url' }),
       ...NimBaseCommand.flags
@@ -54,7 +55,7 @@ export default class WebContentGet extends NimBaseCommand {
     }
 
     async downloadFile(webContentName: string, destination: string, client: StorageClient, logger: NimLogger, flags:any) : Promise<void> {
-      const { saveAs, save, print } = flags
+      const { 'save-as': save_as, saveAs, save, print } = flags
       if (!existsSync(destination)) {
         logger.handleError(`${destination} doesn't exist`)
       }
@@ -70,9 +71,9 @@ export default class WebContentGet extends NimBaseCommand {
           loader.stop('couldn\'t print content')
           errorHandler(err, logger, webContentName)
         }
-      } else if (save || saveAs) {
+      } else if (save || (saveAs || save_as)) {
         const fileName = basename(webContentName)
-        await client.file(webContentName).download({ destination: join(destination, (saveAs || fileName)) }).then(_ => loader.stop('done'))
+        await client.file(webContentName).download({ destination: join(destination, ((saveAs || save_as) || fileName)) }).then(_ => loader.stop('done'))
       }
     }
 }

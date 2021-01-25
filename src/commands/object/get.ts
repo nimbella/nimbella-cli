@@ -26,7 +26,8 @@ export default class ObjectGet extends NimBaseCommand {
       namespace: flags.string({ description: 'The namespace to get the object from (current namespace if omitted)' }),
       apihost: flags.string({ description: 'API host of the namespace to get object from' }),
       save: flags.boolean({ char: 's', description: 'Saves object on file system', default: true }),
-      saveAs: flags.string({ description: 'Saves object on file system with the given name', exclusive: ['save'] }),
+      'save-as': flags.string({ description: 'Saves object on file system with the given name', exclusive: ['save', 'saveAs'] }),
+      saveAs: flags.string({ description: 'Saves object on file system with the given name', exclusive: ['save', 'save-as'] }),
       print: flags.boolean({ char: 'p', description: 'Prints content on terminal' }),
       ...NimBaseCommand.flags
     }
@@ -44,7 +45,7 @@ export default class ObjectGet extends NimBaseCommand {
     }
 
     async downloadFile(objectName: string, destination: string, client: StorageClient, logger: NimLogger, flags:any): Promise<void> {
-      const { saveAs, save, print } = flags
+      const { 'save-as': save_as, saveAs, save, print } = flags
       if (!existsSync(destination)) {
         logger.handleError(`${destination} doesn't exist`)
       }
@@ -60,9 +61,9 @@ export default class ObjectGet extends NimBaseCommand {
           loader.stop('couldn\'t print content')
           errorHandler(err, logger, objectName)
         }
-      } else if (save || saveAs) {
+      } else if (save || (saveAs || save_as)) {
         const fileName = basename(objectName)
-        await client.file(objectName).download({ destination: join(destination, (saveAs || fileName)) }).then(_ => loader.stop('done'))
+        await client.file(objectName).download({ destination: join(destination, ((saveAs || save_as) || fileName)) }).then(_ => loader.stop('done'))
       }
     }
 }
