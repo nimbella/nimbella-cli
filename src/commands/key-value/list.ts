@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister } from 'nimbella-deployer'
+
 import { queryKVStore } from '../../storage/key-value'
 
 const queryCommand = 'redis/keys'
@@ -22,27 +22,35 @@ export default class KeysList extends NimBaseCommand {
     static description = 'Lists Keys from Key Value Store'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
-        namespace: flags.string({ description: 'The namespace to list keys from (current namespace if omitted)' }),
-        ...NimBaseCommand.flags
+      apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
+      json: flags.boolean({ char: 'j', description: 'Displays output in JSON form' }),
+      namespace: flags.string({ description: 'The namespace to list keys from (current namespace if omitted)' }),
+      ...NimBaseCommand.flags
     }
 
-    static args = [{ name: 'prefix', description: 'Prefix to match keys against'}];
+    static args = [{ name: 'prefix', description: 'Prefix to match keys against' }];
 
     static aliases = ['kv:list']
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        await queryKVStore(queryCommand, args, flags, authPersister)
-          .then(res => {
-            res.value.forEach(element => {
-              logger.log(element);
-            });
-          })
-          // Log the error returned by the action.
-          .catch(err =>
-            logger.handleError(
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger):Promise<void> {
+      await queryKVStore(queryCommand, args, flags, authPersister)
+        .then(res => {
+          if (flags.json) {
+            const outputJSON = { keys: [] }
+            res.value.forEach((element: any) => {
+              outputJSON.keys.push(element)
+            })
+            logger.logJSON(outputJSON)
+          } else {
+            res.value.forEach((element: string) => {
+              logger.log(element)
+            })
+          }
+        })
+        .catch(err =>
+          logger.handleError(
               err.error?.response?.result?.error || err.message
-            )
-          );
+          )
+        )
     }
 }

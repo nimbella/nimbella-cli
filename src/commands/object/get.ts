@@ -12,8 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
 import { getObjectStorageClient } from '../../storage/clients'
 import { existsSync } from 'fs'
 import { join, basename } from 'path'
@@ -24,45 +23,47 @@ export default class ObjectGet extends NimBaseCommand {
     static description = 'Gets Object from the Object Store'
 
     static flags = {
-        namespace: flags.string({ description: 'The namespace to get the object from (current namespace if omitted)' }),
-        apihost: flags.string({ description: 'API host of the namespace to get object from' }),
-        save: flags.boolean({ char: 's', description: 'Saves object on file system' }),
-        saveAs: flags.string({ description: 'Saves object on file system with the given name' }),
-        ...NimBaseCommand.flags
+      namespace: flags.string({ description: 'The namespace to get the object from (current namespace if omitted)' }),
+      apihost: flags.string({ description: 'API host of the namespace to get object from' }),
+      save: flags.boolean({ char: 's', description: 'Saves object on file system (default)', default: true }),
+      'save-as': flags.string({ description: 'Saves object on file system with the given name', exclusive: ['save', 'saveAs'] }),
+      saveAs: flags.string({ description: 'Saves object on file system with the given name', exclusive: ['save', 'save-as'] }),
+      print: flags.boolean({ char: 'p', description: 'Prints content on terminal' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'objectName', description: 'The object to get', required: true },
-        { name: 'destination', description: 'The location to write object at', required: true, default: './' },
-        { name: 'namespace', required: false, hidden: true }
+      { name: 'objectName', description: 'The object to get', required: true },
+      { name: 'destination', description: 'The location to write object at', required: true, default: './' },
+      { name: 'namespace', required: false, hidden: true }
     ]
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        const { client } = await getObjectStorageClient(args, flags, authPersister);
-        if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
-        await this.downloadFile(args.objectName, args.destination, client, logger, flags.saveAs, flags.save).catch((err: Error) => logger.handleError('', err));
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
+      const { client } = await getObjectStorageClient(args, flags, authPersister)
+      if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
+      await this.downloadFile(args.objectName, args.destination, client, logger, flags).catch((err: Error) => logger.handleError('', err))
     }
 
-    async downloadFile(objectName: string, destination: string, client: StorageClient, logger: NimLogger, saveAs: string, save: boolean = false) {
-        if (!existsSync(destination)) {
-            logger.handleError(`${destination} doesn't exist`)
+    async downloadFile(objectName: string, destination: string, client: StorageClient, logger: NimLogger, flags:any): Promise<void> {
+      const { 'save-as': save_as, saveAs, save, print } = flags
+      if (!existsSync(destination)) {
+        logger.handleError(`${destination} doesn't exist`)
+      }
+      const loader = await spinner()
+      loader.start(`getting ${objectName}`, 'downloading', { stdout: true })
+      if (print) {
+        try {
+          const contents = await client.file(objectName).download()
+          loader.stop()
+          logger.log('\n')
+          logger.log(String.fromCharCode.apply(null, contents))
+        } catch (err) {
+          loader.stop('couldn\'t print content')
+          errorHandler(err, logger, objectName)
         }
-        const loader = await spinner();
-        loader.start(`getting ${objectName}`, 'downloading', { stdout: true })
-        if (save || saveAs) {
-            const fileName = basename(objectName)
-            await client.file(objectName).download({ destination: join(destination, (saveAs ? saveAs : fileName)) }).then(_ => loader.stop('done'));
-        }
-        else {
-            try {
-                const contents = await client.file(objectName).download()
-                loader.stop()
-                logger.log('\n')
-                logger.log(String.fromCharCode.apply(null, contents))
-            } catch (err) {
-                loader.stop(`couldn't print content`)
-                errorHandler(err, logger, objectName);
-            }
-        }
+      } else if (save || (saveAs || save_as)) {
+        const fileName = basename(objectName)
+        await client.file(objectName).download({ destination: join(destination, ((saveAs || save_as) || fileName)) }).then(_ => loader.stop('done'))
+      }
     }
 }
