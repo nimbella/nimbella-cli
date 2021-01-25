@@ -25,7 +25,7 @@ export default class ObjectGet extends NimBaseCommand {
     static flags = {
       namespace: flags.string({ description: 'The namespace to get the object from (current namespace if omitted)' }),
       apihost: flags.string({ description: 'API host of the namespace to get object from' }),
-      save: flags.boolean({ char: 's', description: 'Saves object on file system', default: true }),
+      save: flags.boolean({ char: 's', description: 'Saves object on file system (default)', default: true }),
       'save-as': flags.string({ description: 'Saves object on file system with the given name', exclusive: ['save', 'saveAs'] }),
       saveAs: flags.string({ description: 'Saves object on file system with the given name', exclusive: ['save', 'save-as'] }),
       print: flags.boolean({ char: 'p', description: 'Prints content on terminal' }),

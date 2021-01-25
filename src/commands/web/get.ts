@@ -25,7 +25,7 @@ export default class WebContentGet extends NimBaseCommand {
     static flags = {
       namespace: flags.string({ description: 'The namespace from which to get web content (current namespace if omitted)' }),
       apihost: flags.string({ description: 'API host of the namespace from which to get web content' }),
-      save: flags.boolean({ char: 's', description: 'Saves content on file system', default: true }),
+      save: flags.boolean({ char: 's', description: 'Saves content on file system (default)', default: true }),
       'save-as': flags.string({ description: 'Saves content on file system with the given name', exclusive: ['save', 'saveAs'] }),
       saveAs: flags.string({ description: 'Saves content on file system with the given name', exclusive: ['save', 'save-as'] }),
       print: flags.boolean({ char: 'p', description: 'Prints content on terminal' }),
