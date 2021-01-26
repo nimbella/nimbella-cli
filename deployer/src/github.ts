@@ -106,7 +106,7 @@ export function parseGithubRef(projectPath: string): GithubDef {
     if (!baseUrl.includes('api')) {
       baseUrl += '/api/v3'
     } 
-    if (!baseUrl.includes(':')) {
+    if (!baseUrl.includes('://')) {
       baseUrl = "https://" + baseUrl
     }
     debug('modified baseUrl: %s', baseUrl)
