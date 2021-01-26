@@ -16,6 +16,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Package Deployer Code
+      run: |
+        cd deployer
+        npm install
+        npm pack
+        cd ..
     - name: Install dependencies
       run: npm install
     - name: Run ESLint check
