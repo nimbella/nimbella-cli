@@ -100,14 +100,14 @@ export function parseGithubRef(projectPath: string): GithubDef {
   // Add auth and optionally the baseUrl
   const path = slashSplit.slice(2).join('/')
   const rawAuth = getGithubAuth(authPersister)
-  let [ auth, baseUrl ] = (rawAuth || '').split('@')
+  let [auth, baseUrl] = (rawAuth || '').split('@')
   if (baseUrl) {
     debug('original baseUrl: %s', baseUrl)
     if (!baseUrl.includes('api')) {
       baseUrl += '/api/v3'
-    } 
+    }
     if (!baseUrl.includes('://')) {
-      baseUrl = "https://" + baseUrl
+      baseUrl = 'https://' + baseUrl
     }
     debug('modified baseUrl: %s', baseUrl)
   }
