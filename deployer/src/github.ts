@@ -39,6 +39,7 @@ export interface GithubDef {
     repo: string
     path: string
     auth?: string
+    baseUrl?: string
     ref?: string
 }
 
@@ -96,10 +97,21 @@ export function parseGithubRef(projectPath: string): GithubDef {
   if (repo.endsWith('.git')) {
     repo = repo.slice(0, repo.length - 4)
   }
-  // Add auth
+  // Add auth and optionally the baseUrl
   const path = slashSplit.slice(2).join('/')
-  const auth = getGithubAuth(authPersister)
-  return { owner, repo, path, auth, ref }
+  const rawAuth = getGithubAuth(authPersister)
+  let [ auth, baseUrl ] = (rawAuth || '').split('@')
+  if (baseUrl) {
+    debug('original baseUrl: %s', baseUrl)
+    if (!baseUrl.includes('api')) {
+      baseUrl += '/api/v3'
+    } 
+    if (!baseUrl.includes(':')) {
+      baseUrl = "https://" + baseUrl
+    }
+    debug('modified baseUrl: %s', baseUrl)
+  }
+  return { owner, repo, path, auth, baseUrl, ref }
 }
 
 // Fetch a project into the cache, returning a path to its location
@@ -118,7 +130,7 @@ export async function fetchProject(def: GithubDef, userAgent: string): Promise<s
 
 // Make a github client
 export function makeClient(def: GithubDef, userAgent: string): Octokit {
-  return new Octokit({ auth: def.auth, userAgent })
+  return new Octokit({ auth: def.auth, baseUrl: def.baseUrl, userAgent })
 }
 
 // Get contents from a github repo at specific coordinates (path and ref).  All but the path
