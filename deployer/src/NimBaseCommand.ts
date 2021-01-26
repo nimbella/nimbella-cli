@@ -318,6 +318,13 @@ Repeat the command with the '--verbose' flag for more detail`
   if ((pretty || '').toString().trim()) {
     msg = msg ? `${msg}: ${pretty}` : pretty
   }
+  if (!msg) {
+    if (err.status) {
+      msg = getStatusCode(err.status)
+    } else {
+      msg = 'unknown error'
+    }
+  }
   debug('improved msg: %s', msg)
   return msg
 }
