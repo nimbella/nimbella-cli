@@ -88,20 +88,20 @@ export async function doDeploy(todeploy: DeployStructure): Promise<DeployRespons
 }
 
 // Deploy web resources, potentially in chunks to avoid overloading the storage server
-const WEB_CHUNK_MAX=20 //not sure yet how to tune this
+const WEB_CHUNK_MAX = 20 // not sure yet how to tune this
 async function deployAllWebResources(todeploy: DeployStructure, webLocal: string): Promise<DeployResponse[]> {
   let pending = todeploy.web
-  let ans: DeployResponse[] = []
+  const ans: DeployResponse[] = []
   while (pending.length > 0) {
     const chunk = pending.length > WEB_CHUNK_MAX ? pending.slice(0, WEB_CHUNK_MAX) : pending
     pending = pending.slice(chunk.length)
     const chunkResults = chunk.map(res => deployWebResource(res, todeploy.actionWrapPackage, todeploy.bucket,
-      todeploy.bucketClient, todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader, 
+      todeploy.bucketClient, todeploy.flags.incremental ? todeploy.versions : undefined, webLocal, todeploy.reader,
       todeploy.credentials.ow))
     ans.push(...await Promise.all(chunkResults))
   }
   return ans
-}  
+}
 
 // Process the remote result when something has been built remotely
 async function processRemoteResponse(activationId: string, owClient: openwhisk.Client, context: string, feedback: Feedback): Promise<DeployResponse> {
