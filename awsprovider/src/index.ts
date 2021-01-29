@@ -53,7 +53,8 @@ class S3RemoteFile implements RemoteFile {
 	setMetadata(meta: SettableFileMetadata): Promise<any> {
 		const CopySource = `${this.bucketName}/${this.name}`
 		const { cacheControl: CacheControl, contentType: ContentType } = meta
-		const cmd = new CopyObjectCommand({ CopySource, Bucket: this.bucketName, Key: this.name, CacheControl, ContentType, MetadataDirective: 'REPLACE' })
+		const ACL = this.web ? 'public-read' : undefined
+		const cmd = new CopyObjectCommand({ CopySource, Bucket: this.bucketName, Key: this.name, CacheControl, ContentType, MetadataDirective: 'REPLACE', ACL })
 		return this.s3.send(cmd)
 	}
 
