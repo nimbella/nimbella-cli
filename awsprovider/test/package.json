@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@nimbella/storage-s3": "0.0.8",
+    "@nimbella/storage-s3": "file:../nimbella-storage-s3-0.0.11.tgz",
     "axios": "^0.21.1"
   }
 }

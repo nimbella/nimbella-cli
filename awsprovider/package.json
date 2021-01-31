@@ -1,6 +1,6 @@
 {
   "name": "@nimbella/storage-s3",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "The google cloud storage provider for s3",
   "main": "lib/index.js",
   "repository": {

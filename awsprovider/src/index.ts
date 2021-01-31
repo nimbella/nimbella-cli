@@ -106,7 +106,7 @@ class S3RemoteFile implements RemoteFile {
 			// The interface expects something that can be passed to new Date()
 			// to get an absolute time.  The s3 getSignedUrl options expect a value in seconds
 			// from now
-			expiresIn = (new Date(expires).getTime() - Date.now()) / 1000
+			expiresIn = Math.round((new Date(expires).getTime() - Date.now()) / 1000)
 		}
 		let cmd
 		switch (action) {
