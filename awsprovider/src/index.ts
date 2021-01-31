@@ -44,6 +44,7 @@ class S3RemoteFile implements RemoteFile {
 
 	save(data: Buffer, options?: SaveOptions): Promise<any> {
 		// Set public read iff web bucket
+		debug('save was called for file %s', this.name)
 		const ACL = this.web ? 'public-read' : undefined
 		const cmd = new PutObjectCommand({ Bucket: this.bucketName, Key: this.name, Body: data, 
 			ContentType: options?.metadata?.contentType, CacheControl: options?.metadata?.cacheControl, ACL })
@@ -51,6 +52,7 @@ class S3RemoteFile implements RemoteFile {
 	}
 
 	setMetadata(meta: SettableFileMetadata): Promise<any> {
+		debug('setMetadata was called for file %s', this.name)
 		const CopySource = `${this.bucketName}/${this.name}`
 		const { cacheControl: CacheControl, contentType: ContentType } = meta
 		const ACL = this.web ? 'public-read' : undefined
@@ -59,6 +61,7 @@ class S3RemoteFile implements RemoteFile {
 	}
 
     async getMetadata(): Promise<FileMetadata|undefined> {
+		debug('getMetadata was called for file %s', this.name)
 		const cmd = new HeadObjectCommand({ Bucket: this.bucketName, Key: this.name})
 		const response = await this.s3.send(cmd)
 		const { StorageClass: storageClass, ContentLength, ETag: etag, LastModified } = response
@@ -66,15 +69,18 @@ class S3RemoteFile implements RemoteFile {
 	}
 
 	async exists(): Promise<boolean> {
+		debug('exists was called for file %s', this.name)
 		return !!await this.getMetadata()
 	}
 	
     delete(): Promise<any> {
+		debug('delete was called for file %s', this.name)
 		const cmd = new DeleteObjectCommand({Bucket: this.bucketName, Key: this.name })
 		return this.s3.send(cmd)
 	}
 	
 	async download(options?: DownloadOptions): Promise<Buffer> {
+		debug('download was called for file %s', this.name)
 		const destination = options?.destination ? createWriteStream(options.destination) : 
 			new WritableStream({ highWaterMark: 1024 * 1024 })
 		debug('download: created destination for options %O', options)
@@ -90,6 +96,7 @@ class S3RemoteFile implements RemoteFile {
 	}
 
 	async getSignedUrl(options: SignedUrlOptions): Promise<string> {
+		debug('getSignedUrl was called for file %s', this.name)
 		const { action, expires, version, contentType: ContentType } = options
 		if (version !== 'v4') {
 			throw new Error('Signing version v4 is required for s3')
@@ -154,12 +161,14 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
 	}
 	
 	setWebsite(website: WebsiteOptions): Promise<any> {
+		debug('setWebsite was called for bucket %s', this.bucketName)
 		const { notFoundPage: Key, mainPageSuffix: Suffix } = website
 		const cmd = new PutBucketWebsiteCommand({ Bucket: this.bucketName, WebsiteConfiguration: { ErrorDocument: { Key }, IndexDocument: { Suffix } }})
 		return this.s3.send(cmd)
 	}
 
 	async deleteFiles(options?: DeleteFilesOptions): Promise<any> {
+		debug('deleteFiles was called for bucket %s', this.bucketName)
 		// s3 does not support 'prefix' on DeleteObjects, only on ListObjects.
 		// The multi-object delete takes a list of objects.  So this takes two round trips.
 		const listCmd = new ListObjectsCommand({ Bucket: this.bucketName, Prefix: options?.prefix })
@@ -177,6 +186,7 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
 	}
 
 	upload(path: string, options?: UploadOptions): Promise<any> {
+		debug('upload was called for path %s to bucket %s', path, this.bucketName)
 		const data = createReadStream(path)
 		const Key = options?.destination || path
 		// Set public read iff web bucket
@@ -187,6 +197,7 @@ function pipe(input: Readable, output: Writable): Promise<unknown> {
 	}
 
 	async getFiles(options?: GetFilesOptions): Promise<RemoteFile[]> {
+		debug('getFiles was called for bucket %s', this.bucketName)
 		const cmd = new ListObjectsCommand({ Bucket: this.bucketName, Prefix:options?.prefix })
 		const response = await this.s3.send(cmd)
 		return (response.Contents || []).map(obj => new S3RemoteFile(this.s3, this.bucketName, obj.Key, !!this.url))
@@ -212,10 +223,13 @@ const provider: StorageProvider = {
 	prepareCredentials: (original: Record<string, any>): StorageKey => {
 		// For s3 we will arrange to have the stored information be exactly what we need so
 		// this function is an identity map
+		debug('preparing credentials: %O', original)
 		return original as StorageKey
 	},
 	getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
+		debug('making S3Client with credentials %O', credentials)
 		const s3 = new S3Client(credentials)
+		debug('have client: %O', s3)
 		let bucketName = computeBucketStorageName(apiHost, namespace)
 		let url: string
 		if (web) {
