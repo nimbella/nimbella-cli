@@ -15,7 +15,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#v2021-02-01-1",
-    "@adobe/aio-lib-core-config": "^1.0.15",
+    "@adobe/aio-lib-core-config": "^2.0.0",
     "@adobe/aio-lib-runtime": "^1.2.1",
     "@nimbella/storage-provider": "0.0.8",
     "@oclif/command": "^1",
