@@ -272,7 +272,7 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
   const needsBucket = inputSpec.web && inputSpec.web.length > 0 && !inputSpec.actionWrapPackage && !flags.webLocal
   if (needsBucket && !credentials.storageKey) {
     return errorStructure(new Error(
-      `Deployment of web content to namespace '${credentials.namespace}' requires a storage key but none is present`))
+      `Deployment of web content to namespace '${credentials.namespace}' requires file store access but is not enabled`))
   }
   debug('Auth sufficiency established')
   inputSpec.owClient = openwhisk(wskoptions)
@@ -284,7 +284,7 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
   debug('Target namespace validated')
   if (!flags.production && saveUsFromOurselves(credentials.namespace, credentials.ow.apihost)) {
     return errorStructure(new Error(
-      `To deploy to namespace '${credentials.namespace}' on host '${credentials.ow.apihost}' you must specifiy the '--production' flag`))
+      `To deploy to namespace '${credentials.namespace}' on host '${credentials.ow.apihost}' you must specify the '--production' flag`))
   }
   debug('Sensitive project/namespace guard passed')
   if (needsBucket) {
