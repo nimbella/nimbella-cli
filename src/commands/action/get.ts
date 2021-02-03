@@ -11,13 +11,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, CaptureLogger, authPersister, getCredentials, getCredentialsForNamespace, inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, CaptureLogger, authPersister, getCredentialsForNamespace, inBrowser } from 'nimbella-deployer'
 
-import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/get')
 
 export default class ActionGet extends NimBaseCommand {
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     AioCommand.fullGet = inBrowser
     if (flags.url) {
       const capture = new CaptureLogger()

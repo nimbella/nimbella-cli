@@ -19,9 +19,9 @@ import { queryKVStore } from '../../storage/key-value'
 const queryCommand = 'redis/lrange'
 
 export default class LRange extends NimBaseCommand {
-    static description = 'Returns the specified elements of the list stored at key.\
- The offsets start and stop are zero-based indexes, with 0 being the first element of the list,\
- 1 being the next element and so on.'
+    static description = `Returns the specified elements of the list stored at key.
+ The offsets start and stop are zero-based indexes, with 0 being the first element of the list,
+ 1 being the next element and so on.`
 
     static flags = {
       apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
@@ -36,7 +36,7 @@ export default class LRange extends NimBaseCommand {
 
     static aliases = ['kv:lrange']
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       await queryKVStore(queryCommand, args, flags, authPersister)
         .then(res => {
           res.value.forEach(element => {

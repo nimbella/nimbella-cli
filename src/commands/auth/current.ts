@@ -32,7 +32,7 @@ export default class AuthInspect extends NimBaseCommand {
 
   static args = []
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     let { all, name, apihost, auth, web, storage, redis, project, production } = flags
     if (all) {
       name = apihost = auth = web = storage = redis = project = production = true
@@ -70,7 +70,7 @@ export default class AuthInspect extends NimBaseCommand {
     if (production) {
       ans.production = creds.production
     }
-    if (Object.keys(ans).length == 1) {
+    if (Object.keys(ans).length === 1) {
       logger.log(String(Object.values(ans)[0]))
     } else {
       logger.log(JSON.stringify(ans, null, 2))

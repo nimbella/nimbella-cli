@@ -12,11 +12,11 @@
  */
 
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/activation/get')
 
 export default class ActivationGet extends NimBaseCommand {
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     await this.runAio(rawArgv, argv, args, flags, logger, AioCommand)
   }
 

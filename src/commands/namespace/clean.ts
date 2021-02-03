@@ -32,7 +32,7 @@ export default class NamespaceClean extends NimBaseCommand {
 
      static args = [{ name: 'namespace', description: 'The namespace to clean (current namespace if omitted)', required: false }]
 
-     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
        let namespace = args.namespace
        let creds: Credentials
        if (!namespace) {

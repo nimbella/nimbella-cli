@@ -33,7 +33,7 @@ export default class ObjectUrl extends NimBaseCommand {
       { name: 'namespace', required: false, hidden: true }
     ]
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       const { client } = await getObjectStorageClient(args, flags, authPersister)
       if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
 
@@ -43,9 +43,10 @@ export default class ObjectUrl extends NimBaseCommand {
         const options = {
           version: 'v4' as 'v2' | 'v4',
           action: flags.permission,
-          expires: Date.now() + expiration
+          expires: Date.now() + expiration,
+          contentType: undefined
         }
-        if (flags.permission === 'write') { options['contentType'] = 'application/octet-stream' }
+        if (flags.permission === 'write') { options.contentType = 'application/octet-stream' }
         const url = await file.getSignedUrl(options)
         logger.log(url)
         return

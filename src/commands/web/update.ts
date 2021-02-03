@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { basename, isAbsolute, join } from 'path'
+import { basename, isAbsolute } from 'path'
 import { existsSync, lstatSync } from 'fs'
 import { spinner } from '../../ui'
 import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
@@ -35,13 +35,13 @@ export default class WebContentUpdate extends NimBaseCommand {
       { name: 'namespace', required: false, hidden: true }
     ]
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       const { client } = await getWebStorageClient(args, flags, authPersister)
       if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
       await this.uploadFile(args.webContentPath, flags.destination, flags.cache, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
-    async uploadFile(webContentPath: string, destination: string, cache: number, client: StorageClient, logger: NimLogger) {
+    private async uploadFile(webContentPath: string, destination: string, cache: number, client: StorageClient, logger: NimLogger) {
       if (!existsSync(webContentPath)) {
         logger.handleError(`${webContentPath} doesn't exist`)
       }

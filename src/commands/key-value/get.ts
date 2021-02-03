@@ -30,7 +30,7 @@ export default class Get extends NimBaseCommand {
 
     static aliases = ['kv:get'];
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       await queryKVStore(queryCommand, args, flags, authPersister)
         .then(res => {
           try {

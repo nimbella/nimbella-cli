@@ -12,14 +12,14 @@
  */
 
 import { NimBaseCommand, NimLogger, inBrowser, getCredentials, wipePackage, authPersister } from 'nimbella-deployer'
-import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 import { flags } from '@oclif/command'
 
 import { prompt } from '../../ui'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/package/delete')
 
 export default class PackageDelete extends NimBaseCommand {
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     if (inBrowser && flags.json) { // behave correctly when invoked from sidecar delete button
       const ans = await prompt(`type 'yes' to really delete '${args.packageName}'`)
       if (ans !== 'yes') {
@@ -51,7 +51,7 @@ export default class PackageDelete extends NimBaseCommand {
   static description = AioCommand.description
 
   // Recursive deletion
-  async recursiveDelete(args: any, flags: any, logger: NimLogger) {
+  private async recursiveDelete(args: any, flags: any, logger: NimLogger) {
     const creds = await getCredentials(authPersister).catch(err => logger.handleError('', err))
     const auth = flags.auth || (creds ? creds.ow.api_key : undefined)
     const apihost = flags.apihost || (creds ? creds.ow.apihost : undefined)

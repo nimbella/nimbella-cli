@@ -29,7 +29,7 @@ export default class AuthExport extends NimBaseCommand {
 
   static args = [{ name: 'namespace', description: 'The namespace to export (omit for current namespace)', required: false }]
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     const host = parseAPIHost(flags.apihost)
     const nonExpiring = flags['non-expiring']
 

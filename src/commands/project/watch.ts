@@ -40,9 +40,9 @@ export default class ProjectWatch extends NimBaseCommand {
   static args = ProjectDeploy.args
   static strict = false
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     // If no projects specified, display help
-    if (argv.length == 0) {
+    if (argv.length === 0) {
       this.doHelp()
     }
     // In the cloud, disallow the command entirely (it can't possibly work and it's easiest to head it off here)
@@ -158,7 +158,7 @@ function isTypicalProject(project: string, item: string, shouldBeFile: boolean):
   item = path.join(project, item)
   if (fs.existsSync(item)) {
     const stat = fs.lstatSync(item)
-    if (shouldBeFile && stat.isFile() || !shouldBeFile && stat.isDirectory()) {
+    if ((shouldBeFile && stat.isFile()) || (!shouldBeFile && stat.isDirectory())) {
       return true
     }
   }

@@ -12,12 +12,12 @@
  */
 
 import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
-import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 import { prompt } from '../../ui'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/rule/delete')
 
 export default class RuleDelete extends NimBaseCommand {
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     if (inBrowser && flags.json) { // behave correctly when invoked from sidecar delete button
       const ans = await prompt(`type 'yes' to really delete '${args.name}'`)
       if (ans !== 'yes') {

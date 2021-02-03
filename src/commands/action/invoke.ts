@@ -15,7 +15,7 @@ import { NimBaseCommand, NimLogger, inBrowser, CaptureLogger } from 'nimbella-de
 import { flags } from '@oclif/command'
 import { Action } from 'openwhisk'
 import { open } from '../../ui'
-import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 import { createKeyValueArrayFromFlag, createKeyValueArrayFromFile } from '@adobe/aio-lib-runtime'
 import * as makeDebug from 'debug'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/invoke')
@@ -24,7 +24,7 @@ const ActionGet: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runt
 const debug = makeDebug('nim:invoke:web')
 
 export default class ActionInvoke extends NimBaseCommand {
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     // Ensure correct results in the workbench
     if (inBrowser) {
       this.debug('flags: %O', flags)
@@ -33,7 +33,7 @@ export default class ActionInvoke extends NimBaseCommand {
       // Perhaps this should be done earlier since it represents a difference between kui and oclif.  Kui also
       // handles the '--no-' prefix differently: --no-wait will set --wait to false, not --no-wait to true.  On the
       // other hand, the abbreviation -n will indeed set --no-wait to true.
-      flags.result == !!flags.result
+      flags.result = !!flags.result
       flags['no-wait'] = flags['no-wait'] || flags.wait === false
       // Also impose a different default (--full, rather than --result).
       flags.full = !flags.result && !flags['no-wait']
@@ -49,7 +49,7 @@ export default class ActionInvoke extends NimBaseCommand {
 
   // Distinct from the main 'invoke' path but sharing many of its flags: do GET on the action's web URL (if it has one).
   // It is an error if the action is not a web action.
-  async invokeViaWeb(actionName: string, flags: any, logger: NimLogger) {
+  async invokeViaWeb(actionName: string, flags: any, logger: NimLogger): Promise<void> {
     // Run the aio 'action get' to grab the action metadata
     const capture = new CaptureLogger()
     debug('invoking aio to get action metadata')

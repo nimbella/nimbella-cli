@@ -45,9 +45,9 @@ export class ProjectDeploy extends NimBaseCommand {
   static args = [{ name: 'projects', description: 'One or more paths to projects' }]
   static strict = false
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     // If no projects specified, display help
-    if (argv.length == 0) {
+    if (argv.length === 0) {
       this.doHelp()
     }
     // Otherwise ...
@@ -193,7 +193,7 @@ function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback
 // Display the result of a successful run
 function displayResult(result: DeployResponse, watching: boolean, webLocal: string, bucketURL: string, logger: NimLogger): boolean {
   let success = true
-  if (result.successes.length == 0 && result.failures.length == 0) {
+  if (result.successes.length === 0 && result.failures.length === 0) {
     logger.log('\nNothing deployed')
   } else {
     logger.log('')
@@ -208,7 +208,7 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
         } else {
           deployedWeb++
         }
-      } else if (success.kind == 'action') {
+      } else if (success.kind === 'action') {
         if (success.skipped) {
           skippedActions++
         } else {

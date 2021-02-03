@@ -31,7 +31,7 @@ export default class AuthList extends NimBaseCommand {
 
   static args = []
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     const dict = await getCredentialDict(authPersister)
     if (Object.keys(dict).length === 1) {
       await this.formatCredentialList(Object.values(dict)[0], logger)
@@ -46,7 +46,7 @@ export default class AuthList extends NimBaseCommand {
     }
   }
 
-  async formatCredentialList(credentialList: CredentialRow[], logger: NimLogger) {
+  private async formatCredentialList(credentialList: CredentialRow[], logger: NimLogger) {
     logger.log(bold(LIST_HEADER))
     for (const row of credentialList) {
       let ns = row.namespace

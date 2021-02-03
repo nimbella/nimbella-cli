@@ -29,7 +29,7 @@ export default class Clean extends NimBaseCommand {
 
   static aliases = ['kv:clean'];
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     if (!flags.force) {
       const ans = await prompt('Type \'yes\' to remove all content from Key-Value Store')
       if (ans !== 'yes') {

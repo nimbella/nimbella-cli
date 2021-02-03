@@ -31,13 +31,13 @@ export default class WebContentDelete extends NimBaseCommand {
       { name: 'namespace', required: false, hidden: true }
     ]
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       const { client } = await getWebStorageClient(args, flags, authPersister)
       if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
       await this.deleteFile(args.webContentName, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
-    async deleteFile(webContentName: string, client: StorageClient, logger: NimLogger) {
+    private async deleteFile(webContentName: string, client: StorageClient, _logger: NimLogger) {
       const loader = await spinner()
       loader.start(`searching ${webContentName}`, 'deleting', { stdout: true })
       await client.file(webContentName).delete().then(_ => loader.stop('done'))

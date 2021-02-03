@@ -17,7 +17,7 @@ import { initializeAPI } from 'nimbella-deployer'
 import { CLIError } from '@oclif/errors'
 
 // A screening function called at top level (before the real oclif dispatching begins).  Does various fixups.
-export async function run() {
+export async function run(): Promise<void> {
   // Get topics info from package.json
   const pj = require('../package.json')
   const topics = pj.oclif.topics
@@ -36,10 +36,11 @@ export async function run() {
   try {
     await require('@oclif/command').run(undefined, __dirname)
   } catch (err) {
+    let toThrow = err
     if (err.message && !err.oclif) {
-      err = new CLIError(err.message, { exit: 1 })
+      toThrow = new CLIError(err.message, { exit: 1 })
     }
-    throw err
+    throw toThrow
   }
 }
 
@@ -80,7 +81,7 @@ function decolonize(topics: any) {
 // Check whether a token matches a topic or alias
 function isTopicOrAlias(token: string, topics: any): boolean {
   for (const topic in topics) {
-    if (token == topic) {
+    if (token === topic) {
       return true
     }
     const def = topics[topic]

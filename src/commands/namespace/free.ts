@@ -29,7 +29,7 @@ export default class NamespaceFree extends NimBaseCommand {
     static args = [{ name: 'namespace', description: 'The namespace(s) you are freeing (current if omitted)', required: false }]
     static strict = false
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       if (flags.all && argv.length > 0) {
         logger.handleError('Cannot combine the \'--all\' flag with explicit namespace names')
       }
@@ -56,7 +56,7 @@ export default class NamespaceFree extends NimBaseCommand {
       }
     }
 
-    async freeAll(host: string, logger: NimLogger) {
+    private async freeAll(host: string, logger: NimLogger) {
       let all: CredentialRow[]
       if (host) {
         const dict = await getCredentialDict(authPersister)
@@ -69,7 +69,7 @@ export default class NamespaceFree extends NimBaseCommand {
       }
     }
 
-    async doFree(namespace: string, host: string, logger: NimLogger) {
+    private async doFree(namespace: string, host: string, logger: NimLogger) {
       const success = await recordNamespaceOwnership(undefined, namespace, host, undefined, authPersister)
       if (success) {
         logger.log(`Removed ownership from namespace '${namespace}'`)

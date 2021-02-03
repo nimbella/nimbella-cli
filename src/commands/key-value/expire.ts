@@ -33,7 +33,7 @@ export default class Expire extends NimBaseCommand {
 
     static aliases = ['kv:expire'];
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       if (isNaN(args.ttl)) {
         logger.log('Please specify a numeric value for ttl')
         return

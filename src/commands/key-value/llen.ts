@@ -19,9 +19,9 @@ import { queryKVStore } from '../../storage/key-value'
 const queryCommand = 'redis/llen'
 
 export default class LLen extends NimBaseCommand {
-    static description = 'Returns the length of the list stored at key.\
- If a key does not exist, it is interpreted as an empty list and 0 is returned.\
- An error is returned when the value stored at key is not a list.'
+    static description = `Returns the length of the list stored at key.
+ If a key does not exist, it is interpreted as an empty list and 0 is returned.
+ An error is returned when the value stored at key is not a list.`
 
     static flags = {
       apihost: flags.string({ description: 'API host of the namespace' }),
@@ -32,7 +32,7 @@ export default class LLen extends NimBaseCommand {
 
     static aliases = ['kv:llen']
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       await queryKVStore(queryCommand, args, flags, authPersister)
         .then(res => logger.log(res.value))
       // Log the error returned by the action.

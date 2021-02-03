@@ -20,7 +20,7 @@ const previewURL = 'https://preview-apigcp.nimbella.io/workbench'
 // Used by both "workbench:run" and "workbench:login".
 // Not expected to be used in the browser.
 
-export function openWorkbench(command: string, preview: boolean, logger: NimLogger) {
+export function openWorkbench(command: string, preview: boolean, _logger: NimLogger): void {
   let query = ''
   if (command) {
     query = '?command=' + encodeURIComponent(command)

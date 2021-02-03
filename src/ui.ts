@@ -21,7 +21,7 @@ let kuiOpen: (url: string) => Promise<any>
 let cli
 
 // Allow the cloud-workbench to install a kui-friendly 'open' (uses the sidecar)
-export function setKuiOpen(opener: (url: string) => Promise<any>) {
+export function setKuiOpen(opener: (url: string) => Promise<any>): void {
   kuiOpen = opener
 }
 
@@ -29,7 +29,7 @@ export function setKuiOpen(opener: (url: string) => Promise<any>) {
 // Note: this is reliable for http[s] absolute URLs.  It won't work on file URLs in the browser.
 // Whether or not it works on relative URLs in the browser depends on how the files are packaged by webpack.
 // If the files are buried in webpack bundles this function will not work for them.
-export function open(url: string, sidecar = false) {
+export function open(url: string, sidecar = false): any {
   if (inBrowser) {
     if (sidecar && kuiOpen) {
       return kuiOpen(url)
@@ -42,7 +42,7 @@ export function open(url: string, sidecar = false) {
 }
 
 // Allow the cloud-workbench to install a kui-friendly prompter
-export function setKuiPrompter(prompter: (msg: string) => Promise<string>) {
+export function setKuiPrompter(prompter: (msg: string) => Promise<string>): void {
   kuiPrompt = prompter
 }
 
@@ -83,8 +83,8 @@ export async function choicePrompter(choices: string[]): Promise<string> {
 export async function spinner(): Promise<any> {
   if (inBrowser) {
     return Promise.resolve({
-      start: _ => { },
-      stop: _ => { }
+      start: _ => { /* no-op */ },
+      stop: _ => { /* no-op */ }
     })
   } else {
     if (!cli) { cli = require('cli-ux').cli }

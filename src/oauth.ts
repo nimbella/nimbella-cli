@@ -225,7 +225,7 @@ export function isFullCredentials(toTest: OAuthResponse): toTest is FullCredenti
 }
 
 export function isGithubProvider(toTest: OAuthResponse): toTest is IdProvider {
-  return toTest != true && 'provider' in toTest && toTest.provider.toLowerCase() === 'github'
+  return toTest !== true && 'provider' in toTest && toTest.provider.toLowerCase() === 'github'
 }
 
 function providerFromResponse(response: OAuthResponse): string {
@@ -269,7 +269,9 @@ export async function doOAuthFlow(logger: NimLogger, githubOnly: boolean, apihos
 
   const query = {
     provider: githubOnly ? 'github' : undefined,
-    redirect: inBrowser ? wbReentry() : true
+    redirect: inBrowser ? wbReentry() : true,
+    port: undefined,
+    tokenize: undefined
   }
 
   let loginUrl // needs to be computed differently when not in browser
@@ -280,7 +282,7 @@ export async function doOAuthFlow(logger: NimLogger, githubOnly: boolean, apihos
     const createServer = require('http').createServer
     const getPort = require('get-port')
     const port = await getPort({ port: 3000 })
-    query['port'] = port
+    query.port = port
 
     const server = createServer(function(req, res) {
       const parameters = querystring.parse(req.url.slice(req.url.indexOf('?') + 1))
@@ -335,7 +337,7 @@ export async function doOAuthFlow(logger: NimLogger, githubOnly: boolean, apihos
   } else {
     // for browser, we will just return Promise<true> because the real callback will be in a separate flow altogether
     deferredResolve(true)
-    query['tokenize'] = !githubOnly
+    query.tokenize = !githubOnly
   }
 
   // Common code

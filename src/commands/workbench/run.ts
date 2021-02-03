@@ -29,9 +29,9 @@ export default class WorkbenchRun extends NimBaseCommand {
 
   static aliases = ['wb:run']
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     let command: string
-    if (argv.length == 0) {
+    if (argv.length === 0) {
       command = ''
     } else {
       command = argv.join(' ')

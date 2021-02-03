@@ -12,12 +12,12 @@
  */
 
 import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
-import { screenLegal, default as ActionCreate } from './create'
+import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import ActionCreate, { screenLegal } from './create'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/update')
 
 export default class ActionUpdate extends NimBaseCommand {
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     screenLegal(!!args.actionPath, flags, logger)
     await this.runAio(rawArgv, argv, args, flags, logger, AioCommand)
   }

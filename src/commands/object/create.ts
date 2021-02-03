@@ -36,13 +36,13 @@ export default class ObjectCreate extends NimBaseCommand {
 
     static aliases = ['objects:add', 'object:add']
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       const { client } = await getObjectStorageClient(args, flags, authPersister)
       if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
       await this.uploadFile(args.objectPath, flags.destination, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
-    async uploadFile(objectPath: string, destination: string, client: StorageClient, logger: NimLogger) {
+    private async uploadFile(objectPath: string, destination: string, client: StorageClient, logger: NimLogger) {
       if (!existsSync(objectPath)) {
         logger.handleError(`${objectPath} doesn't exist`)
       }

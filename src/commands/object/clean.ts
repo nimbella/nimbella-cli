@@ -31,7 +31,7 @@ export default class ObjectClean extends NimBaseCommand {
       { name: 'namespace', required: false, hidden: true }
     ]
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       if (!flags.force) {
         const ans = await prompt('Type \'yes\' to remove all objects from Object Store')
         if (ans !== 'yes') {
@@ -44,7 +44,7 @@ export default class ObjectClean extends NimBaseCommand {
       await this.cleanup(client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
-    async cleanup(client: StorageClient, logger: NimLogger) {
+    private async cleanup(client: StorageClient, _logger: NimLogger) {
       const loader = await spinner()
       loader.start('deleting objects', '', { stdout: true })
       await client.deleteFiles().then(_ => loader.stop('done'))

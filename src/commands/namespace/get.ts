@@ -13,11 +13,11 @@
 
 import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
 
-import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
+import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/namespace/get')
 
 export default class NamespaceGet extends NimBaseCommand {
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     // We only support --json when running in the workbench.  Locally, we allow both --json and the default format.
     if (inBrowser) {
       flags.json = true

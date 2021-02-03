@@ -33,7 +33,7 @@ export default class Set extends NimBaseCommand {
 
     static aliases = ['kv:set', 'kv:add'];
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       await queryKVStore(queryCommand, args, flags, authPersister)
         .then(res => logger.log(res.value))
       // Log the error returned by the action.

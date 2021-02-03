@@ -30,7 +30,7 @@ export default class WebContentClean extends NimBaseCommand {
       { name: 'namespace', required: false, hidden: true }
     ]
 
-    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+    async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
       if (!flags.force) {
         const ans = await prompt('Type \'yes\' to remove all content from web storage')
         if (ans !== 'yes') {
@@ -43,7 +43,7 @@ export default class WebContentClean extends NimBaseCommand {
       await this.cleanup(client, creds.ow, logger).catch((err: Error) => logger.handleError('', err))
     }
 
-    async cleanup(client: StorageClient, ow: OWOptions, logger: NimLogger) {
+    private async cleanup(client: StorageClient, ow: OWOptions, logger: NimLogger) {
       const loader = await spinner()
       loader.start('deleting web content', '', { stdout: true })
       await client.deleteFiles().then(_ => restore404Page(client, ow)).then(_ => loader.stop('done')).catch(e => logger.handleError('', e))

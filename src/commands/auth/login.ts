@@ -32,7 +32,7 @@ export default class AuthLogin extends NimBaseCommand {
 
   static aliases = ['login']
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
+  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     let credentials: Credentials
     const apihost = parseAPIHost(flags.apihost) || (flags.admin ? undefined : 'https://apigcp.nimbella.io')
     if (args.token) {
