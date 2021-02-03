@@ -13,8 +13,8 @@
 
 import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
 import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
-const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/rule/delete')
 import { prompt } from '../../ui'
+const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/rule/delete')
 
 export default class RuleDelete extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {

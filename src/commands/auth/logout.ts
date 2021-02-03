@@ -12,32 +12,32 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
-import { getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts } from 'nimbella-deployer'
+
 import { prompt, choicePrompter } from '../../ui'
 
 export default class AuthLogout extends NimBaseCommand {
   static description = 'Drop access to Nimbella namespaces'
 
   static flags = {
-    apihost: flags.string({ description: 'API host serving the namespace(s)'}),
-    all: flags.boolean({ description: 'log out of all namespaces (or, all on the given API host)'}),
+    apihost: flags.string({ description: 'API host serving the namespace(s)' }),
+    all: flags.boolean({ description: 'log out of all namespaces (or, all on the given API host)' }),
     ...NimBaseCommand.flags
   }
 
-  static args = [{name: 'namespace', description: 'The namespace(s) you are dropping', required: false}]
+  static args = [{ name: 'namespace', description: 'The namespace(s) you are dropping', required: false }]
   static strict = false
 
   static aliases = ['logout']
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
     if (flags.all && flags.apihost && argv.length > 0) {
-      logger.handleError(`Cannot combine '--all' and '--apihost' with explicit namespace names`)
+      logger.handleError('Cannot combine \'--all\' and \'--apihost\' with explicit namespace names')
     }
-    let host = parseAPIHost(flags.apihost)
+    const host = parseAPIHost(flags.apihost)
     if (host && argv.length === 0 && !flags.all) {
       // what does it mean to logout from current namespace while specifying the api host? reject this.
-      logger.handleError(`Cannot specify an API host without also specifying the namespace or the '--all' flag.`)
+      logger.handleError('Cannot specify an API host without also specifying the namespace or the \'--all\' flag.')
     }
 
     // Process the --all case without namespace names
@@ -75,19 +75,19 @@ export default class AuthLogout extends NimBaseCommand {
   // Do logout of a namespace, with messages.  Note: the messages seem redundent but this is mostly to avoid breaking some existing tests.  We can
   // clean it up but then expect to have to fix the tests.
   async doLogout(namespace: string, host: string, logger: NimLogger) {
-      const creds = await forgetNamespace(namespace, host, authPersister, new NimFeedback(logger)).catch(err => logger.handleError('', err))
-      logger.log(`Ok.  Removed the namespace '${namespace}' on host '${creds.ow.apihost}' from the credential store`)
-      logger.log(`Successful logout from namespace '${namespace}' on API host '${creds.ow.apihost}'`)
+    const creds = await forgetNamespace(namespace, host, authPersister, new NimFeedback(logger)).catch(err => logger.handleError('', err))
+    logger.log(`Ok.  Removed the namespace '${namespace}' on host '${creds.ow.apihost}' from the credential store`)
+    logger.log(`Successful logout from namespace '${namespace}' on API host '${creds.ow.apihost}'`)
   }
 
   // Logout of 'all' namespaces (possibly qualified by API host)
   async logoutAll(host: string, logger: NimLogger) {
     // Issue prompt, being especially dire if API host is not specified
-    const context = host ? `all namespaces on API host ${host}` : `all namespaces, leaving you with no namespaces`
+    const context = host ? `all namespaces on API host ${host}` : 'all namespaces, leaving you with no namespaces'
     const ans = await prompt(`Type 'yes' to logout ${context}`)
     if (ans !== 'yes') {
-        logger.log('Doing nothing.')
-        return;
+      logger.log('Doing nothing.')
+      return
     }
     let all = await getCredentialList(authPersister)
     if (host) {

@@ -13,33 +13,33 @@
 
 import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
+
 import { getObjectStorageClient } from '../../storage/clients'
 
 export default class ObjectDelete extends NimBaseCommand {
     static description = 'Deletes Object from the Object Store'
 
     static flags = {
-        namespace: flags.string({ description: 'The namespace to delete the object from (current namespace if omitted)' }),
-        apihost: flags.string({ description: 'API host of the namespace to delete object from' }),
-        ...NimBaseCommand.flags
+      namespace: flags.string({ description: 'The namespace to delete the object from (current namespace if omitted)' }),
+      apihost: flags.string({ description: 'API host of the namespace to delete object from' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'objectName', description: 'The object to be deleted', required: true },
-        { name: 'namespace', required: false, hidden: true }
+      { name: 'objectName', description: 'The object to be deleted', required: true },
+      { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        const { client } = await getObjectStorageClient(args, flags, authPersister);
-        if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
-        await this.deleteFile(args.objectName, client, logger).catch((err: Error) => logger.handleError('', err));
+      const { client } = await getObjectStorageClient(args, flags, authPersister)
+      if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
+      await this.deleteFile(args.objectName, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
     async deleteFile(objectName: string, client: StorageClient, logger: NimLogger) {
-        const loader = await spinner();
-        loader.start(`searching ${objectName}`, 'deleting', { stdout: true })
-        await client.file(objectName).delete().then(_ => loader.stop('done'));
+      const loader = await spinner()
+      loader.start(`searching ${objectName}`, 'deleting', { stdout: true })
+      await client.file(objectName).delete().then(_ => loader.stop('done'))
     }
 }

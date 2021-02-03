@@ -11,9 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay } from 'nimbella-deployer'
 import { ProjectDeploy, processCredentials, doDeploy } from './deploy'
-import { Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay } from 'nimbella-deployer'
+
 import * as fs from 'fs'
 import * as chokidar from 'chokidar'
 import * as path from 'path'
@@ -41,22 +41,32 @@ export default class ProjectWatch extends NimBaseCommand {
   static strict = false
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-     // If no projects specified, display help
+    // If no projects specified, display help
     if (argv.length == 0) {
       this.doHelp()
     }
     // In the cloud, disallow the command entirely (it can't possibly work and it's easiest to head it off here)
     if (inBrowser) {
-        logger.handleError(`'project watch' is designed for local development and will not work in the cloud`)
+      logger.handleError('\'project watch\' is designed for local development and will not work in the cloud')
     }
     // Otherwise ...
     const isGithub = argv.some(project => isGithubRef(project))
     if (isGithub && !flags['anon-github']) {
-      logger.handleError(`you don't have github authorization.  Use 'nim auth github --initial' to activate it.`)
+      logger.handleError('you don\'t have github authorization.  Use \'nim auth github --initial\' to activate it.')
     }
     const { target, env, apihost, auth, insecure, yarn, include, exclude } = flags
-    const cmdFlags: Flags = { verboseBuild: flags['verbose-build'], verboseZip: flags['verboseZip'], production: false,
-        incremental: true, env, yarn, webLocal: flags['web-local'], include, exclude, remoteBuild: flags['remote-build'] }
+    const cmdFlags: Flags = {
+      verboseBuild: flags['verbose-build'],
+      verboseZip: flags.verboseZip,
+      production: false,
+      incremental: true,
+      env,
+      yarn,
+      webLocal: flags['web-local'],
+      include,
+      exclude,
+      remoteBuild: flags['remote-build']
+    }
     this.debug('cmdFlags', cmdFlags)
     const { creds, owOptions } = await processCredentials(insecure, apihost, auth, target, logger)
     argv.forEach(project => watch(project, cmdFlags, creds, owOptions, logger))
@@ -65,93 +75,92 @@ export default class ProjectWatch extends NimBaseCommand {
 
 // Validate a project and start watching it if it actually looks like a project
 function watch(project: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions,
-        logger: NimLogger) {
-    const msg = validateProject(project)
-    if (msg) {
-        logger.handleError(msg, new Error(msg))
+  logger: NimLogger) {
+  const msg = validateProject(project)
+  if (msg) {
+    logger.handleError(msg, new Error(msg))
+  }
+  logger.log(`Watching '${project}' [use Control-C to terminate]`)
+  let watcher: chokidar.FSWatcher
+  const reset = async() => {
+    if (watcher) {
+      // logger.log("Closing watcher")
+      await watcher.close()
     }
-    logger.log(`Watching '${project}' [use Control-C to terminate]`)
-    let watcher: chokidar.FSWatcher = undefined
-    const reset = async () => {
-        if (watcher) {
-            // logger.log("Closing watcher")
-            await watcher.close()
-        }
-    }
-    const watch = () => {
-        // logger.log("Opening new watcher")
-        watcher = chokidar.watch(project, { ignoreInitial: true, followSymlinks: false, usePolling: false, useFsEvents: false })
-        watcher.on('all', async (event, filename) => await fireDeploy(project, filename, cmdFlags, creds, owOptions, logger, reset, watch, event))
-    }
-    watch()
+  }
+  const watch = () => {
+    // logger.log("Opening new watcher")
+    watcher = chokidar.watch(project, { ignoreInitial: true, followSymlinks: false, usePolling: false, useFsEvents: false })
+    watcher.on('all', async(event, filename) => await fireDeploy(project, filename, cmdFlags, creds, owOptions, logger, reset, watch, event))
+  }
+  watch()
 }
 
 // Fire a deploy cycle.  Suspends the watcher so that mods made to the project by the deployer won't cause a spurious re-trigger.
 // TODO this logic was crafted for fs.watch().  There might be a better way to suspend chokidar.
 // Displays an informative message before deploying.
 async function fireDeploy(project: string, filename: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions,
-        logger: NimLogger, reset: ()=>Promise<void>, watch: ()=>void, event: string) {
-    if (event === 'addDir') {
-        // Don't fire on directory add ... it never represents a complete change.
-        return
-    }
-    if (excluded(filename)) {
-        return
-    }
-    await reset()
-    logger.log(`\nDeploying '${project}' due to change in '${filename}'`)
-    let error = false
-    const result = await doDeploy(project, cmdFlags, creds, owOptions, true, logger).catch(err => {
-        logger.displayError('', err)
-        error = true
-    })
-    if (error || !result)
-        return
-    logger.log("Deployment complete.  Resuming watch.\n")
-    await delay(200).then(() => watch())
+  logger: NimLogger, reset: ()=>Promise<void>, watch: ()=>void, event: string) {
+  if (event === 'addDir') {
+    // Don't fire on directory add ... it never represents a complete change.
+    return
+  }
+  if (excluded(filename)) {
+    return
+  }
+  await reset()
+  logger.log(`\nDeploying '${project}' due to change in '${filename}'`)
+  let error = false
+  const result = await doDeploy(project, cmdFlags, creds, owOptions, true, logger).catch(err => {
+    logger.displayError('', err)
+    error = true
+  })
+  if (error || !result) { return }
+  logger.log('Deployment complete.  Resuming watch.\n')
+  await delay(200).then(() => watch())
 }
 
 // Decide if a file name should be excluded from consideration when firing a deploy.
 // TODO Someday this might be based on a list of patterns but the number of rules right now are small enough to
 // not bother with that.   Note that chokidar has an ignore feature using wildcards that we might switch to.
 function excluded(filename: string): boolean {
-    const parts = filename.includes('\\') ? filename.split('\\') : filename.split('/')
-    return parts.includes('.nimbella')
-        || parts.includes('.git')
-        || filename.endsWith('~')
-        || filename.includes('_tmp_')
-        || filename.endsWith('.swx')
-        || filename.includes('.#')
+  const parts = filename.includes('\\') ? filename.split('\\') : filename.split('/')
+  return parts.includes('.nimbella') ||
+        parts.includes('.git') ||
+        filename.endsWith('~') ||
+        filename.includes('_tmp_') ||
+        filename.endsWith('.swx') ||
+        filename.includes('.#')
 }
 
 // Validate a project argument to ensure that it denotes an actual directory that "looks like a project".
 // Returns an error message when there is a problem, undefined otherwise
 function validateProject(project: string): string|undefined {
-    if (isGithubRef(project)) {
-        return `'${project}' is not in the local file system; we do not support watching github projects`
-    }
-    if (!fs.existsSync(project)) {
-        return `${project} does not exist`
-    }
-    const stat = fs.lstatSync(project)
-    if (!stat.isDirectory()) {
-        return `${project} is not a directory`
-    }
-    if (isTypicalProject(project, 'project.yml', true) || isTypicalProject(project, 'packages', false)
-            || isTypicalProject(project, 'web', false)) {
-        return undefined
-    }
-    return `${project} is a directory but it doesn't appear to contain a project`
+  if (isGithubRef(project)) {
+    return `'${project}' is not in the local file system; we do not support watching github projects`
+  }
+  if (!fs.existsSync(project)) {
+    return `${project} does not exist`
+  }
+  const stat = fs.lstatSync(project)
+  if (!stat.isDirectory()) {
+    return `${project} is not a directory`
+  }
+  if (isTypicalProject(project, 'project.yml', true) || isTypicalProject(project, 'packages', false) ||
+            isTypicalProject(project, 'web', false)) {
+    return undefined
+  }
+  return `${project} is a directory but it doesn't appear to contain a project`
 }
 
 // Check for typical things found in a project (part of validating that a directory is a project)
 function isTypicalProject(project: string, item: string, shouldBeFile: boolean): boolean {
-    item = path.join(project, item)
-    if (fs.existsSync(item)) {
-        const stat = fs.lstatSync(item)
-        if (shouldBeFile && stat.isFile() || !shouldBeFile && stat.isDirectory()) {
-            return true
-        }
+  item = path.join(project, item)
+  if (fs.existsSync(item)) {
+    const stat = fs.lstatSync(item)
+    if (shouldBeFile && stat.isFile() || !shouldBeFile && stat.isDirectory()) {
+      return true
     }
-    return false
+  }
+  return false
 }

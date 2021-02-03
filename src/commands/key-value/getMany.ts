@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister } from 'nimbella-deployer'
+
 import { queryKVStore } from '../../storage/key-value'
 
 const queryCommand = 'redis/getMany'
@@ -22,30 +22,30 @@ export default class GetMany extends NimBaseCommand {
     static description = 'Gets values for given Keys'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
-        ...NimBaseCommand.flags
+      apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'keyPrefix', description: 'The key for which value is to be retrieved' },
-        { name: 'startIndex', description: 'The index to start at' },
-        { name: 'count', description: 'The count to run to from start' }
+      { name: 'keyPrefix', description: 'The key for which value is to be retrieved' },
+      { name: 'startIndex', description: 'The index to start at' },
+      { name: 'count', description: 'The count to run to from start' }
     ];
 
     static aliases = ['kv:getMany', 'kv:getmany']
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        await queryKVStore(queryCommand, args, flags, authPersister)
-          .then(res => {
-            res.value.forEach(element => {
-              logger.log(element);
-            });
+      await queryKVStore(queryCommand, args, flags, authPersister)
+        .then(res => {
+          res.value.forEach(element => {
+            logger.log(element)
           })
-          // Log the error returned by the action.
-          .catch(err =>
-            logger.handleError(
+        })
+      // Log the error returned by the action.
+        .catch(err =>
+          logger.handleError(
               err.error?.response?.result?.error || err.message
-            )
-          );
+          )
+        )
     }
 }

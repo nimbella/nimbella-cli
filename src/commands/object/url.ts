@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister } from 'nimbella-deployer'
+
 import { getObjectStorageClient } from '../../storage/clients'
 import { errorHandler } from '../../storage/util'
 
@@ -21,37 +21,36 @@ export default class ObjectUrl extends NimBaseCommand {
     static description = 'Generates Signed URL for an Object in the Object Store'
 
     static flags = {
-        namespace: flags.string({ description: 'The namespace to get the object URL from (current namespace if omitted)' }),
-        apihost: flags.string({ description: 'API host of the namespace to get object URL from' }),
-        permission: flags.string({ char: 'p', description: 'Permission applicable on the URL', options: ['read', 'write'], default: 'read' }),
-        ttl: flags.integer({ char: 't', description: 'Expiration time of the URL (in Minutes)', default: 15 }),
-        ...NimBaseCommand.flags
+      namespace: flags.string({ description: 'The namespace to get the object URL from (current namespace if omitted)' }),
+      apihost: flags.string({ description: 'API host of the namespace to get object URL from' }),
+      permission: flags.string({ char: 'p', description: 'Permission applicable on the URL', options: ['read', 'write'], default: 'read' }),
+      ttl: flags.integer({ char: 't', description: 'Expiration time of the URL (in Minutes)', default: 15 }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'objectName', description: 'The object to get URL for', required: true },
-        { name: 'namespace', required: false, hidden: true }
+      { name: 'objectName', description: 'The object to get URL for', required: true },
+      { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        const { client } = await getObjectStorageClient(args, flags, authPersister);
-        if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
+      const { client } = await getObjectStorageClient(args, flags, authPersister)
+      if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
 
-        try {
-            const file = client.file(args.objectName)
-            const expiration = flags.ttl * 60 * 1000
-            const options = {
-                version: 'v4' as 'v2' | 'v4',
-                action: flags.permission,
-                expires: Date.now() + expiration
-            }
-            if (flags.permission === 'write')
-                options['contentType'] = 'application/octet-stream'
-            const url = await file.getSignedUrl(options)
-            logger.log(url)
-            return
-        } catch (e) {
-            errorHandler(e, logger, args.objectName)
+      try {
+        const file = client.file(args.objectName)
+        const expiration = flags.ttl * 60 * 1000
+        const options = {
+          version: 'v4' as 'v2' | 'v4',
+          action: flags.permission,
+          expires: Date.now() + expiration
         }
+        if (flags.permission === 'write') { options['contentType'] = 'application/octet-stream' }
+        const url = await file.getSignedUrl(options)
+        logger.log(url)
+        return
+      } catch (e) {
+        errorHandler(e, logger, args.objectName)
+      }
     }
 }

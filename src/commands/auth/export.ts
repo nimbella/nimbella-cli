@@ -11,9 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace, getCredentials, getCredentialsForNamespace, authPersister } from 'nimbella-deployer'
 import { flags } from '@oclif/command'
-import { getCredentials, getCredentialsForNamespace, authPersister } from 'nimbella-deployer'
+
 import { getCredentialsToken } from '../../oauth'
 import { choicePrompter } from '../../ui'
 
@@ -21,13 +21,13 @@ export default class AuthExport extends NimBaseCommand {
   static description = 'Make a token for switching to another machine or web browser'
 
   static flags = {
-    apihost: flags.string({ description: 'API host serving the namespace'}),
+    apihost: flags.string({ description: 'API host serving the namespace' }),
     'non-expiring': flags.boolean({ description: 'Generate non-expiring token (for functional ids and integrations)' }),
     json: flags.boolean({ description: 'Get response as a JSON object with a "token:" member' }),
     ...NimBaseCommand.flags
   }
 
-  static args = [ { name: 'namespace', description: 'The namespace to export (omit for current namespace)', required: false } ]
+  static args = [{ name: 'namespace', description: 'The namespace to export (omit for current namespace)', required: false }]
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
     const host = parseAPIHost(flags.apihost)
@@ -35,11 +35,11 @@ export default class AuthExport extends NimBaseCommand {
 
     let namespace: string
     if (args.namespace) {
-        namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
+      namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
     }
 
-    const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister) :
-        getCredentials(authPersister)).catch(err => logger.handleError('', err))
+    const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister)
+      : getCredentials(authPersister)).catch(err => logger.handleError('', err))
     const token = await getCredentialsToken(creds.ow, logger, nonExpiring)
     if (flags.json) {
       logger.logJSON({ token })

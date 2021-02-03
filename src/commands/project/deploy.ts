@@ -12,35 +12,37 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
+import {
+  NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
   readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
-  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice } from 'nimbella-deployer';
+  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice
+} from 'nimbella-deployer'
 import * as path from 'path'
-import { choicePrompter } from '../../ui';
+import { choicePrompter } from '../../ui'
 
 export class ProjectDeploy extends NimBaseCommand {
   static description = 'Deploy Nimbella projects'
 
   static flags = {
-    target: flags.string({ description: 'The target namespace'}),
+    target: flags.string({ description: 'The target namespace' }),
     env: flags.string({ description: 'Path to environment file' }),
     apihost: flags.string({ description: 'API host to use' }),
     auth: flags.string({ description: 'OpenWhisk auth token to use' }),
     insecure: flags.boolean({ description: 'Ignore SSL Certificates', default: false }),
     'verbose-build': flags.boolean({ description: 'Display build details' }),
-    'verbose-zip': flags.boolean({ description: 'Display start/end of zipping phase for each action'}),
+    'verbose-zip': flags.boolean({ description: 'Display start/end of zipping phase for each action' }),
     production: flags.boolean({ description: 'Deploy to the production namespace instead of the test one' }),
     yarn: flags.boolean({ description: 'Use yarn instead of npm for node builds' }),
-    'web-local': flags.string({ description: 'A local directory to receive web deploy, instead of uploading'}),
+    'web-local': flags.string({ description: 'A local directory to receive web deploy, instead of uploading' }),
     include: flags.string({ description: 'Project portions to include' }),
     exclude: flags.string({ description: 'Project portions to exclude' }),
     'remote-build': flags.boolean({ description: 'Run builds remotely' }),
     incremental: flags.boolean({ description: 'Deploy only changes since last deploy' }),
-    'anon-github': flags.boolean({ description: 'Attempt GitHub deploys anonymously'} ),
+    'anon-github': flags.boolean({ description: 'Attempt GitHub deploys anonymously' }),
     ...NimBaseCommand.flags
   }
 
-  static args = [ { name: 'projects', description: 'One or more paths to projects'} ]
+  static args = [{ name: 'projects', description: 'One or more paths to projects' }]
   static strict = false
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
@@ -52,16 +54,26 @@ export class ProjectDeploy extends NimBaseCommand {
     const isGithub = argv.some(project => isGithubRef(project))
     const { target, env, apihost, auth, insecure, production, yarn, incremental, include, exclude } = flags
     if (incremental && isGithub) {
-      logger.handleError(`'--incremental' may not be used with GitHub projects`)
+      logger.handleError('\'--incremental\' may not be used with GitHub projects')
     }
     if (inBrowser && !isGithub) {
-      logger.handleError(`only GitHub projects are deployable from the cloud`)
+      logger.handleError('only GitHub projects are deployable from the cloud')
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
-      logger.handleError(`you don't have GitHub authorization.  Use 'nim auth github --initial' to activate it.`)
+      logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github --initial\' to activate it.')
     }
-    const cmdFlags: Flags = { verboseBuild: flags['verbose-build'], verboseZip: flags['verbose-zip'], production, incremental, env, yarn,
-      webLocal: flags['web-local'], include, exclude, remoteBuild: flags['remote-build'] }
+    const cmdFlags: Flags = {
+      verboseBuild: flags['verbose-build'],
+      verboseZip: flags['verbose-zip'],
+      production,
+      incremental,
+      env,
+      yarn,
+      webLocal: flags['web-local'],
+      include,
+      exclude,
+      remoteBuild: flags['remote-build']
+    }
     this.debug('cmdFlags', cmdFlags)
     const { creds, owOptions } = await processCredentials(insecure, apihost, auth, target, logger)
     this.debug('creds', creds)
@@ -71,7 +83,7 @@ export class ProjectDeploy extends NimBaseCommand {
     const multiple = argv.length > 1
     for (const project of argv) {
       if (multiple) {
-          logger.log(`\nReading project '${project}`)
+        logger.log(`\nReading project '${project}`)
       }
       success = success && await doDeploy(project, cmdFlags, creds, owOptions, false, logger)
     }
@@ -85,8 +97,8 @@ export class ProjectDeploy extends NimBaseCommand {
 
 // Process credentials, possibly select non-current namespace
 export async function processCredentials(ignore_certs: boolean, apihost: string|undefined, auth: string|undefined,
-    target: string|undefined, logger: NimLogger): Promise<{ creds: Credentials|undefined, owOptions: OWOptions }> {
-  const owOptions: OWOptions = { ignore_certs }  // No explicit undefined
+  target: string|undefined, logger: NimLogger): Promise<{ creds: Credentials|undefined, owOptions: OWOptions }> {
+  const owOptions: OWOptions = { ignore_certs } // No explicit undefined
   if (apihost) {
     owOptions.apihost = parseAPIHost(apihost)
   }
@@ -94,7 +106,7 @@ export async function processCredentials(ignore_certs: boolean, apihost: string|
     owOptions.api_key = auth
   }
   // Iff a namespace switch was requested, perform it.  It might fail if there are no credentials for the target
-  let creds: Credentials|undefined = undefined
+  let creds: Credentials|undefined
   if (target) {
     target = await disambiguateNamespace(target, owOptions.apihost, choicePrompter).catch((err: Error) => logger.handleError('', err))
     creds = await getCredentialsForNamespace(target, owOptions.apihost, authPersister).catch((err: Error) => logger.handleError('', err))
@@ -109,28 +121,28 @@ export async function processCredentials(ignore_certs: boolean, apihost: string|
 
 // Deploy one project
 export async function doDeploy(project: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions, watching: boolean,
-    logger: NimLogger): Promise<boolean> {
+  logger: NimLogger): Promise<boolean> {
   let feedback: NimFeedback
-  if (project.startsWith("slice:")) {
+  if (project.startsWith('slice:')) {
     feedback = new NimFeedback(new CaptureLogger())
     feedback.warnOnly = true
-   } else {
-     feedback = new NimFeedback(logger)
-   }
+  } else {
+    feedback = new NimFeedback(logger)
+  }
   let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, undefined, feedback)
-   if (!todeploy) {
+  if (!todeploy) {
     return false
   } else if (todeploy.error) {
-      logger.displayError('', todeploy.error)
-      return false
+    logger.displayError('', todeploy.error)
+    return false
   }
   if (!watching && !todeploy.slice) {
     displayHeader(project, todeploy.credentials, logger)
   }
   todeploy = await buildProject(todeploy)
   if (todeploy.error) {
-      logger.displayError('', todeploy.error)
-      return false
+    logger.displayError('', todeploy.error)
+    return false
   }
   const result: DeployResponse = await deploy(todeploy)
   if (todeploy.slice) {
@@ -141,18 +153,18 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
     return success
   }
   const bucketURL = todeploy.bucketClient?.getURL()
-  return displayResult(result, watching, cmdFlags. webLocal, bucketURL, logger)
+  return displayResult(result, watching, cmdFlags.webLocal, bucketURL, logger)
 }
 
 // Display the deployment "header" (what we are about to deploy)
 function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
-  let namespaceClause = ""
+  let namespaceClause = ''
   if (creds && creds.namespace) {
-      namespaceClause = `\n  to namespace '${creds.namespace}'`
+    namespaceClause = `\n  to namespace '${creds.namespace}'`
   }
-  let hostClause = ""
+  let hostClause = ''
   if (creds && creds.ow.apihost) {
-      hostClause = `\n  on host '${creds.ow.apihost}'`
+    hostClause = `\n  on host '${creds.ow.apihost}'`
   }
   const projectPath = isGithubRef(project) ? project : path.resolve(project)
   logger.log(`Deploying project '${projectPath}'${namespaceClause}${hostClause}`)
@@ -163,13 +175,13 @@ function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
 function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback: any): boolean {
   function replaceErrors(_key: string, value: any) {
     if (value instanceof Error) {
-      const error = {};
-      Object.getOwnPropertyNames(value).forEach(function (key) {
-        error[key] = value[key];
-      });
-      return error;
+      const error = {}
+      Object.getOwnPropertyNames(value).forEach(function(key) {
+        error[key] = value[key]
+      })
+      return error
     }
-    return value;
+    return value
   }
   const transcript = feedback.logger.captured
   const result = { transcript, outcome }
@@ -182,74 +194,74 @@ function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback
 function displayResult(result: DeployResponse, watching: boolean, webLocal: string, bucketURL: string, logger: NimLogger): boolean {
   let success = true
   if (result.successes.length == 0 && result.failures.length == 0) {
-      logger.log("\nNothing deployed")
+    logger.log('\nNothing deployed')
   } else {
-      logger.log('')
-      const actions: string[] = []
-      let deployedWeb = 0
-      let skippedActions = 0
-      let skippedWeb = 0
-      for (const success of result.successes) {
-          if (success.kind === 'web') {
-              if (success.skipped) {
-                  skippedWeb++
-              } else {
-                  deployedWeb++
-              }
-          } else if (success.kind == "action") {
-              if (success.skipped) {
-                  skippedActions++
-              } else {
-                  let name = success.name
-                  if (success.wrapping) {
-                      name += ` (wrapping ${success.wrapping})`
-                  }
-                  actions.push(name)
-              }
+    logger.log('')
+    const actions: string[] = []
+    let deployedWeb = 0
+    let skippedActions = 0
+    let skippedWeb = 0
+    for (const success of result.successes) {
+      if (success.kind === 'web') {
+        if (success.skipped) {
+          skippedWeb++
+        } else {
+          deployedWeb++
+        }
+      } else if (success.kind == 'action') {
+        if (success.skipped) {
+          skippedActions++
+        } else {
+          let name = success.name
+          if (success.wrapping) {
+            name += ` (wrapping ${success.wrapping})`
           }
+          actions.push(name)
+        }
       }
-      if (deployedWeb > 0) {
-          let bucketClause = ""
-          if (webLocal) {
-            bucketClause = ` to ${webLocal}`
-          } else if (result.apihost) {
-              bucketClause = ` to\n  ${bucketURL}`
-          }
-          logger.log(`Deployed ${deployedWeb} web content items${bucketClause}`)
+    }
+    if (deployedWeb > 0) {
+      let bucketClause = ''
+      if (webLocal) {
+        bucketClause = ` to ${webLocal}`
+      } else if (result.apihost) {
+        bucketClause = ` to\n  ${bucketURL}`
       }
-      if (skippedWeb > 0) {
-          let bucketClause = ""
-          if (watching && result.apihost) {
-            if (webLocal) {
-                bucketClause = ` in ${webLocal}`
-            } else {
-                bucketClause = ` on\n  https://${bucketURL}`
-            }
-          }
-          logger.log(`Skipped ${skippedWeb} unchanged web resources${bucketClause}`)
+      logger.log(`Deployed ${deployedWeb} web content items${bucketClause}`)
+    }
+    if (skippedWeb > 0) {
+      let bucketClause = ''
+      if (watching && result.apihost) {
+        if (webLocal) {
+          bucketClause = ` in ${webLocal}`
+        } else {
+          bucketClause = ` on\n  https://${bucketURL}`
+        }
       }
-      if (actions.length > 0) {
-          logger.log(`Deployed actions ('nim action get <actionName> --url' for URL):`)
-          for (const action of actions) {
-              logger.log(`  - ${action}`)
-          }
+      logger.log(`Skipped ${skippedWeb} unchanged web resources${bucketClause}`)
+    }
+    if (actions.length > 0) {
+      logger.log('Deployed actions (\'nim action get <actionName> --url\' for URL):')
+      for (const action of actions) {
+        logger.log(`  - ${action}`)
       }
-      if (skippedActions > 0) {
-          logger.log(`Skipped ${skippedActions} unchanged actions`)
+    }
+    if (skippedActions > 0) {
+      logger.log(`Skipped ${skippedActions} unchanged actions`)
+    }
+    if (result.failures.length > 0) {
+      success = false
+      logger.log('Failures:')
+      for (const err of result.failures) {
+        success = false
+        const context = (err as any).context
+        if (context) {
+          logger.displayError(`While deploying ${context}`, err)
+        } else {
+          logger.displayError('', err)
+        }
       }
-      if (result.failures.length > 0) {
-          success = false
-          logger.log('Failures:')
-          for (const err of result.failures) {
-              success = false
-              const context = (err as any)['context']
-              if (context) {
-                  logger.displayError(`While deploying ${context}`, err)
-              } else {
-                logger.displayError('', err)
-              }
-          }
-      }
+    }
   }
   return success
 }

@@ -11,10 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { getCredentialDict, authPersister, CredentialRow } from 'nimbella-deployer'
-import { bold } from 'chalk'
+import { NimBaseCommand, NimLogger, getCredentialDict, authPersister, CredentialRow } from 'nimbella-deployer'
 
+import { bold } from 'chalk'
 
 // Constants used in formatting the credential list
 const LIST_HEADER = '  Namespace            Current File-Store   Key-Val Production Project'
@@ -50,20 +49,20 @@ export default class AuthList extends NimBaseCommand {
   async formatCredentialList(credentialList: CredentialRow[], logger: NimLogger) {
     logger.log(bold(LIST_HEADER))
     for (const row of credentialList) {
-        let ns = row.namespace
-        let pad = ''
-        if (ns.length < NS_LEN) {
-          pad = ' '.repeat(NS_LEN - ns.length)
-        } else {
-          ns = ns.slice(0, NS_LEN - 3) + '...'
-        }
-        const check = row.current ? (process && 'win32' === process.platform ? '\u221A ' : '\u2713 ') : '  '
-        const curr = row.current ? YES : NO
-        const stor = row.storage ? YES : NO
-        const redis = row.redis ? YES : row.redis === false ? NO : MAYBE
-        const production = row.production ? YES : NO
-        const owner = row.project || '<any>'
-        logger.log(check + ns + pad + curr + stor + '    ' + redis + production + '     ' + owner)
+      let ns = row.namespace
+      let pad = ''
+      if (ns.length < NS_LEN) {
+        pad = ' '.repeat(NS_LEN - ns.length)
+      } else {
+        ns = ns.slice(0, NS_LEN - 3) + '...'
+      }
+      const check = row.current ? (process && process.platform === 'win32' ? '\u221A ' : '\u2713 ') : '  '
+      const curr = row.current ? YES : NO
+      const stor = row.storage ? YES : NO
+      const redis = row.redis ? YES : row.redis === false ? NO : MAYBE
+      const production = row.production ? YES : NO
+      const owner = row.project || '<any>'
+      logger.log(check + ns + pad + curr + stor + '    ' + redis + production + '     ' + owner)
     }
   }
 }

@@ -11,9 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import  * as querystring from 'querystring'
-import { NimLogger} from 'nimbella-deployer'
-import { OWOptions, wskRequest, inBrowser, FullCredentials, IdProvider } from 'nimbella-deployer'
+import * as querystring from 'querystring'
+import { NimLogger, OWOptions, wskRequest, inBrowser, FullCredentials, IdProvider } from 'nimbella-deployer'
+
 import { open } from './ui'
 
 import * as makeDebug from 'debug'
@@ -30,7 +30,7 @@ const PROGRESS = '/user/progress'
  * @param provider optional string for the provider name, may be empty string
  */
 function loginHtml(provider?: string) {
-    return `<html>
+  return `<html>
 <head>
   <meta charset="utf-8"/>
   <style>
@@ -48,7 +48,7 @@ function loginHtml(provider?: string) {
 }
 
 function provisioningHtml(loginUrl, progressUrl, id) {
-    return `<html>
+  return `<html>
 <head>
   <meta charset="utf-8"/>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -234,7 +234,7 @@ function providerFromResponse(response: OAuthResponse): string {
   } else if (isFullCredentials(response)) {
     return response.externalId ? response.externalId.provider : ''
   } else {
-    return response['provider']
+    return response.provider
   }
 }
 
@@ -340,7 +340,7 @@ export async function doOAuthFlow(logger: NimLogger, githubOnly: boolean, apihos
 
   // Common code
   loginUrl = loginUrl || getAPIUrl(NAMESPACE, apihost || DEFAULT_APIHOST) + LOGIN + '?' + querystring.stringify(query)
-  debug("computed url: %s", loginUrl)
+  debug('computed url: %s', loginUrl)
 
   try {
     if (inBrowser) {
@@ -352,22 +352,22 @@ export async function doOAuthFlow(logger: NimLogger, githubOnly: boolean, apihos
   } catch (err) {
     logger.handleError('Nimbella CLI could not open the browser for you.' +
       ' Please visit this URL in a browser on this device: ' + loginUrl,
-      err)
+    err)
   }
 
   return await deferredPromise
 }
 
 // Invoke the tokenizer given low level OW credentials (auth and apihost), getting back a bearer token to full credentials
-export async function getCredentialsToken(ow: OWOptions, logger: NimLogger, nonExpiring: boolean = false): Promise<string> {
-    debug('getCredentialsToken with input %O', ow)
-    const url = getAPIUrl(NAMESPACE, ow.apihost) + TOKENIZER + (nonExpiring === true ? '?ttl=login' : '')
-    let response
-    try {
-      response = await wskRequest(url, ow.api_key)
-    } catch (err) {
-      logger.handleError('', err)
-    }
-    debug('response from tokenizer: %O', response)
-    return response.token
+export async function getCredentialsToken(ow: OWOptions, logger: NimLogger, nonExpiring = false): Promise<string> {
+  debug('getCredentialsToken with input %O', ow)
+  const url = getAPIUrl(NAMESPACE, ow.apihost) + TOKENIZER + (nonExpiring === true ? '?ttl=login' : '')
+  let response
+  try {
+    response = await wskRequest(url, ow.api_key)
+  } catch (err) {
+    logger.handleError('', err)
+  }
+  debug('response from tokenizer: %O', response)
+  return response.token
 }

@@ -11,8 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, CaptureLogger, authPersister, getCredentials, getCredentialsForNamespace } from 'nimbella-deployer'
-import { inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, CaptureLogger, authPersister, getCredentials, getCredentialsForNamespace, inBrowser } from 'nimbella-deployer'
+
 import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/get')
 
@@ -47,7 +47,7 @@ export default class ActionGet extends NimBaseCommand {
         const actionPath = pathParts.slice(1).join('/')
         let hasStorage = false
         try {
-          let creds = await getCredentialsForNamespace(namespace, apihost, authPersister)
+          const creds = await getCredentialsForNamespace(namespace, apihost, authPersister)
           hasStorage = !!creds.storageKey
         } catch {
           // ignore; hasStorage remains false

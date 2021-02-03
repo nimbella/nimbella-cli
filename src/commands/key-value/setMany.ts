@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister } from 'nimbella-deployer'
+
 import { queryKVStore } from '../../storage/key-value'
 
 const queryCommand = 'redis/setMany'
@@ -22,28 +22,27 @@ export default class SetMany extends NimBaseCommand {
     static description = 'Set Value for a Key'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
-        ...NimBaseCommand.flags
+      apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'keyPrefix', description: 'The key to be set at' },
-        { name: 'valuePrefix', description: 'The value to be set' },
-        { name: 'startIndex', description: 'The index to start at' },
-        { name: 'count', description: 'The count to run to from start'}
+      { name: 'keyPrefix', description: 'The key to be set at' },
+      { name: 'valuePrefix', description: 'The value to be set' },
+      { name: 'startIndex', description: 'The index to start at' },
+      { name: 'count', description: 'The count to run to from start' }
     ];
 
     static aliases = ['kv:setMany', 'kv:setmany']
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        await queryKVStore(queryCommand, args, flags, authPersister)
-          .then(res => logger.log(res.value))
-          // Log the error returned by the action.
-          .catch(err =>
-            logger.handleError(
+      await queryKVStore(queryCommand, args, flags, authPersister)
+        .then(res => logger.log(res.value))
+      // Log the error returned by the action.
+        .catch(err =>
+          logger.handleError(
               err.error?.response?.result?.error || err.message
-            )
-          );
+          )
+        )
     }
-
 }

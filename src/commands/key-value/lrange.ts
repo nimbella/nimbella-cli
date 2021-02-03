@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister } from 'nimbella-deployer'
+
 import { queryKVStore } from '../../storage/key-value'
 
 const queryCommand = 'redis/lrange'
@@ -24,30 +24,30 @@ export default class LRange extends NimBaseCommand {
  1 being the next element and so on.'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
-        ...NimBaseCommand.flags
+      apihost: flags.string({ description: 'API host of the namespace to list keys from' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'key', description: 'The key to be queried', required: true },
-        { name: 'start', description: 'The index to start', required: true },
-        { name: 'stop', description: 'The index to stop', required: true }
+      { name: 'key', description: 'The key to be queried', required: true },
+      { name: 'start', description: 'The index to start', required: true },
+      { name: 'stop', description: 'The index to stop', required: true }
     ];
 
     static aliases = ['kv:lrange']
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        await queryKVStore(queryCommand, args, flags, authPersister)
-          .then(res => {
-            res.value.forEach(element => {
-              logger.log(element);
-            });
+      await queryKVStore(queryCommand, args, flags, authPersister)
+        .then(res => {
+          res.value.forEach(element => {
+            logger.log(element)
           })
-          // Log the error returned by the action.
-          .catch(err =>
-            logger.handleError(
+        })
+      // Log the error returned by the action.
+        .catch(err =>
+          logger.handleError(
               err.error?.response?.result?.error || err.message
-            )
-          );
+          )
+        )
     }
 }

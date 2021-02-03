@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister } from 'nimbella-deployer'
+
 import { queryKVStore } from '../../storage/key-value'
 
 const queryCommand = 'redis/rpush'
@@ -24,26 +24,25 @@ export default class RPush extends NimBaseCommand {
  An error is returned when key holds such a value that is not a list'
 
     static flags = {
-        apihost: flags.string({ description: 'API host of the namespace' }),
-        ...NimBaseCommand.flags
+      apihost: flags.string({ description: 'API host of the namespace' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'key', description: 'The key to be added at', required: true },
-        { name: 'value', description: 'The value to be added', required: true }
+      { name: 'key', description: 'The key to be added at', required: true },
+      { name: 'value', description: 'The value to be added', required: true }
     ];
 
     static aliases = ['kv:rpush']
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-
-        await queryKVStore(queryCommand, args, flags, authPersister)
-          .then(res => logger.log(res.value))
-          // Log the error returned by the action.
-          .catch(err =>
-            logger.handleError(
+      await queryKVStore(queryCommand, args, flags, authPersister)
+        .then(res => logger.log(res.value))
+      // Log the error returned by the action.
+        .catch(err =>
+          logger.handleError(
               err.error?.response?.result?.error || err.message
-            )
-          );
+          )
+        )
     }
 }

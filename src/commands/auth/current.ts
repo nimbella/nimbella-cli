@@ -11,9 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, makeStorageClient } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, makeStorageClient, getCredentials, authPersister } from 'nimbella-deployer'
 import { flags } from '@oclif/command'
-import { getCredentials, authPersister } from 'nimbella-deployer'
 
 export default class AuthInspect extends NimBaseCommand {
   static description = 'Get current namespace with optional details'
@@ -31,50 +30,50 @@ export default class AuthInspect extends NimBaseCommand {
     ...NimBaseCommand.flags
   }
 
-  static args = [ ]
+  static args = []
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-    let { all, name, apihost, auth, web, storage, redis, project , production } = flags
+    let { all, name, apihost, auth, web, storage, redis, project, production } = flags
     if (all) {
-        name = apihost = auth = web = storage = redis = project  = production = true
-    } else if (!apihost && !auth && !web && !storage && !redis && !project  && !production) {
-        name = true
+      name = apihost = auth = web = storage = redis = project = production = true
+    } else if (!apihost && !auth && !web && !storage && !redis && !project && !production) {
+      name = true
     }
     const creds = await getCredentials(authPersister).catch(err => logger.handleError('', err))
     const ans: { name?: string, apihost?: string, auth?: string, web?: string, storage?: boolean, redis?: boolean, project?: string, production?: boolean } = {}
     if (name) {
-        ans.name = creds.namespace
+      ans.name = creds.namespace
     }
     if (apihost) {
-        ans.apihost = creds.ow.apihost
+      ans.apihost = creds.ow.apihost
     }
     if (auth) {
-        ans.auth = creds.ow.api_key
+      ans.auth = creds.ow.api_key
     }
     if (web) {
-        if (!!creds.storageKey) {
-            const storageClient = makeStorageClient(creds.namespace, creds.ow.apihost, true, creds.storageKey)
-            ans.web = `${storageClient.getURL()}`
-        } else {
-            ans.web = 'Not available, upgrade your account.'
-        }
+      if (creds.storageKey) {
+        const storageClient = makeStorageClient(creds.namespace, creds.ow.apihost, true, creds.storageKey)
+        ans.web = `${storageClient.getURL()}`
+      } else {
+        ans.web = 'Not available, upgrade your account.'
+      }
     }
     if (storage) {
-        ans.storage = !!creds.storageKey
+      ans.storage = !!creds.storageKey
     }
     if (redis) {
-        ans.redis = creds.redis
+      ans.redis = creds.redis
     }
     if (project) {
-        ans.project = creds.project
+      ans.project = creds.project
     }
     if (production) {
-        ans.production = creds.production
+      ans.production = creds.production
     }
     if (Object.keys(ans).length == 1) {
-        logger.log(String(Object.values(ans)[0]))
+      logger.log(String(Object.values(ans)[0]))
     } else {
-        logger.log(JSON.stringify(ans, null, 2))
+      logger.log(JSON.stringify(ans, null, 2))
     }
   }
 }

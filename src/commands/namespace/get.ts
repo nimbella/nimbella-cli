@@ -11,8 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
+
 import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/namespace/get')
 

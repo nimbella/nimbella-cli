@@ -11,8 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
-import { inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
+
 import { flags } from '@oclif/command'
 import { default as RuntimeBaseCommand } from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/create')
@@ -28,7 +28,7 @@ export default class ActionCreate extends NimBaseCommand {
   // Change description from what is in aio: log size limit is KB, not MB, and defaults should not be specified statically
   static flags = Object.assign({}, AioCommand.flags, {
     timeout: flags.integer({
-     char: 't',
+      char: 't',
       description: 'Timeout LIMIT in milliseconds after which the Action is terminated'
     }),
     memory: flags.integer({

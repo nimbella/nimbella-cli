@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, parseAPIHost } from 'nimbella-deployer'
-import { doLogin, doAdminLogin, doInteractiveLogin, addCredentialAndSave, Credentials, authPersister, inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, doLogin, doAdminLogin, doInteractiveLogin, addCredentialAndSave, Credentials, authPersister, inBrowser } from 'nimbella-deployer'
+
 import { doOAuthFlow, isFullCredentials } from '../../oauth'
 import { prompt } from '../../ui'
 
@@ -21,14 +21,14 @@ export default class AuthLogin extends NimBaseCommand {
   static description = 'Gain access to a Nimbella namespace'
 
   static flags = {
-    apihost: flags.string({ description: 'API host to use for authentication'}),
+    apihost: flags.string({ description: 'API host to use for authentication' }),
     auth: flags.string({ char: 'u', description: 'API key to use for authentication' }),
     admin: flags.boolean({ hidden: true }),
     namespace: flags.string({ hidden: true }),
     ...NimBaseCommand.flags
   }
 
-  static args = [{name: 'token', description: 'String provided by Nimbella Corp', required: false}]
+  static args = [{ name: 'token', description: 'String provided by Nimbella Corp', required: false }]
 
   static aliases = ['login']
 
@@ -40,12 +40,12 @@ export default class AuthLogin extends NimBaseCommand {
         logger.handleError('You cannot specify both a login token and an auth key.  Use one or the other')
       }
       if (flags.admin || flags.namespace) {
-        logger.handleError("Internal error: incorrect use of administrative flags")
+        logger.handleError('Internal error: incorrect use of administrative flags')
       }
       credentials = await doLogin(args.token, authPersister, apihost).catch((err: Error) => this.handleError('', err))
     } else if (flags.admin) {
       if (flags.auth || flags.namespace || !apihost) {
-        logger.handleError("Internal error: incorrect use of administrative flags")
+        logger.handleError('Internal error: incorrect use of administrative flags')
       }
       credentials = await doAdminLogin(apihost).catch(err => this.handleError('', err))
     } else if (flags.auth) {
@@ -62,12 +62,12 @@ export default class AuthLogin extends NimBaseCommand {
         // We have two different logics here, one for CLI and one for workbench.
         if (inBrowser) {
           // In the workbench, a true response is the norm.  We just need to reassure the user.
-          await prompt(`Login will restart the workbench with appropriate credentials (please wait)`)
+          await prompt('Login will restart the workbench with appropriate credentials (please wait)')
         } else {
           // In the CLI, a true response indicates a "long" provisioning (the wait for the redirect timed out).
           // It can also happen if the user just ignores the browser and does nothing.
           // We also reassure the user, but with some more instructions.
-          logger.log("If you logged in, your account is being provisioned and should be ready in a minute or two.")
+          logger.log('If you logged in, your account is being provisioned and should be ready in a minute or two.')
           logger.log("Try another 'nim auth login' then.")
         }
         return

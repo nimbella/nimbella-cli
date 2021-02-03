@@ -11,8 +11,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace,
-    doLogin, getCredentials, getCredentialsForNamespace, authPersister } from 'nimbella-deployer'
+import {
+  NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace,
+  doLogin, getCredentials, getCredentialsForNamespace, authPersister
+} from 'nimbella-deployer'
 import { flags } from '@oclif/command'
 import { getCredentialsToken } from '../../oauth'
 import { choicePrompter } from '../../ui'
@@ -21,26 +23,26 @@ export default class AuthRefresh extends NimBaseCommand {
     static description = 'Refresh Nimbella namespace credentials by re-reading the latest from the backend'
 
   static flags = {
-    apihost: flags.string({ description: 'API host serving the namespace'}),
+    apihost: flags.string({ description: 'API host serving the namespace' }),
     ...NimBaseCommand.flags
   }
 
-  static args = [ { name: 'namespace', description: 'The namespace to refresh (omit for current namespace)', required: false } ]
+  static args = [{ name: 'namespace', description: 'The namespace to refresh (omit for current namespace)', required: false }]
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<any> {
     const host = parseAPIHost(flags.apihost)
 
     let namespace: string
     if (args.namespace) {
-        namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
+      namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
     }
 
     if (host && !args.namespace) {
-      logger.handleError(`The '--apihost' flag is only to be used when specifying a namespace explicitly`)
+      logger.handleError('The \'--apihost\' flag is only to be used when specifying a namespace explicitly')
     }
 
-    const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister) :
-        getCredentials(authPersister)).catch(err => logger.handleError('', err))
+    const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister)
+      : getCredentials(authPersister)).catch(err => logger.handleError('', err))
     logger.log('Contacting the backend')
     const token = await getCredentialsToken(creds.ow, logger)
     logger.log('Refreshing credentials')

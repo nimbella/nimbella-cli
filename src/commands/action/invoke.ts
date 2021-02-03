@@ -83,11 +83,11 @@ export default class ActionInvoke extends NimBaseCommand {
       }
     }
     // Open the URL in a browser or in the workbench sidecar.
-    const result = await open(url+query, true)
+    const result = await open(url + query, true)
     if (inBrowser && typeof result === 'object' && logger instanceof CaptureLogger) {
       // In the workbench.  Have to save the result for return to the REPL in order to achieve sidecar display
       logger.entity = result
-      logger.command = [ 'sidecar' ] // pseudo-command known to the output processor
+      logger.command = ['sidecar'] // pseudo-command known to the output processor
     }
   }
 
@@ -96,7 +96,7 @@ export default class ActionInvoke extends NimBaseCommand {
   // The template for parsing the flags is not changed for the browser because it is only used by oclif parsing
   // The browser inverts the flags by a special case in the usage model generator.
   static flags = {
-    web: flags.boolean({ description: 'Invoke as a web action, show result as web page'}),
+    web: flags.boolean({ description: 'Invoke as a web action, show result as web page' }),
     ...AioCommand.flags
   }
 

@@ -13,33 +13,33 @@
 
 import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
+
 import { getWebStorageClient } from '../../storage/clients'
 
 export default class WebContentDelete extends NimBaseCommand {
     static description = 'Deletes Content from the Web Storage'
 
     static flags = {
-        namespace: flags.string({ description: 'The namespace in which to delete content (current namespace if omitted)' }),
-        apihost: flags.string({ description: 'API host of the namespace in which to delete content' }),
-        ...NimBaseCommand.flags
+      namespace: flags.string({ description: 'The namespace in which to delete content (current namespace if omitted)' }),
+      apihost: flags.string({ description: 'API host of the namespace in which to delete content' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'webContentName', description: 'The web content to be deleted', required: true },
-        { name: 'namespace', required: false, hidden: true }
+      { name: 'webContentName', description: 'The web content to be deleted', required: true },
+      { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        const { client } = await getWebStorageClient(args, flags, authPersister);
-        if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
-        await this.deleteFile(args.webContentName, client, logger).catch((err: Error) => logger.handleError('', err));
+      const { client } = await getWebStorageClient(args, flags, authPersister)
+      if (!client) logger.handleError(`Couldn't get to the web storage, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
+      await this.deleteFile(args.webContentName, client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
     async deleteFile(webContentName: string, client: StorageClient, logger: NimLogger) {
-        const loader = await spinner();
-        loader.start(`searching ${webContentName}`, 'deleting', { stdout: true })
-        await client.file(webContentName).delete().then(_ => loader.stop('done'));
+      const loader = await spinner()
+      loader.start(`searching ${webContentName}`, 'deleting', { stdout: true })
+      await client.file(webContentName).delete().then(_ => loader.stop('done'))
     }
 }

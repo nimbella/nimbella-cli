@@ -12,42 +12,41 @@
  */
 
 import { flags } from '@oclif/command'
-import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger, StorageClient } from 'nimbella-deployer'
-import { authPersister } from 'nimbella-deployer'
+import { spinner, prompt } from '../../ui'
+import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
+
 import { getObjectStorageClient } from '../../storage/clients'
-import { prompt } from '../../ui'
 
 export default class ObjectClean extends NimBaseCommand {
     static description = 'Deletes all objects from the Object Store'
 
     static flags = {
-        namespace: flags.string({ description: 'The namespace to clean (current namespace if omitted)' }),
-        apihost: flags.string({ description: 'API host of the namespace to delete objects from' }),
-        force: flags.boolean({ char: 'f', description: 'Just do it, omitting confirmatory prompt' }),
-        ...NimBaseCommand.flags
+      namespace: flags.string({ description: 'The namespace to clean (current namespace if omitted)' }),
+      apihost: flags.string({ description: 'API host of the namespace to delete objects from' }),
+      force: flags.boolean({ char: 'f', description: 'Just do it, omitting confirmatory prompt' }),
+      ...NimBaseCommand.flags
     }
 
     static args = [
-        { name: 'namespace', required: false, hidden: true }
+      { name: 'namespace', required: false, hidden: true }
     ]
 
     async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger) {
-        if (!flags.force) {
-            const ans = await prompt(`Type 'yes' to remove all objects from Object Store`);
-            if (ans !== 'yes') {
-                logger.log('Doing nothing.');
-                return;
-            }
+      if (!flags.force) {
+        const ans = await prompt('Type \'yes\' to remove all objects from Object Store')
+        if (ans !== 'yes') {
+          logger.log('Doing nothing.')
+          return
         }
-        const { client } = await getObjectStorageClient(args, flags, authPersister);
-        if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`);
-        await this.cleanup(client, logger).catch((err: Error) => logger.handleError('', err));
+      }
+      const { client } = await getObjectStorageClient(args, flags, authPersister)
+      if (!client) logger.handleError(`Couldn't get to the object store, ensure it's enabled for the ${args.namespace || 'current'} namespace`)
+      await this.cleanup(client, logger).catch((err: Error) => logger.handleError('', err))
     }
 
     async cleanup(client: StorageClient, logger: NimLogger) {
-        const loader = await spinner();
-        loader.start(`deleting objects`, '', { stdout: true })
-        await client.deleteFiles().then(_ => loader.stop('done'));
+      const loader = await spinner()
+      loader.start('deleting objects', '', { stdout: true })
+      await client.deleteFiles().then(_ => loader.stop('done'))
     }
 }
