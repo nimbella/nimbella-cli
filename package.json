@@ -14,7 +14,7 @@
   "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#v2021-02-01-1",
+    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#v2021-02-03-1",
     "@adobe/aio-lib-core-config": "^1.0.15",
     "@adobe/aio-lib-runtime": "^1.2.1",
     "@nimbella/storage-provider": "0.0.8",
@@ -29,7 +29,7 @@
     "chalk": "^4.1.0",
     "check-node-version": "^4.0.3",
     "chokidar": "^3.4.0",
-    "commander": "nimbella/commander-cli#63f4d51d094b306aa7890bc75491694dadde3f9a",
+    "commander": "nimbella/commander-cli#87a0f10a9d655a618fcd8c857b560fc49518d756",
     "debug": "^4.1.1",
     "dotenv": "7.0.0",
     "expand-home-dir": "0.0.3",
