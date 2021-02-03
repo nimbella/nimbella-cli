@@ -16,7 +16,7 @@ import { NimBaseCommand, NimLogger, authPersister, getCredentials } from 'nimbel
 import { existsSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { spawn } from 'child_process'
-export default class WebContentServe extends NimBaseCommand {
+export default class ProjectServeWeb extends NimBaseCommand {
   static description = 'Serves content from the local Web folder, proxying API requests to given/current namespace'
 
   static flags = {
