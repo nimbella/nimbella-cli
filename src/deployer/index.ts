@@ -24,7 +24,7 @@ export {
   getApiHosts, Persister, fileSystemPersister, browserPersister, authPersister, addGithubAccount, getGithubAccounts, deleteGithubAccount,
   getGithubAuth, switchGithubAccount, addCommanderData, recordNamespaceOwnership, nimbellaDir, setInBrowser, getCredentialsFromEnvironment, // from './credentials'
   cleanBucket, restore404Page, makeStorageClient, // from './deploy-to-bucket'
-  extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName, // from './util'
+  extFromRuntime, wskRequest, inBrowser, RuntimeTable, delay, writeSliceResult, getBestProjectName, renamePackage, // from './util'
   GithubDef, isGithubRef, parseGithubRef, fetchProject, // from './github'
   NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, // from './NimBaseCommand'
   deleteSlice // from './slice-reader'

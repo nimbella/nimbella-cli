@@ -1357,3 +1357,19 @@ export function getStorageProvider(rawStorageCreds: Record<string, any>): Storag
     return require(provider)
   }
 }
+
+// Utility to rename a package in a DeployStructure in a safe and consistent way.
+// Will throw if the oldName does not match a package in the spec.
+export function renamePackage(spec: DeployStructure, oldName: string, newName: string): DeployStructure {
+  const pkg = spec.packages?.find(pkg => pkg.name === oldName)
+  if (!pkg) {
+    throw new Error(`Package '${oldName}' was not found in the DeployStructure`)
+  }
+  pkg.name = newName
+  if (pkg.actions) {
+    for (const action of pkg.actions) {
+      action.package = newName
+    }
+  }
+  return spec
+}
