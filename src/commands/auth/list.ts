@@ -17,7 +17,7 @@ import { bold } from 'chalk'
 
 
 // Constants used in formatting the credential list
-const LIST_HEADER = '  Namespace            Current Storage   Redis Production Project'
+const LIST_HEADER = '  Namespace            Current File-Store   Key-Val Production Project'
 const NS_LEN = 21
 const YES = '   yes  '
 const NO = '    no  '
@@ -63,7 +63,7 @@ export default class AuthList extends NimBaseCommand {
         const redis = row.redis ? YES : row.redis === false ? NO : MAYBE
         const production = row.production ? YES : NO
         const owner = row.project || '<any>'
-        logger.log(check + ns + pad + curr + stor + redis + production + '   ' + owner)
+        logger.log(check + ns + pad + curr + stor + '    ' + redis + production + '     ' + owner)
     }
   }
 }
