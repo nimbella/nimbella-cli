@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay, getExclusionList } from 'nimbella-deployer'
 import { ProjectDeploy, processCredentials, doDeploy } from './deploy'
 
 import * as fs from 'fs'
@@ -90,7 +90,7 @@ function watch(project: string, cmdFlags: Flags, creds: Credentials|undefined, o
   }
   const watch = () => {
     // logger.log("Opening new watcher")
-    watcher = chokidar.watch(project, { ignoreInitial: true, followSymlinks: false, usePolling: false, useFsEvents: false })
+    watcher = chokidar.watch(project, { ignoreInitial: true, followSymlinks: false, usePolling: false, useFsEvents: false, ignored: getExclusionList() })
     watcher.on('all', async(event, filename) => await fireDeploy(project, filename, cmdFlags, creds, owOptions, logger, reset, watch, event))
   }
   watch()
@@ -105,9 +105,6 @@ async function fireDeploy(project: string, filename: string, cmdFlags: Flags, cr
     // Don't fire on directory add ... it never represents a complete change.
     return
   }
-  if (excluded(filename)) {
-    return
-  }
   await reset()
   logger.log(`\nDeploying '${project}' due to change in '${filename}'`)
   let error = false
@@ -118,19 +115,6 @@ async function fireDeploy(project: string, filename: string, cmdFlags: Flags, cr
   if (error || !result) { return }
   logger.log('Deployment complete.  Resuming watch.\n')
   await delay(200).then(() => watch())
-}
-
-// Decide if a file name should be excluded from consideration when firing a deploy.
-// TODO Someday this might be based on a list of patterns but the number of rules right now are small enough to
-// not bother with that.   Note that chokidar has an ignore feature using wildcards that we might switch to.
-function excluded(filename: string): boolean {
-  const parts = filename.includes('\\') ? filename.split('\\') : filename.split('/')
-  return parts.includes('.nimbella') ||
-        parts.includes('.git') ||
-        filename.endsWith('~') ||
-        filename.includes('_tmp_') ||
-        filename.endsWith('.swx') ||
-        filename.includes('.#')
 }
 
 // Validate a project argument to ensure that it denotes an actual directory that "looks like a project".

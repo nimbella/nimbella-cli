@@ -54,7 +54,7 @@ export function getBuildForAction(filepath: string, reader: ProjectReader): Prom
 
 // Build all the actions in an array of PackageSpecs, returning a new array of PackageSpecs.  We try to return
 // undefined for the case where no building occurred at all, since we are obligated to return a full array if
-// any building occured, even if most things weren't subject to building.
+// any building occurred, even if most things weren't subject to building.
 export function buildAllActions(spec: DeployStructure): Promise<PackageSpec[]> {
   const packages = spec.packages
   if (!packages || packages.length === 0) {
@@ -784,7 +784,7 @@ function singleFileBuilder(action: ActionSpec, file: string): Promise<ActionSpec
   delete newMeta.name
   newMeta.web = true
   // After a build, only the file, zipped, and binary flags take precedence over what's in the action already.
-  // Metadata calcuated from the file name is filled in, as is the default for web, but these apply only if not
+  // Metadata calculated from the file name is filled in, as is the default for web, but these apply only if not
   // already specified in the action (except for binary and zipped, which always change to match the build result).
   const { binary, zipped } = newMeta
   const newAction = Object.assign(newMeta, action, { file, binary, zipped })

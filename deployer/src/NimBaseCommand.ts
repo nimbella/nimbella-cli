@@ -147,7 +147,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   // Usage model for when running with kui
   usage: Record<string, any>
 
-  // A general way of running help from a cammand.  Use _help in oclif and helpHelper in kui
+  // A general way of running help from a command.  Use _help in oclif and helpHelper in kui
   doHelp(): void {
     if (helpHelper && this.usage) {
       helpHelper(this.usage)

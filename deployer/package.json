@@ -17,6 +17,7 @@
     "@nimbella/storage-s3": "0.0.11",
     "@oclif/command": "^1",
     "@octokit/rest": "16.36.0",
+    "anymatch": "^3.1.1",
     "adm-zip": "^0.4.16",
     "archiver": "^3.0.0",
     "axios": "^0.21.1",
