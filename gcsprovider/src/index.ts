@@ -11,95 +11,97 @@
  * governing permissions and limitations under the License.
  */
 
-import { StorageProvider, StorageClient, RemoteFile, DeleteFilesOptions, DownloadOptions, GetFilesOptions,
-	SaveOptions, SignedUrlOptions, UploadOptions, StorageKey, FileMetadata, WebsiteOptions, SettableFileMetadata } from '@nimbella/storage-provider'
+import {
+  StorageProvider, StorageClient, RemoteFile, DeleteFilesOptions, DownloadOptions, GetFilesOptions,
+  SaveOptions, SignedUrlOptions, UploadOptions, StorageKey, FileMetadata, WebsiteOptions, SettableFileMetadata
+} from '@nimbella/storage-provider'
 import { Storage, Bucket, File, GetSignedUrlConfig } from '@google-cloud/storage'
 import * as URL from 'url-parse'
- 
- class GCSRemoteFile implements RemoteFile {
-	 private file: File
-	 name: string
 
-	 constructor(file: File) {
-		 this.file = file
-		 this.name = file.name
-	 }
+class GCSRemoteFile implements RemoteFile {
+   private file: File
+   name: string
 
-	 getImplementation(): any {
-		 return this.file
-	 }
+   constructor(file: File) {
+     this.file = file
+     this.name = file.name
+   }
 
-	 save(data: Buffer, options: SaveOptions): Promise<any> {
-		 return this.file.save(data, options)
-	 }
+   getImplementation(): any {
+     return this.file
+   }
 
-	 setMetadata(meta: SettableFileMetadata): Promise<any> {
-		 return this.file.setMetadata(meta)
-	 }
+   save(data: Buffer, options: SaveOptions): Promise<any> {
+     return this.file.save(data, options)
+   }
 
-    async getMetadata(): Promise<FileMetadata> {
-		const data = await this.file.getMetadata()
-		return data[0]
-	}
+   setMetadata(meta: SettableFileMetadata): Promise<any> {
+     return this.file.setMetadata(meta)
+   }
 
-	async exists(): Promise<boolean> {
-		const ans = await this.file.exists()
-		return ans[0]
-	}
-	
-    delete(): Promise<any> {
-		return this.file.delete()
-	}
-	
-	async download(options?: DownloadOptions): Promise<Buffer> {
-		const response = await this.file.download(options)
-		return response[0]
-	}
+   async getMetadata(): Promise<FileMetadata> {
+     const data = await this.file.getMetadata()
+     return data[0]
+   }
 
-	async getSignedUrl(options: SignedUrlOptions): Promise<string> {
-		const result = await this.file.getSignedUrl(options as GetSignedUrlConfig)
-		return result[0]
-	}
- }
+   async exists(): Promise<boolean> {
+     const ans = await this.file.exists()
+     return ans[0]
+   }
 
- class GCSClient implements StorageClient {
-	private bucket: Bucket
-	private url: string
-	 
-	constructor(bucket: Bucket, url: string) {
-		this.bucket = bucket
-		this.url = url
-	}
+   delete(): Promise<any> {
+     return this.file.delete()
+   }
 
-	getImplementation(): any {
-		return this.bucket
-	}
+   async download(options?: DownloadOptions): Promise<Buffer> {
+     const response = await this.file.download(options)
+     return response[0]
+   }
 
-    getURL(): string {
-		return this.url
-	}
-	
-	setWebsite(website: WebsiteOptions): Promise<any> {
-		return this.bucket.setMetadata({ website })
-	}
+   async getSignedUrl(options: SignedUrlOptions): Promise<string> {
+     const result = await this.file.getSignedUrl(options as GetSignedUrlConfig)
+     return result[0]
+   }
+}
 
-	deleteFiles(options?: DeleteFilesOptions): Promise<any> {
-		return this.bucket.deleteFiles(options)
-	}
+class GCSClient implements StorageClient {
+  private bucket: Bucket
+  private url: string
 
-	file(destination: string): RemoteFile {
-		return new GCSRemoteFile(this.bucket.file(destination))
-	}
+  constructor(bucket: Bucket, url: string) {
+    this.bucket = bucket
+    this.url = url
+  }
 
-	upload(path: string, options?: UploadOptions): Promise<any> {
-		return this.bucket.upload(path, options)
-	}
+  getImplementation(): any {
+    return this.bucket
+  }
 
-	async getFiles(options?: GetFilesOptions): Promise<RemoteFile[]> {
-		const files = (await this.bucket.getFiles(options))[0]
-		return files.map(file => new GCSRemoteFile(file))
-	}
- }
+  getURL(): string {
+    return this.url
+  }
+
+  setWebsite(website: WebsiteOptions): Promise<any> {
+    return this.bucket.setMetadata({ website })
+  }
+
+  deleteFiles(options?: DeleteFilesOptions): Promise<any> {
+    return this.bucket.deleteFiles(options)
+  }
+
+  file(destination: string): RemoteFile {
+    return new GCSRemoteFile(this.bucket.file(destination))
+  }
+
+  upload(path: string, options?: UploadOptions): Promise<any> {
+    return this.bucket.upload(path, options)
+  }
+
+  async getFiles(options?: GetFilesOptions): Promise<RemoteFile[]> {
+    const files = (await this.bucket.getFiles(options))[0]
+    return files.map(file => new GCSRemoteFile(file))
+  }
+}
 
 // Compute the actual name of a bucket as viewed by google storage
 function computeBucketStorageName(apiHost: string, namespace: string): string {
@@ -113,22 +115,22 @@ function computeBucketDomainName(apiHost: string, namespace: string): string {
 }
 
 const provider: StorageProvider = {
-	prepareCredentials: (original: Record<string, any>): StorageKey => {
-      	const { client_email, private_key, project_id } = original
-        return { credentials: { client_email, private_key }, project_id, provider: '@nimbella/storage-gcs' }
-	},
-	getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
-		const storage: Storage = new Storage(credentials)
-		let bucketName = computeBucketStorageName(apiHost, namespace)
-		let url: string
-		if (web) {
-			url = "https://" + computeBucketDomainName(apiHost, namespace)
-		} else {
-			bucketName = 'data-' + bucketName
-		}
-		const bucket = storage.bucket(bucketName)
-		return new GCSClient(bucket, url)
-	}
+  prepareCredentials: (original: Record<string, any>): StorageKey => {
+    const { client_email, private_key, project_id } = original
+    return { credentials: { client_email, private_key }, project_id, provider: '@nimbella/storage-gcs' }
+  },
+  getClient: (namespace: string, apiHost: string, web: boolean, credentials: Record<string, any>) => {
+    const storage: Storage = new Storage(credentials)
+    let bucketName = computeBucketStorageName(apiHost, namespace)
+    let url: string
+    if (web) {
+      url = 'https://' + computeBucketDomainName(apiHost, namespace)
+    } else {
+      bucketName = 'data-' + bucketName
+    }
+    const bucket = storage.bucket(bucketName)
+    return new GCSClient(bucket, url)
+  }
 }
 
 export default provider

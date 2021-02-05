@@ -11,10 +11,10 @@
  * governing permissions and limitations under the License.
  */
 
- // Model the StorageKey type that is to be stored in the credential store.  Only the 'provider' member has specified
- // semantics.  The rest is at the convenience of the provider.
+// Model the StorageKey type that is to be stored in the credential store.  Only the 'provider' member has specified
+// semantics.  The rest is at the convenience of the provider.
 export type StorageKey = {
-        provider?: string  // Assume '@nimbella/storage-gcs' if omitted
+        provider?: string // Assume '@nimbella/storage-gcs' if omitted
     } & {
         [prop: string]: any
     }
@@ -83,7 +83,7 @@ export interface StorageProvider {
     // Convert an object containing credentials as stored in couchdb into the proper form for the credential store
     // Except for GCS, which is grandfathered as the default, the result must include a 'provider' field denoting
     // a valid npm-installable package
-    prepareCredentials: (original: Record<string,any>) => StorageKey
+    prepareCredentials: (original: Record<string, any>) => StorageKey
 }
 
 // The behaviors required of a storage client (part of storage provider)
@@ -101,7 +101,7 @@ export interface StorageClient {
     // Get files from the store
     getFiles: (options?: GetFilesOptions) => Promise<RemoteFile[]>
     // Get the underlying implementation for provider-dependent operations
-    getImplementation: () => any        
+    getImplementation: () => any
 }
 
 // The behaviors required of a file handle (part of storage provider)
