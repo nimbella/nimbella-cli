@@ -39,12 +39,12 @@ export const FILES_TO_SKIP = ['.gitignore', '.DS_Store']
 
 // List of files/paths to be ignored, add https://github.com/micromatch/anymatch compatible definitions
 export const SYSTEM_EXCLUDE_PATTERNS = ['.ignore', '.build', 'build.sh', 'build.cmd', '__deployer__.zip', '.gitignore', '.DS_Store',
-  (_: string | string[]): boolean => _.includes('.nimbella'),
-  (_: string | string[]): boolean => _.includes('_tmp_'),
-  (_: string | string[]): boolean => _.includes('.#'),
-  (_: string): boolean => _.endsWith('~'),
-  (_: string): boolean => _.endsWith('.swp'),
-  (_: string): boolean => _.endsWith('.swx')
+  '*.nimbella*',
+  '*_tmp_*',
+  '*.#*',
+  '*~',
+  '*.swp',
+  '*.swx'
 ]
 
 // Flag indicating running in browser
@@ -790,7 +790,7 @@ function binaryFromExt(ext: string): boolean {
 export function filterFiles(entries: PathKind[]): PathKind[] {
   return entries.filter(entry => {
     if (!entry.isDirectory) {
-      return !entry.name.endsWith('~') && FILES_TO_SKIP.every(_ => entry.name !== _)
+      return !anymatch(SYSTEM_EXCLUDE_PATTERNS, entry.name)
     } else {
       return entry
     }
@@ -799,8 +799,7 @@ export function filterFiles(entries: PathKind[]): PathKind[] {
 
 // Emulates promiseFiles (from node-dir) using a ProjectReader and adds filtering like filterFiles
 export function promiseFilesAndFilterFiles(root: string, reader: ProjectReader): Promise<string[]> {
-  return promiseFiles(root, reader).then((items: string[]) => items.filter((item: string) => !item.endsWith('~') &&
-        FILES_TO_SKIP.every(_ => item !== _)))
+  return promiseFiles(root, reader).then((items: string[]) => items.filter((item: string) => !anymatch(SYSTEM_EXCLUDE_PATTERNS, item)))
 }
 
 // Emulate promiseFiles using a ProjectReader
