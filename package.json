@@ -207,7 +207,7 @@
     "prepack": "rimraf lib && tsc -b && npm run minify && oclif-dev manifest && oclif-dev readme",
     "test": "echo NO TESTS",
     "version": "oclif-dev readme && git add README.md",
-    "lint": "eslint 'src/**/*.ts' 'gcsprovider/**/*.ts' 'awsprovider/**/*.ts' 'deployer/src/**/*.ts' 'storage/**/*.ts' --ignore-pattern node_modules",
+    "lint": "eslint 'src/**/*.ts' 'gcsprovider/**/*.ts' 'awsprovider/**/*.ts' 'deployer/src/**/*.ts' 'storage/**/*.ts'",
     "minify": "test $NO_MINIFY || for i in `find lib -type f -name \\*.js`; do npx minify $i > minified; mv minified $i; done",
     "version-check": "npx check-node-version --node \">=10.0\""
   },
