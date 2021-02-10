@@ -11,7 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, getCredentialDict, authPersister, CredentialRow } from 'nimbella-deployer'
+import { flags } from '@oclif/command'
+import { NimBaseCommand, NimLogger, getCredentialDict, authPersister, CredentialRow, parseAPIHost } from 'nimbella-deployer'
 
 import { bold } from 'chalk'
 
@@ -25,7 +26,8 @@ const MAYBE = '   -?-  '
 export default class AuthList extends NimBaseCommand {
   static description = 'List all your Nimbella namespaces'
 
-  static flags: typeof NimBaseCommand.flags = {
+  static flags = {
+    apihost: flags.string({ description: 'Only list namespaces for the specififed API host' }),
     ...NimBaseCommand.flags
   }
 
@@ -33,15 +35,25 @@ export default class AuthList extends NimBaseCommand {
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     const dict = await getCredentialDict(authPersister)
-    if (Object.keys(dict).length === 1) {
-      await this.formatCredentialList(Object.values(dict)[0], logger)
-    } else {
-      for (const host in dict) {
-        const rows = dict[host]
-        if (rows.length === 0) continue
-        logger.log('')
+    if (flags.apihost) {
+      const host = parseAPIHost(flags.apihost)
+      if (host in dict) {
         logger.log(`${bold(`On API host ${host}:`)}`)
         await this.formatCredentialList(dict[host], logger)
+      }
+    } else {
+      if (Object.keys(dict).length === 1) {
+        await this.formatCredentialList(Object.values(dict)[0], logger)
+      } else {
+        let newline = false
+        for (const host in dict) {
+          const rows = dict[host]
+          if (rows.length === 0) continue
+          if (newline) logger.log('')
+          logger.log(`${bold(`On API host ${host}:`)}`)
+          await this.formatCredentialList(rows, logger)
+          newline = true
+        }
       }
     }
   }
