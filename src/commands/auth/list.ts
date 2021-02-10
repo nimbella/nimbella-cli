@@ -27,7 +27,7 @@ export default class AuthList extends NimBaseCommand {
   static description = 'List all your Nimbella namespaces'
 
   static flags = {
-    apihost: flags.string({ description: 'Only list namespaces for the specififed API host' }),
+    apihost: flags.string({ description: 'Only list namespaces for the specified API host' }),
     ...NimBaseCommand.flags
   }
 
