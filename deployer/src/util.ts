@@ -1386,15 +1386,15 @@ export function renamePackage(spec: DeployStructure, oldName: string, newName: s
 }
 
 // Checks if a given pattern matches exclusion list, defined by system or user via global .exclude file.
-export function isExcluded(match: string): boolean {
-  return anymatch(getExclusionList(), match)
+export function isExcluded(project: string, match: string): boolean {
+  return anymatch(getExclusionList(project), match)
 }
 
 // Returns full list of exclusion patterns, predefined or listed in the global .exclude file.
-export function getExclusionList(): string[] {
+export function getExclusionList(project: string): string[] {
   let userDefinedPatterns = []
   try {
-    const globalExcludeFile = path.join(process.cwd(), '.exclude')
+    const globalExcludeFile = path.join(project || process.cwd(), '.exclude')
     userDefinedPatterns = fs.readFileSync(globalExcludeFile).toString().split('\n').filter(e => e.toString().trim() !== '')
   } catch (e) {
     debug(e.message)
