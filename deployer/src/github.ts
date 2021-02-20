@@ -102,8 +102,8 @@ export function parseGithubRef(projectPath: string): GithubDef {
   // Determine whether the combination of the path and the already-examined ref fits the alternate form of
   // path /tree/<commitish>/<path>.  In that case, isolate the ref and path and proceed.
   if (remainder.length > 1 && remainder[0] === 'tree' && !ref) {
-      ref = remainder[1]
-      path = remainder.slice(2).join('/')
+    ref = remainder[1]
+    path = remainder.slice(2).join('/')
   } else {
     path = remainder.join('/')
   }
