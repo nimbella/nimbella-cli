@@ -23,6 +23,7 @@ let fs_readdir: (dir: fs.PathLike, options: { withFileTypes: boolean }) => Promi
 let fs_readfile: (file: fs.PathLike) => Promise<any>
 let fs_lstat: (path: fs.PathLike) => Promise<any>
 let fs_realpath: (path: fs.PathLike) => Promise<any>
+let fs_readlink: (path: fs.PathLike) => Promise<any>
 
 // The file system implementation of ProjectReader
 // The file system implementation accepts absolute paths and relative paths landing anywhere in the filesystem.
@@ -35,6 +36,7 @@ export function makeFileReader(basepath: string): ProjectReader {
   fs_readfile = promisify(fs.readFile)
   fs_lstat = promisify(fs.lstat)
   fs_realpath = promisify(fs.realpath)
+  fs_readlink = promisify(fs.readlink)
   return new FileProjectReader(basepath)
 }
 
@@ -60,23 +62,28 @@ class FileProjectReader implements ProjectReader {
       debug("resolved to directory '%s", path)
       const entries = await fs_readdir(path, { withFileTypes: true })
       const results = entries.map(async entry => {
-        let isFile: boolean, isDirectory: boolean
+        let isFile: boolean, isDirectory: boolean, symlink: string
         if (entry.isSymbolicLink()) {
-          const fullName = await fs_realpath(Path.resolve(path, entry.name))
-          const stat = await fs_lstat(fullName)
-          isFile = stat.isFile()
-          isDirectory = stat.isDirectory()
+          try {
+            const fullName = await fs_realpath(Path.resolve(path, entry.name))
+            const stat = await fs_lstat(fullName)
+            isFile = stat.isFile()
+            isDirectory = stat.isDirectory()
+          } catch (_) {
+            symlink = await fs_readlink(Path.resolve(path, entry.name))
+          }
         } else {
           isFile = entry.isFile()
           isDirectory = entry.isDirectory()
         }
-        return { name: entry.name, isDirectory, isFile, mode: 0o666 }
+        return { name: entry.name, isDirectory, isFile, symlink, mode: 0o666 }
       })
       return Promise.all(results)
     }
 
     // File system implementation of readFileContents
     async readFileContents(path: string): Promise<Buffer> {
+      debug('request to read %s', path)
       path = Path.resolve(this.basepath, path)
       path = await fs_realpath(path)
       return fs_readfile(path)
@@ -101,10 +108,16 @@ class FileProjectReader implements ProjectReader {
     }
 
     // File system implementation  of getPathKind
-    getPathKind(path: string): Promise<PathKind> {
+    async getPathKind(path: string): Promise<PathKind> {
       path = Path.resolve(this.basepath, path)
-      return fs_lstat(path).then((stats: fs.Stats) => {
-        return { name: Path.basename(path), isFile: stats.isFile(), isDirectory: stats.isDirectory(), mode: stats.mode }
-      }).catch(() => undefined)
+      const stats = await fs_lstat(path).catch(() => undefined)
+      if (!stats) {
+        return undefined
+      }
+      let symlink: string
+      if (stats.isSymbolicLink()) {
+        symlink = await fs_readlink(path)
+      }
+      return { name: Path.basename(path), isFile: stats.isFile(), isDirectory: stats.isDirectory(), symlink, mode: stats.mode }
     }
 }

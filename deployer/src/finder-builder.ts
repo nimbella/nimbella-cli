@@ -861,11 +861,16 @@ async function autozipBuilder(pairs: string[][], action: ActionSpec, incremental
   zipDebug('zipping %d files', pairs.length)
   for (const pair of pairs) {
     const [oldPath, newPath] = pair
-    const mode = (await reader.getPathKind(oldPath)).mode
-    const data = await reader.readFileContents(oldPath)
-    zipDebug("Zipping file with old path '%s', buffer length '%d', new path '%s', and mode %d", oldPath, data.length, newPath, mode)
-    zip.append(data, { name: newPath, mode: mode })
-    zipDebug("Zipped '%s' for action '%s', emitted %d", newPath, action.name, zip.pointer())
+    const pathKind = await reader.getPathKind(oldPath)
+    if (pathKind.symlink) {
+      zip.symlink(newPath, pathKind.symlink)
+    } else {
+      const mode = pathKind.mode
+      const data = await reader.readFileContents(oldPath)
+      zipDebug("Zipping file with old path '%s', buffer length '%d', new path '%s', and mode %d", oldPath, data.length, newPath, mode)
+      zip.append(data, { name: newPath, mode: mode })
+      zipDebug("Zipped '%s' for action '%s', emitted %d", newPath, action.name, zip.pointer())
+    }
   }
   zipDebug('finalizing zip for action %s', action.name)
   zip.finalize()
