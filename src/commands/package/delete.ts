@@ -21,10 +21,12 @@ const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-run
 export default class PackageDelete extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     if (inBrowser && flags.json) { // behave correctly when invoked from sidecar delete button
-      const ans = await prompt(`type 'yes' to really delete '${args.packageName}'`)
-      if (ans !== 'yes') {
-        logger.log('doing nothing')
-        return
+      if (!flags.force) {
+        const ans = await prompt(`type 'yes' to really delete '${args.packageName}'`)
+        if (ans !== 'yes') {
+          logger.log('doing nothing')
+          return
+        }
       }
     }
     // Don't delegate the recursive case.  We handle it specially here
@@ -45,6 +47,7 @@ export default class PackageDelete extends NimBaseCommand {
     // For some reason, aio's 'project delete' does not incorporate host and auth as is the usual practice with other commands
     apihost: flags.string({ description: 'Whisk API host' }),
     auth: flags.string({ char: 'u', description: 'Whisk auth' }),
+    force: flags.boolean({ char: 'f', description: 'Just do it, omitting confirmatory prompt' }),
     ...AioCommand.flags
   }
 
