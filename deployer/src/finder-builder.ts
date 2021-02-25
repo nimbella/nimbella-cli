@@ -14,9 +14,9 @@
 import { spawn } from 'child_process'
 import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback, Credentials } from './deploy-struct'
 import {
-  SYSTEM_EXCLUDE_PATTERNS, actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
+  actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
   promiseFilesAndFilterFiles, agreeOnRuntime,
-  canonicalRuntime, getBestProjectName
+  canonicalRuntime, getBestProjectName, getExclusionList
 } from './util'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -1037,7 +1037,7 @@ function buildScriptExists(filepath: string): boolean {
 // also don't add an entry for .include (or .source) since that case is driven by a fixed set of files and not by scanning a directory.
 function getIgnores(dir: string, reader: ProjectReader): Promise<Ignore> {
   const filePath = path.join(dir, '.ignore')
-  const fixedItems = ['.ignore', '.build', 'build.sh', 'build.cmd', ZIP_TARGET, ...SYSTEM_EXCLUDE_PATTERNS]
+  const fixedItems = ['.ignore', '.build', 'build.sh', 'build.cmd', ZIP_TARGET, ...getExclusionList()]
   return readFileAsList(filePath, reader).then(items => {
     return ignore().add(items.concat(fixedItems))
   }).catch(() => {

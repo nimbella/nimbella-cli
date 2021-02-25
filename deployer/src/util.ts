@@ -31,11 +31,8 @@ import * as makeDebug from 'debug'
 import anymatch from 'anymatch'
 import { parseGithubRef } from './github'
 import { StorageProvider } from '@nimbella/storage-provider'
+import { nimbellaDir } from './credentials'
 const debug = makeDebug('nim:deployer:util')
-
-// TODO: Deprecate this use SYSTEM_EXCLUDE_PATTERNS instead
-// List of files to skip as actions inside packages, or from auto-zipping
-export const FILES_TO_SKIP = ['.gitignore', '.DS_Store']
 
 // List of files/paths to be ignored, add https://github.com/micromatch/anymatch compatible definitions
 export const SYSTEM_EXCLUDE_PATTERNS = ['.ignore', '.build', 'build.sh', 'build.cmd', '__deployer__.zip', '.gitignore', '.DS_Store',
@@ -171,7 +168,7 @@ async function hasDefaultRemote(action: ActionSpec, reader: ProjectReader): Prom
   }
   const kind = runtime.split(':')[0]
   switch (kind) {
-  // TODO shouild this be an external table?
+  // TODO should this be an external table?
   case 'go':
   case 'swift':
     return true
@@ -790,7 +787,7 @@ function binaryFromExt(ext: string): boolean {
 export function filterFiles(entries: PathKind[]): PathKind[] {
   return entries.filter(entry => {
     if (!entry.isDirectory) {
-      return !anymatch(SYSTEM_EXCLUDE_PATTERNS, entry.name)
+      return !anymatch(getExclusionList(), entry.name)
     } else {
       return entry
     }
@@ -799,7 +796,7 @@ export function filterFiles(entries: PathKind[]): PathKind[] {
 
 // Emulates promiseFiles (from node-dir) using a ProjectReader and adds filtering like filterFiles
 export function promiseFilesAndFilterFiles(root: string, reader: ProjectReader): Promise<string[]> {
-  return promiseFiles(root, reader).then((items: string[]) => items.filter((item: string) => !anymatch(SYSTEM_EXCLUDE_PATTERNS, item)))
+  return promiseFiles(root, reader).then((items: string[]) => items.filter((item: string) => !anymatch(getExclusionList(), item)))
 }
 
 // Emulate promiseFiles using a ProjectReader
@@ -1386,15 +1383,15 @@ export function renamePackage(spec: DeployStructure, oldName: string, newName: s
 }
 
 // Checks if a given pattern matches exclusion list, defined by system or user via global .exclude file.
-export function isExcluded(project: string, match: string): boolean {
-  return anymatch(getExclusionList(project), match)
+export function isExcluded(match: string): boolean {
+  return anymatch(getExclusionList(), match)
 }
 
 // Returns full list of exclusion patterns, predefined or listed in the global .exclude file.
-export function getExclusionList(project: string): string[] {
+export function getExclusionList(): string[] {
   let userDefinedPatterns = []
   try {
-    const globalExcludeFile = path.join(project || process.cwd(), '.exclude')
+    const globalExcludeFile = path.join(nimbellaDir(), '.exclude')
     userDefinedPatterns = fs.readFileSync(globalExcludeFile).toString().split('\n').filter(e => e.toString().trim() !== '')
   } catch (e) {
     debug(e.message)
