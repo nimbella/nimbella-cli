@@ -22,6 +22,7 @@ export default class AuthLogout extends NimBaseCommand {
   static flags = {
     apihost: flags.string({ description: 'API host serving the namespace(s)' }),
     all: flags.boolean({ description: 'log out of all namespaces (or, all on the given API host)' }),
+    force: flags.boolean({ char: 'f', description: 'Just do it, omitting confirmatory prompt' }),
     ...NimBaseCommand.flags
   }
 
@@ -42,19 +43,21 @@ export default class AuthLogout extends NimBaseCommand {
 
     // Process the --all case without namespace names
     if (flags.all && argv.length === 0) {
-      return this.logoutAll(host, logger)
+      return this.logoutAll(host, logger, flags.force)
     }
 
     // Process logout from current namespace (with prompt)
     if (argv.length === 0) {
       const creds = await getCredentials(authPersister).catch(err => logger.handleError('', err))
-      const ans = await prompt(`Type 'yes' to logout '${creds.namespace}' namespace on API host '${creds.ow.apihost}'`)
-      if (ans !== 'yes') {
-        logger.log('Doing nothing.')
-        return
-      } else {
-        return await this.doLogout(creds.namespace, creds.ow.apihost, logger)
+
+      if (!flags.force) {
+        const ans = await prompt(`Type 'yes' to logout '${creds.namespace}' namespace on API host '${creds.ow.apihost}'`)
+        if (ans !== 'yes') {
+          logger.log('Doing nothing.')
+          return
+        }
       }
+      return await this.doLogout(creds.namespace, creds.ow.apihost, logger)
     }
 
     // Individual logout for one or more namespaces by name, possibly looping over apihosts if --all is specified
@@ -81,13 +84,15 @@ export default class AuthLogout extends NimBaseCommand {
   }
 
   // Logout of 'all' namespaces (possibly qualified by API host)
-  async logoutAll(host: string, logger: NimLogger): Promise<void> {
+  async logoutAll(host: string, logger: NimLogger, force: boolean): Promise<void> {
     // Issue prompt, being especially dire if API host is not specified
     const context = host ? `all namespaces on API host ${host}` : 'all namespaces, leaving you with no namespaces'
-    const ans = await prompt(`Type 'yes' to logout ${context}`)
-    if (ans !== 'yes') {
-      logger.log('Doing nothing.')
-      return
+    if (!force) {
+      const ans = await prompt(`Type 'yes' to logout ${context}`)
+      if (ans !== 'yes') {
+        logger.log('Doing nothing.')
+        return
+      }
     }
     let all = await getCredentialList(authPersister)
     if (host) {

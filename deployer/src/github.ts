@@ -97,8 +97,17 @@ export function parseGithubRef(projectPath: string): GithubDef {
   if (repo.endsWith('.git')) {
     repo = repo.slice(0, repo.length - 4)
   }
+  const remainder = slashSplit.slice(2)
+  let path: string
+  // Determine whether the combination of the path and the already-examined ref fits the alternate form of
+  // path /tree/<commitish>/<path>.  In that case, isolate the ref and path and proceed.
+  if (remainder.length > 1 && remainder[0] === 'tree' && !ref) {
+    ref = remainder[1]
+    path = remainder.slice(2).join('/')
+  } else {
+    path = remainder.join('/')
+  }
   // Add auth and optionally the baseUrl
-  const path = slashSplit.slice(2).join('/')
   const rawAuth = getGithubAuth(authPersister)
   let [auth, baseUrl] = (rawAuth || '').split('@')
   if (baseUrl) {

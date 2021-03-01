@@ -340,8 +340,9 @@ export interface Includer {
 
 // Defines the general ProjectReader interface
 
-// A simplified fs.Dirent that just distinguishes files and directories (all we really have when using github)
-export type PathKind = { name: string, isDirectory: boolean, isFile: boolean, mode: number }
+// A simplified fs.Dirent that just distinguishes files, directories, and symlinks.
+// The symlink case is only for "dangling" symlinks: intact symlinks are followed.
+export type PathKind = { name: string, isDirectory: boolean, isFile: boolean, symlink?: string, mode: number }
 
 // The method repertoire for reading projects.
 // Path names passed to these methods may, in the most general case, be either absolute or relative to the

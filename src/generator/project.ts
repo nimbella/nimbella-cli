@@ -73,7 +73,14 @@ export async function createOrUpdateProject(updating: boolean, args: any, flags:
     const data = yaml.safeDump(projectConfig)
     fs.writeFileSync(configFile, data)
   }
-  logger.log(`project ${updating ? 'updated' : 'created'} at ${args.project}`)
+
+  if (updating) {
+    logger.log(`The project '${args.project}' was updated.`)
+  } else { // create or flags.overwrite
+    logger.log(`A sample project called '${args.project}' was created for you.`)
+    logger.log('You may deploy it by running the command shown on the next line:')
+    logger.log(`  nim project deploy ${args.project}`)
+  }
 }
 
 function createProject(defaultPackage: string, args: any) {

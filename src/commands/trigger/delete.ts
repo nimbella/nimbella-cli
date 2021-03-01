@@ -14,15 +14,18 @@
 import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
 import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 import { prompt } from '../../ui'
+import { flags } from '@oclif/command'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/trigger/delete')
 
 export default class TriggerDelete extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     if (inBrowser && flags.json) { // behave correctly when invoked from sidecar delete button
-      const ans = await prompt(`type 'yes' to really delete '${args.triggerPath}'`)
-      if (ans !== 'yes') {
-        logger.log('doing nothing')
-        return
+      if (!flags.force) {
+        const ans = await prompt(`type 'yes' to really delete '${args.triggerPath}'`)
+        if (ans !== 'yes') {
+          logger.log('doing nothing')
+          return
+        }
       }
     }
     await this.runAio(rawArgv, argv, args, flags, logger, AioCommand)
@@ -30,7 +33,10 @@ export default class TriggerDelete extends NimBaseCommand {
 
   static args = AioCommand.args
 
-  static flags = AioCommand.flags
+  static flags = {
+    force: flags.boolean({ char: 'f', description: 'Just do it, omitting confirmatory prompt' }),
+    ...AioCommand.flags
+  }
 
   // Exception to usual pattern
   static description = 'Delete a Trigger'
