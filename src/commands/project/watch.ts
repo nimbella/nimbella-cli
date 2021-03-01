@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay, getExclusionList, isExcluded } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay, isExcluded } from 'nimbella-deployer'
 import { ProjectDeploy, processCredentials, doDeploy } from './deploy'
 
 import * as fs from 'fs'
