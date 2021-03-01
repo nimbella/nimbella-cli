@@ -122,7 +122,7 @@ export async function readTopLevel(filePath: string, env: string, includer: Incl
       feedback.warn('Warning: found %s but no %s', notconfig, CONFIG_FILE)
     }
     if (githubPath) {
-      debug('githhub path was %s', githubPath)
+      debug('github path was %s', githubPath)
       debug('filePath is %s', filePath)
     }
     const ans = { web, packages, config, strays, filePath, env, githubPath, includer, reader, feedback }

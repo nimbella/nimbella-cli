@@ -335,7 +335,7 @@ export async function prepareToDeploy(inputSpec: DeployStructure, owOptions: OWO
 // Utility to convert errors into useful messages.   Usually, this just means getting the message field from the error but there
 // is logic to recognize the particular error pattern used by OW
 export function getMessageFromError(err: any): string {
-  // Althought we attempt to say that all errors have type Error, in the loosy-goosy untyped world of Javascript this is easily violated.
+  // Although we attempt to say that all errors have type Error, in the loosy-goosy untyped world of Javascript this is easily violated.
   // Sometimes 'err' is just a string
   if (typeof err === 'string') {
     return err

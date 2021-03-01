@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2019 - present Nimbella Corp.
- *
- * This file is licensed to you under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License. You may obtain a copy
- * of the License at http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
- * OF ANY KIND, either express or implied. See the License for the specific language
- * governing permissions and limitations under the License.
- */
+* Copyright (c) 2019 - present Nimbella Corp.
+*
+* This file is licensed to you under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License. You may obtain a copy
+* of the License at http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+* OF ANY KIND, either express or implied. See the License for the specific language
+* governing permissions and limitations under the License.
+*/
 
 import {
   DeployStructure, DeployResponse, DeploySuccess, DeployKind, ActionSpec, PackageSpec, Feedback,
@@ -28,12 +28,21 @@ import * as randomstring from 'randomstring'
 import * as crypto from 'crypto'
 import * as yaml from 'js-yaml'
 import * as makeDebug from 'debug'
+import anymatch from 'anymatch'
 import { parseGithubRef } from './github'
 import { StorageProvider } from '@nimbella/storage-provider'
+import { nimbellaDir } from './credentials'
 const debug = makeDebug('nim:deployer:util')
 
-// List of files to skip as actions inside packages, or from auto-zipping
-export const FILES_TO_SKIP = ['.gitignore', '.DS_Store']
+// List of files/paths to be ignored, add https://github.com/micromatch/anymatch compatible definitions
+export const SYSTEM_EXCLUDE_PATTERNS = ['.ignore', '.build', 'build.sh', 'build.cmd', '__deployer__.zip', '.gitignore', '.DS_Store',
+  '*.nimbella*',
+  '*_tmp_*',
+  '*.#*',
+  '*~',
+  '*.swp',
+  '*.swx'
+]
 
 // Flag indicating running in browser
 export const inBrowser = (typeof process === 'undefined') || (!process.release) || (process.release.name !== 'node')
@@ -159,7 +168,7 @@ async function hasDefaultRemote(action: ActionSpec, reader: ProjectReader): Prom
   }
   const kind = runtime.split(':')[0]
   switch (kind) {
-  // TODO shouild this be an external table?
+  // TODO should this be an external table?
   case 'go':
   case 'swift':
     return true
@@ -778,7 +787,7 @@ function binaryFromExt(ext: string): boolean {
 export function filterFiles(entries: PathKind[]): PathKind[] {
   return entries.filter(entry => {
     if (!entry.isDirectory) {
-      return !entry.name.endsWith('~') && FILES_TO_SKIP.every(_ => entry.name !== _)
+      return !anymatch(getExclusionList(), entry.name)
     } else {
       return entry
     }
@@ -787,8 +796,7 @@ export function filterFiles(entries: PathKind[]): PathKind[] {
 
 // Emulates promiseFiles (from node-dir) using a ProjectReader and adds filtering like filterFiles
 export function promiseFilesAndFilterFiles(root: string, reader: ProjectReader): Promise<string[]> {
-  return promiseFiles(root, reader).then((items: string[]) => items.filter((item: string) => !item.endsWith('~') &&
-        FILES_TO_SKIP.every(_ => item !== _)))
+  return promiseFiles(root, reader).then((items: string[]) => items.filter((item: string) => !anymatch(getExclusionList(), item)))
 }
 
 // Emulate promiseFiles using a ProjectReader
@@ -1065,7 +1073,7 @@ export async function getDeployerAnnotation(project: string, githubPath: string)
 
 function deployerAnnotationFromGithub(githubPath: string): DeployerAnnotation {
   const def = parseGithubRef(githubPath)
-  const repository = `githhub:${def.owner}/${def.repo}`
+  const repository = `github:${def.owner}/${def.repo}`
   return { digest: undefined, user: 'cloud', repository, projectPath: def.path, commit: def.ref || 'master' }
 }
 
@@ -1233,7 +1241,7 @@ export function writeProjectStatus(project: string, results: DeployResponse, rep
   let versionList: VersionEntry[] = []
   const versionFile = path.join(statusDir, 'versions.json')
   if (fs.existsSync(versionFile)) {
-    debug('version file alread exists')
+    debug('version file already exists')
     const old = JSON.parse(String(fs.readFileSync(versionFile)))
     if (Array.isArray(old)) {
       versionList = old
@@ -1372,4 +1380,22 @@ export function renamePackage(spec: DeployStructure, oldName: string, newName: s
     }
   }
   return spec
+}
+
+// Checks if a given pattern matches exclusion list, defined by system or user via global .exclude file.
+export function isExcluded(match: string): boolean {
+  return anymatch(getExclusionList(), match)
+}
+
+// Returns full list of exclusion patterns, predefined or listed in the global .exclude file.
+export function getExclusionList(): string[] {
+  let userDefinedPatterns = []
+  try {
+    const globalExcludeFile = path.join(nimbellaDir(), '.exclude')
+    userDefinedPatterns = fs.readFileSync(globalExcludeFile).toString().split('\n').filter(e => e.toString().trim() !== '')
+  } catch (e) {
+    debug(e.message)
+  }
+  const allPatterns = [...userDefinedPatterns, ...SYSTEM_EXCLUDE_PATTERNS]
+  return allPatterns
 }

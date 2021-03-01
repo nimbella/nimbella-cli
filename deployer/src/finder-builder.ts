@@ -14,9 +14,9 @@
 import { spawn } from 'child_process'
 import { DeployStructure, ActionSpec, PackageSpec, WebResource, BuildTable, Flags, ProjectReader, PathKind, Feedback, Credentials } from './deploy-struct'
 import {
-  FILES_TO_SKIP, actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
+  actionFileToParts, filterFiles, mapPackages, mapActions, convertToResources, convertPairsToResources,
   promiseFilesAndFilterFiles, agreeOnRuntime,
-  canonicalRuntime, getBestProjectName
+  canonicalRuntime, getBestProjectName, getExclusionList
 } from './util'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -54,7 +54,7 @@ export function getBuildForAction(filepath: string, reader: ProjectReader): Prom
 
 // Build all the actions in an array of PackageSpecs, returning a new array of PackageSpecs.  We try to return
 // undefined for the case where no building occurred at all, since we are obligated to return a full array if
-// any building occured, even if most things weren't subject to building.
+// any building occurred, even if most things weren't subject to building.
 export function buildAllActions(spec: DeployStructure): Promise<PackageSpec[]> {
   const packages = spec.packages
   if (!packages || packages.length === 0) {
@@ -784,7 +784,7 @@ function singleFileBuilder(action: ActionSpec, file: string): Promise<ActionSpec
   delete newMeta.name
   newMeta.web = true
   // After a build, only the file, zipped, and binary flags take precedence over what's in the action already.
-  // Metadata calcuated from the file name is filled in, as is the default for web, but these apply only if not
+  // Metadata calculated from the file name is filled in, as is the default for web, but these apply only if not
   // already specified in the action (except for binary and zipped, which always change to match the build result).
   const { binary, zipped } = newMeta
   const newAction = Object.assign(newMeta, action, { file, binary, zipped })
@@ -1042,7 +1042,7 @@ function buildScriptExists(filepath: string): boolean {
 // also don't add an entry for .include (or .source) since that case is driven by a fixed set of files and not by scanning a directory.
 function getIgnores(dir: string, reader: ProjectReader): Promise<Ignore> {
   const filePath = path.join(dir, '.ignore')
-  const fixedItems = ['.ignore', '.build', 'build.sh', 'build.cmd', ZIP_TARGET, ...FILES_TO_SKIP]
+  const fixedItems = ['.ignore', '.build', 'build.sh', 'build.cmd', ZIP_TARGET, ...getExclusionList()]
   return readFileAsList(filePath, reader).then(items => {
     return ignore().add(items.concat(fixedItems))
   }).catch(() => {
