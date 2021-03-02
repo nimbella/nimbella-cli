@@ -795,8 +795,14 @@ export function filterFiles(entries: PathKind[]): PathKind[] {
 }
 
 // Emulates promiseFiles (from node-dir) using a ProjectReader and adds filtering like filterFiles
-export function promiseFilesAndFilterFiles(root: string, reader: ProjectReader): Promise<string[]> {
-  return promiseFiles(root, reader).then((items: string[]) => items.filter((item: string) => !anymatch(getExclusionList(), item)))
+export async function promiseFilesAndFilterFiles(root: string, reader: ProjectReader): Promise<string[]> {
+  let items = await promiseFiles(root, reader)
+  debug('items before filtering: %O', items)
+  const exclusions = getExclusionList()
+  debug('exclusion list: %O', exclusions)
+  items = items.filter((item: string) => !anymatch(exclusions, item))
+  debug('items after filtering: %O', items)
+  return items
 }
 
 // Emulate promiseFiles using a ProjectReader
