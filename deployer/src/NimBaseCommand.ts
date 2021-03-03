@@ -337,33 +337,39 @@ Repeat the command with the '--verbose' flag for more detail`
 //     - if a choice prompter is provided, invoke it to get the user's choice
 //     - otherwise throw an error
 export async function disambiguateNamespace(namespace: string, apihost: string|undefined, choicePrompter: (list: string[])=>Promise<string>): Promise<string> {
-  if (namespace.endsWith('-')) {
-    const allCreds = await getCredentialList(authPersister)
-    namespace = namespace.slice(0, -1)
-    let matches = allCreds.filter(cred => cred.namespace.startsWith(namespace))
-    if (apihost) {
-      matches = matches.filter(match => match.apihost === apihost)
-    }
-    if (matches.length > 0) {
-      if (matches.every(cred => cred.namespace === matches[0].namespace)) {
-        return matches[0].namespace
-      } else if (choicePrompter) {
-        let choices: string[]
-        if (apihost) {
-          // Already filtered by apihost
-          choices = matches.map(match => match.namespace)
-        } else {
-          // Might be heterogeneous by API host so include in prompt
-          choices = matches.map(match => `${match.namespace} on ${match.apihost}`)
-        }
-        return (await choicePrompter(choices)).split(' on ')[0]
+  // if (namespace.endsWith('-')) {
+  // console.log('apihost', namespace, apihost || 'noe')
+  const allCreds = await getCredentialList(authPersister)
+  // console.log('allCreds', allCreds)
+  namespace = namespace.slice(0, -1)
+  let matches = allCreds.filter(cred => cred.namespace.startsWith(namespace))
+  if (apihost) {
+    matches = matches.filter(match => match.apihost === apihost)
+  }
+  // console.log('matches', matches)
+  if (matches.length > 0) {
+    // if (matches.every(cred => cred.namespace === matches[0].namespace)) {
+    //   return matches[0].namespace
+    // } else
+    if (choicePrompter) {
+      let choices: string[]
+      if (apihost) {
+        // Already filtered by apihost
+        choices = matches.map(match => match.namespace)
       } else {
-        throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
+        // Might be heterogeneous by API host so include in prompt
+        choices = matches.map(match => `${match.namespace} on ${match.apihost}`)
       }
+      return await choicePrompter(choices)
+    } else if (matches.every(cred => cred.namespace === matches[0].namespace)) {
+      return matches[0].namespace
+    } else {
+      throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
     }
   }
+  // }
   // No match or no '-' to begin with
-  return namespace
+  // return namespace
 }
 
 // Utility to parse the value of an --apihost flag, permitting certain abbreviations
