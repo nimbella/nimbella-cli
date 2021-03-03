@@ -91,7 +91,7 @@ function watch(project: string, cmdFlags: Flags, creds: Credentials|undefined, o
   const watch = () => {
     // logger.log("Opening new watcher")
     watcher = chokidar.watch(project, { ignoreInitial: true, followSymlinks: false, usePolling: false, useFsEvents: false })
-    watcher.on('all', async(event, filename) => { if (!isExcluded(path.basename(filename))) { await fireDeploy(project, filename, cmdFlags, creds, owOptions, logger, reset, watch, event) } })
+    watcher.on('all', async(event, filename) => { if (!isExcluded(filename)) { await fireDeploy(project, filename, cmdFlags, creds, owOptions, logger, reset, watch, event) } })
   }
   watch()
 }
