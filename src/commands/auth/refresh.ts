@@ -34,7 +34,7 @@ export default class AuthRefresh extends NimBaseCommand {
 
     let namespace: string
     if (args.namespace) {
-      namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
+      [namespace] = (await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
     }
 
     if (host && !args.namespace) {

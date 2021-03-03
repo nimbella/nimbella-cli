@@ -36,12 +36,12 @@ const debug = makeDebug('nim:deployer:util')
 
 // List of files/paths to be ignored, add https://github.com/micromatch/anymatch compatible definitions
 export const SYSTEM_EXCLUDE_PATTERNS = ['.gitignore', '.DS_Store',
-  '*.nimbella*',
-  '*_tmp_*',
-  '*.#*',
-  '*~',
-  '*.swp',
-  '*.swx'
+  (s: string): boolean => s.includes('.nimbella'),
+  (s: string): boolean => s.includes('_tmp_'),
+  (s: string): boolean => s.includes('.#'),
+  (s: string): boolean => s.endsWith('~'),
+  '**/*.swp',
+  '**/*.swx'
 ]
 
 // Flag indicating running in browser

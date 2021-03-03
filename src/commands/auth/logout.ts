@@ -65,11 +65,11 @@ export default class AuthLogout extends NimBaseCommand {
       if (flags.all) {
         const allHosts = await getApiHosts(authPersister)
         for (const onehost of allHosts) {
-          const namespace = await disambiguateNamespace(ns, onehost, choicePrompter).catch(err => logger.handleError('', err))
+          const [namespace] = (await disambiguateNamespace(ns, onehost, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
           await this.doLogout(namespace, onehost, logger)
         }
       } else {
-        const namespace = await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))
+        const [namespace] = (await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
         await this.doLogout(namespace, host, logger)
       }
     }

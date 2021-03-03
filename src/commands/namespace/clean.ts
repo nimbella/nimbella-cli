@@ -39,7 +39,7 @@ export default class NamespaceClean extends NimBaseCommand {
          creds = await getCredentials(authPersister).catch(err => logger.handleError('', err))
          namespace = creds.namespace
        } else {
-         namespace = await disambiguateNamespace(namespace, flags.apihost, choicePrompter)
+         [namespace] = (await disambiguateNamespace(namespace, flags.apihost, choicePrompter)).split(' on ')
        }
        if (!flags.force) {
          const ow = flags.justwhisk ? ' openwhisk' : ''
