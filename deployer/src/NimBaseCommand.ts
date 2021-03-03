@@ -359,6 +359,7 @@ export async function disambiguateNamespace(namespace: string, apihost: string|u
       throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
     }
   }
+  return namespace
 }
 
 // Utility to parse the value of an --apihost flag, permitting certain abbreviations
