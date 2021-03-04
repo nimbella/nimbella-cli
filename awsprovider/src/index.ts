@@ -221,18 +221,33 @@ class NimS3Client implements StorageClient {
 }
 
 // Compute the actual name of a bucket, minus the s3:// prefix.
-// These need to be unique.  This probably needs more work.
+// Bucket names must be globally unique, which is hard to achieve
+// while at the same time being able to calculate the name deterministically from
+// namespace and API host.  We append `-nimbella-io` as a weak reservation of a
+// block of names.  We extract the deployment name from the API host to disambiguate
+// nimbella deployments.  Then we rely on the fact that namespace names are unique
+// within a deployment.  Global collisions are further avoided by the practice
+// (not followed 100% of the time) of including random characters in namespace names,
+// but we can't use further randomness here since determinism is required.
 function computeBucketStorageName(apiHost: string, namespace: string): string {
-  return namespace + '-nimbella-io'
+  const deployment = apiHost.replace('https://', '').split('.')[0]
+  debug('calculated deployment %s from apihost %s', deployment, apiHost)
+  return `${namespace}-${deployment}-nimbella-io`
 }
 
-// Compute a possibly adequate website URL when none is provided in the credentials.
-// The algorithm here works on one test installation (using scality ring) but is not likely
-// to yield the best URL in general.  Making a URL part of the credentials is expected
-// to be the case for most installations.
-function computeBucketUrl(endpoint: string, namespace: string): string {
+// This computes the minimal function bucket endpoint for cases where we don't
+// have a web url in the credentials but do have an endpoint URL there.
+// It might prove to be a historical artifact and may be eliminated.  It can
+// only provide http access to the bucket, without any path routing for /api
+// paths.  It's possible advantage is that it will provide minimal functionality
+// even on non-AWS implementations of S3 where there is no cloudfront or similar
+// service.
+function computeBucketUrl(endpoint: string, bucketName: string): string {
+  if (!endpoint) {
+    throw new Error('Every credential set on AWS must have either a web URL or an endpoint URL')
+  }
   const url = new URL(endpoint)
-  return `http://${namespace}-nimbella-io.${url.hostname}`
+  return `http://${bucketName}.${url.hostname}`
 }
 
 const provider: StorageProvider = {
@@ -249,7 +264,7 @@ const provider: StorageProvider = {
     let bucketName = computeBucketStorageName(apiHost, namespace)
     let url: string
     if (web) {
-      url = credentials.weburl || computeBucketUrl(credentials.endpoint, namespace)
+      url = credentials.weburl || computeBucketUrl(credentials.endpoint, bucketName)
     } else {
       bucketName = 'data-' + bucketName
     }
