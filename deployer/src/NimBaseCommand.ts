@@ -329,37 +329,35 @@ Repeat the command with the '--verbose' flag for more detail`
   return msg
 }
 
-// Disambiguate a namespace name when the user ends the name with a '-' character
-// If the namespace does not end with '-' just return it
-// If the match is unique up to the apihost, return the unique match (possibly still ambiguous if apihost not provided)
-// If there is no match, return the provided string sans '-'
+// Disambiguate a namespace name when the user ends the name with a '-' character or there are multiple namespaces starting with input name
+// If the namespace does not end with '-' or no matches found starting with input name, just return provided string sans '-'
+// If the match is unique up to the apihost, return the unique match
 // If the match is not unique up to the apihost, then
 //     - if a choice prompter is provided, invoke it to get the user's choice
 //     - otherwise throw an error
 export async function disambiguateNamespace(namespace: string, apihost: string|undefined, choicePrompter: (list: string[])=>Promise<string>): Promise<string> {
-  if (namespace.endsWith('-')) {
-    namespace = namespace.slice(0, -1)
-    const allCreds = await getCredentialList(authPersister)
-    let matches = allCreds.filter(cred => cred.namespace.startsWith(namespace))
-    if (apihost) {
-      matches = matches.filter(match => match.apihost === apihost)
-    }
-    if (matches.length > 0) {
-      if (matches.length > 1 && choicePrompter) {
-        let choices: string[]
-        if (apihost) {
+  const promptSought = namespace.endsWith('-')
+  if (promptSought) { namespace = namespace.slice(0, -1) }
+  const allCreds = await getCredentialList(authPersister)
+  let matches = allCreds.filter(cred => cred.namespace.startsWith(namespace))
+  if (apihost) {
+    matches = matches.filter(match => match.apihost === apihost)
+  }
+  if (promptSought || matches.length > 0) {
+    if (matches.length > 1 && choicePrompter) {
+      let choices: string[]
+      if (apihost) {
         // Already filtered by apihost
-          choices = matches.map(match => match.namespace)
-        } else {
-        // Might be heterogeneous by API host so include in prompt
-          choices = matches.map(match => `${match.namespace} on ${match.apihost}`)
-        }
-        return await choicePrompter(choices)
-      } else if (matches.every(cred => cred.namespace === matches[0].namespace)) {
-        return matches[0].namespace
+        choices = matches.map(match => match.namespace)
       } else {
-        throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
+        // Might be heterogeneous by API host so include in prompt
+        choices = matches.map(match => `${match.namespace} on ${match.apihost}`)
       }
+      return await choicePrompter(choices)
+    } else if (matches.every(cred => cred.namespace === matches[0].namespace)) {
+      return matches[0].namespace
+    } else {
+      throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
     }
   }
   // No match or no '-' to begin with
