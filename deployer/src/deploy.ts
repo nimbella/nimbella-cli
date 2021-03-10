@@ -146,7 +146,9 @@ function cleanActionsAndPackages(todeploy: DeployStructure): Promise<DeployStruc
       const prefix = defaultPkg ? '' : pkg.name + '/'
       for (const action of pkg.actions) {
         if (action.clean && todeploy.includer.isActionIncluded(pkg.name, action.name) && !action.buildResult) {
-          delete todeploy.versions.actionVersions[action.name]
+          if (todeploy.versions && todeploy.versions.actionVersions) {
+            delete todeploy.versions.actionVersions[action.name]
+          }
           promises.push(todeploy.owClient.actions.delete(prefix + action.name).catch(() => undefined))
         }
       }
