@@ -35,7 +35,7 @@ import { nimbellaDir } from './credentials'
 const debug = makeDebug('nim:deployer:util')
 
 // List of files/paths to be ignored, add https://github.com/micromatch/anymatch compatible definitions
-export const SYSTEM_EXCLUDE_PATTERNS = ['.gitignore', '.DS_Store',
+export const SYSTEM_EXCLUDE_PATTERNS = ['.gitignore', '.DS_Store', '**/.git/**',
   (s: string): boolean => s.includes('.nimbella'),
   (s: string): boolean => s.includes('_tmp_'),
   (s: string): boolean => s.includes('.#'),
