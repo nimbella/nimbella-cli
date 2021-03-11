@@ -30,12 +30,12 @@ export default class AuthExport extends NimBaseCommand {
   static args = [{ name: 'namespace', description: 'The namespace to export (omit for current namespace)', required: false }]
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
-    const host = parseAPIHost(flags.apihost)
+    let host = parseAPIHost(flags.apihost)
     const nonExpiring = flags['non-expiring']
 
     let namespace: string
     if (args.namespace) {
-      namespace = await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))
+      [namespace, host] = (await disambiguateNamespace(args.namespace, host, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
     }
 
     const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister)

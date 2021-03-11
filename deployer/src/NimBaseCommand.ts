@@ -338,25 +338,25 @@ Repeat the command with the '--verbose' flag for more detail`
 //     - otherwise throw an error
 export async function disambiguateNamespace(namespace: string, apihost: string|undefined, choicePrompter: (list: string[])=>Promise<string>): Promise<string> {
   if (namespace.endsWith('-')) {
-    const allCreds = await getCredentialList(authPersister)
     namespace = namespace.slice(0, -1)
+    const allCreds = await getCredentialList(authPersister)
     let matches = allCreds.filter(cred => cred.namespace.startsWith(namespace))
     if (apihost) {
       matches = matches.filter(match => match.apihost === apihost)
     }
     if (matches.length > 0) {
-      if (matches.every(cred => cred.namespace === matches[0].namespace)) {
-        return matches[0].namespace
-      } else if (choicePrompter) {
+      if (matches.length > 1 && choicePrompter) {
         let choices: string[]
         if (apihost) {
-          // Already filtered by apihost
+        // Already filtered by apihost
           choices = matches.map(match => match.namespace)
         } else {
-          // Might be heterogeneous by API host so include in prompt
+        // Might be heterogeneous by API host so include in prompt
           choices = matches.map(match => `${match.namespace} on ${match.apihost}`)
         }
-        return (await choicePrompter(choices)).split(' on ')[0]
+        return await choicePrompter(choices)
+      } else if (matches.every(cred => cred.namespace === matches[0].namespace)) {
+        return matches[0].namespace
       } else {
         throw new Error(`Prefix '${namespace}' matches multiple namespaces`)
       }

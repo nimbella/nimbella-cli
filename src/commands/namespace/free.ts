@@ -51,7 +51,7 @@ export default class NamespaceFree extends NimBaseCommand {
 
       // Free one or more namespaces by name
       for (const ns of argv) {
-        const namespace = await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))
+        const [namespace] = (await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
         await this.doFree(namespace, host, logger)
       }
     }
