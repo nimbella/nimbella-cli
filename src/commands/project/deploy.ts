@@ -235,7 +235,7 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
         if (webLocal) {
           bucketClause = ` in ${webLocal}`
         } else {
-          bucketClause = ` on\n  https://${bucketURL}`
+          bucketClause = ` on\n ${bucketURL}`
         }
       }
       logger.log(`Skipped ${skippedWeb} unchanged web resources${bucketClause}`)
