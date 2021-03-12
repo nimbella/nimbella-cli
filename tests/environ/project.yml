@@ -1,0 +1,5 @@
+packages:
+  - name: test_environ
+    actions:
+    - name: variable
+      runtime: ${RUNTIME}
