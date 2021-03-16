@@ -363,7 +363,7 @@ export async function disambiguateNamespace(namespace: string, apihost: string|u
     }
   }
   // No match or no '-' to begin with
-  return namespace
+  return apihost ? `${namespace} on ${apihost}` : namespace
 }
 
 // Utility to parse the value of an --apihost flag, permitting certain abbreviations
