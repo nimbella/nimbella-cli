@@ -9,10 +9,10 @@ fi
 # Utility function to clear our all package resources.
 # Turns into no-op if no resources are available in that package.
 delete_package() {
-	for action in $($NIM action list | grep $1 | awk '{print $6}'); do
+	for action in $($NIM action list | grep -o "$1.*"); do
 		nim action delete $action
 	done
-	for package in $($NIM package list | grep $1 | awk '{print $6}'); do
+	for package in $($NIM package list | grep -o "$1.*"); do
 		nim package delete $package
 	done
 }
