@@ -4,6 +4,9 @@ packages:
       - name: go-explicit-version
         file: packages/test-remote-build/go-default.go
         runtime: 'go:1.12'
-      - name: swift-multi
-        limits:
-          timeout: 5000
+      - name: java-mvn
+        runtime: java:default
+        main: qr.Generate#main
+      - name: java-gradle
+        runtime: java:default
+        main: qr.Generate#main

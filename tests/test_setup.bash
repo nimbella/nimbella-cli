@@ -17,3 +17,8 @@ delete_package() {
 	done
 }
 
+delete_web_content() {
+	for web in $($NIM web list | grep -o "$1.*"); do
+		nim web delete $web
+	done
+}
