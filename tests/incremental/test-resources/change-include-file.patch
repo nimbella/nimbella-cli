@@ -1,0 +1,6 @@
+diff -ruN example/packages/incremental/action5/.include diff/packages/incremental/action5/.include
+--- example/packages/incremental/action5/.include	1970-01-01 01:00:00.000000000 +0100
++++ diff/packages/incremental/action5/.include	2021-03-22 14:47:30.000000000 +0000
+@@ -0,0 +1,2 @@
++inclusion1.js
++inclusion2.js
