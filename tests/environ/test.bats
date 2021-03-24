@@ -16,6 +16,7 @@ teardown_file() {
 }
 
 @test "deploying project using alternative file 'test.env'" {
+	unset RUNTIME
 	run $NIM project deploy $BATS_TEST_DIRNAME --env $BATS_TEST_DIRNAME/test.env
 	assert_success
 	run get_action_kind

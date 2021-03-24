@@ -15,8 +15,8 @@ teardown_file() {
 	assert_output --partial 'test-action-wrapping/logo.png'
 	INDEX_URL=$($NIM action get test-action-wrapping/index --url)
 	LOGO_URL=$($NIM action get test-action-wrapping/logo.png --url)
-	run diff <(curl -s $INDEX_URL) <(cat web/index.html)
+	run diff <(curl -s $INDEX_URL) <(cat $BATS_TEST_DIRNAME/web/index.html)
 	assert_success
-	run diff <(curl -s $LOGO_URL) <(cat web/logo.png)
+	run diff <(curl -s $LOGO_URL) <(cat $BATS_TEST_DIRNAME/web/logo.png)
 	assert_success
 }

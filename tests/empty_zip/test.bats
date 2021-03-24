@@ -1,7 +1,7 @@
 load ../test_setup.bash
 
 setup_file() {
-	ZIPFILE=empty_zip/packages/default/action/__deployer__.zip
+	export ZIPFILE=$BATS_TEST_DIRNAME/packages/default/action/__deployer__.zip
 }
 
 @test "deploying project with empty zip file should fail" {
