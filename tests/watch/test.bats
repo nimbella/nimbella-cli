@@ -21,6 +21,7 @@ teardown_file() {
 	# Kill the background process nicely - otherwise the test framework
 	# complains about terminated sub-processes
 	kill -INT $BG_PID
+	rm $BATS_TEST_DIRNAME/watcher.output
 	# BUG: There's a random orphaned tail process still running after the test finishes.
 	# This stops the test from finishing. It's not clear why this is still running - as 
 	# the wait_for functions have all returned.
