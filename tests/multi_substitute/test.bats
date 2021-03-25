@@ -1,15 +1,19 @@
 load ../test_setup.bash
 
 setup_file() {
+  export A="this is A"
+  export B="this is B"
+  export C="this is C"
 	$NIM project deploy $BATS_TEST_DIRNAME
 }
 
 teardown_file() {
-	delete_package "test_multi_substitute"
+	delete_package "test-multi-substitute"
+  unset A B C
 }
 
 @test "deploy project with multi-level parameter substitution" {
-	run nim action get test_multi_substitute/hello
+	run $NIM action get test-multi-substitute/hello
 	assert_success
 	assert_output --partial '"parameters": [
     {

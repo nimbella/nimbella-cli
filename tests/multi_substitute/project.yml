@@ -1,6 +1,27 @@
-function main(args) {
-  let name = args.name || 'stranger'
-  let greeting = 'Hello ' + name + '!'
-  console.log(greeting)
-  return {"greeting": greeting}
-}
+cleanNamespace: false
+bucket: {}
+parameters: {}
+packages:
+  - name: test-multi-substitute
+    shared: false
+    clean: false
+    environment: {}
+    parameters: {}
+    annotations: {}
+    actions:
+      - name: hello
+        clean: false
+        binary: false
+        main: ''
+        runtime: 'nodejs:default'
+        web: true
+        webSecure: false
+        parameters: $(
+				  A
+					B
+				)
+        environment: $(
+				  C
+				)
+        annotations: {}
+        limits: {}
