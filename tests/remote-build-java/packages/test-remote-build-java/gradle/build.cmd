@@ -7,5 +7,5 @@ IF BUILD == "gradle"  THEN
 
 :gradleBuild 
    gradlew jar
-   @echo build/libs/qr-java-1.0.jar > .include
+   @echo build/libs/gradle-1.0.jar > .include
    goto :eof

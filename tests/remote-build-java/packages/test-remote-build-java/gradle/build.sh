@@ -8,7 +8,7 @@ BUILD="gradle"
 
 if [ $BUILD == "gradle" ]; then
     gradle jar
-    echo build/libs/qr-java-1.0.jar > .include
+    echo build/libs/gradle-1.0.jar > .include
 else
     echo unknown builder
     exit -1

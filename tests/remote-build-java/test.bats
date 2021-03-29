@@ -4,7 +4,7 @@ teardown_file() {
 	delete_package "test-remote-build-java"
 }
 
-@test "deploy projects with remote build" {
+@test "deploy java projects with remote build" {
   run $NIM project deploy $BATS_TEST_DIRNAME --remote-build
 	assert_success
 	assert_line "Submitted action 'default' for remote building and deployment in runtime java:default"
