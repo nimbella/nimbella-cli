@@ -22,3 +22,14 @@ delete_web_content() {
 		nim web delete $web
 	done
 }
+
+test_binary_action() {
+	run $NIM action invoke $1 -f
+	assert_success
+	assert_output --partial '"status": "success"'
+	assert_output --partial $2
+
+	run $NIM action get $1
+	assert_success
+	assert_output --partial '"binary": true'
+}
