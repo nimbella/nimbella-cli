@@ -1,0 +1,23 @@
+Watching 'DIRECTORY/watched' [use Control-C to terminate]
+
+Deploying 'DIRECTORY/watched' due to change in 'DIRECTORY/watched/packages/default/hello.js'
+Deployment status recorded in 'DIRECTORY/watched/.nimbella'
+
+Deployed actions ('nim action get <actionName> --url' for URL):
+  - hello
+Deployment complete.  Resuming watch.
+
+
+Deploying 'DIRECTORY/watched' due to change in 'DIRECTORY/watched/packages/default/hello2/index.js'
+
+Deployed actions ('nim action get <actionName> --url' for URL):
+  - hello2
+Skipped 1 unchanged actions
+Deployment complete.  Resuming watch.
+
+
+Deploying 'DIRECTORY/watched' due to change in 'DIRECTORY/watched/packages/default/hello2/.include'
+
+Skipped 2 unchanged actions
+Deployment complete.  Resuming watch.
+

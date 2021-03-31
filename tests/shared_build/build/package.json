@@ -3,10 +3,6 @@
   "description": "common dependencies",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nimbella-corp/workbench.git"
-  },
   "license": "ISC",
   "dependencies": {
     "rot13-cipher": "^1"

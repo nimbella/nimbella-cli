@@ -9,6 +9,9 @@ wait_for() {
 setup_file() {
 	# Remove any previous project files - otherwise project create won't succeed.
 	find $BATS_TEST_DIRNAME/watched -mindepth 1 -delete
+	# Set up diff template with test directory path
+	sed 's|DIRECTORY|'$BATS_TEST_DIRNAME'|g' $BATS_TEST_DIRNAME/template-watcher.output > $BATS_TEST_DIRNAME/expected-watcher.output 
+
 	$NIM project create $BATS_TEST_DIRNAME/watched
 	# Start project watch as a background process & re-direct output to file
 	$NIM project watch $BATS_TEST_DIRNAME/watched > $BATS_TEST_DIRNAME/watcher.output &
@@ -22,6 +25,7 @@ teardown_file() {
 	# complains about terminated sub-processes
 	kill -INT $BG_PID
 	rm $BATS_TEST_DIRNAME/watcher.output
+	rm $BATS_TEST_DIRNAME/expected-watcher.output
 	# BUG: There's a random orphaned tail process still running after the test finishes.
 	# This stops the test from finishing. It's not clear why this is still running - as 
 	# the wait_for functions have all returned.
