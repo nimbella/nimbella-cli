@@ -57,6 +57,7 @@ export interface ActionSpec {
     runtime?: string // The runtime to use for the action
     main?: string // The 'main' directive if needed
     binary?: boolean // Indicates the need for base64 encoding
+    docker?: string // Docker image to use with blackbox runtime
     zipped?: boolean // (Ignored unless binary) indicates that the binary object is a zip archive
     // End of 'exec' properties
     sequence?: string[] // Indicates that this action is a sequence and provides its components.  Mutually exclusive with the 'exec' options

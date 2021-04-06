@@ -435,6 +435,7 @@ function validateActionSpec(arg: Record<string, any>): string {
     case 'file':
     case 'runtime':
     case 'main':
+    case 'docker':
       if (!(typeof arg[item] === 'string')) {
         return `'${item}' member of an 'action' must be a string`
       }

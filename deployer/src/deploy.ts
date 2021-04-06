@@ -398,6 +398,17 @@ function encodeParameters(normalParms: openwhisk.Dict, envParms: openwhisk.Dict)
   return ans
 }
 
+// Construct the Action.Exec struct from the deployment configuration values.
+export function calculateActionExec(action: ActionSpec, code: string): openwhisk.Exec {
+  if (action.docker) {
+    // @ts-ignore
+    return { code, binary: action.binary, kind: 'blackbox', image: action.docker, main: action.main }
+  }
+
+  // @ts-ignore
+  return { code, binary: action.binary, kind: action.runtime, main: action.main }
+}
+
 // Deploy an action when the code has already been read from a file or constructed programmatically or when the
 // action is a sequence (Sequence passed in lieu of code).
 async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeployStructure,
@@ -463,7 +474,7 @@ async function deployActionFromCodeOrSequence(action: ActionSpec, spec: DeploySt
   const annotDict = Object.assign({}, oldAnnots, annotations)
   // Compute the complete Action value for the call
   const params = encodeParameters(action.parameters, action.environment)
-  const exec = sequence || { code, binary: action.binary, kind: action.runtime, main: action.main } // Actually legal but openwhisk.Exec doesn't think so
+  const exec = sequence || calculateActionExec(action, code)
   const actionBody: openwhisk.Action = { annotations: keyVal(annotDict), parameters: params, exec: exec as openwhisk.Exec }
   if (action.limits) {
     actionBody.limits = action.limits
