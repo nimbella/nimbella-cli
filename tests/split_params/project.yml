@@ -1,0 +1,16 @@
+environment:
+  e1: eone
+parameters:
+  p1: pone
+packages:
+  - name: test_split_params
+    environment:
+      e2: etwo
+    parameters:
+      p2: ptwo
+    actions:
+      - name: authorize
+        environment:
+          e3: ethree
+        parameters:
+          p3: pthree

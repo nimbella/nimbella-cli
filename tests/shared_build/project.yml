@@ -1,0 +1,7 @@
+packages:
+  - name: test-shared-build
+    actions:
+    - name: first-test
+      runtime: nodejs:10
+    - name: second-test
+      runtime: nodejs:10

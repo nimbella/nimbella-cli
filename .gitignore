@@ -10,3 +10,4 @@ productionProjects.json
 *.tgz
 /oclif.manifest.json
 /bin/nim
+.nimbella

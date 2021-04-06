@@ -1,0 +1,6 @@
+packages:
+  - name: default
+    actions:
+      - name: hello
+        annotations: xxx
+

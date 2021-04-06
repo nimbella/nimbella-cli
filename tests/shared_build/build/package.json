@@ -1,0 +1,10 @@
+{
+  "name": "common-dependencies",
+  "description": "common dependencies",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "ISC",
+  "dependencies": {
+    "rot13-cipher": "^1"
+  }
+}

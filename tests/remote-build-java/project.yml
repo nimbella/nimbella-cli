@@ -1,0 +1,9 @@
+packages:
+  - name: test-remote-build-java
+    actions:
+      - name: mvn
+        runtime: java:default
+        main: qr.Generate#main
+      - name: gradle
+        runtime: java:default
+        main: qr.Generate#main
