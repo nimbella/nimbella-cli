@@ -1,10 +1,6 @@
 import { ActionSpec } from '../../src/deploy-struct'
 import { calculateActionExec } from '../../src/deploy'
 
-// TODO: 
-// Need to calculate the actionExec property:
-// { kind = 'blackbox', image: flags.docker }
-// { kind = runtime, image: flags.docker }
 describe('test calculating action runtime kind property', () => {
   test('should return runtime property as kind', () => {
     const as: ActionSpec = {
