@@ -28,6 +28,7 @@ import { promisify } from 'util'
 import * as makeDebug from 'debug'
 
 const debug = makeDebug('nim:deployer:deploy')
+const seqDebug = makeDebug('nim:deployer:sequences')
 const rimraf = promisify(rimrafOrig)
 
 //
@@ -79,7 +80,7 @@ export async function doDeploy(todeploy: DeployStructure): Promise<DeployRespons
   const actionPromises = todeploy.packages.map(pkg => deployPackage(pkg, todeploy))
   const responses: DeployResponse[] = webResults.concat(await Promise.all(actionPromises))
   responses.push(straysToResponse(todeploy.strays))
-  const sequenceResponses = await Promise.all(deploySequences(todeploy, todeploy.feedback))
+  const sequenceResponses = await deploySequences(todeploy)
   responses.push(...sequenceResponses)
   const response = combineResponses(responses)
   response.apihost = todeploy.credentials.ow.apihost
@@ -315,32 +316,75 @@ function checkForLegalSequence(action: ActionSpec): any {
   return false
 }
 
-// Deploy the sequences of the project, if any.  These were identified while deploying the
-// actions.  Sequence actions were lightly checked, then deferred.   We do some deeper checks here.
-// We don't permit a sequence of the project to be a member of another.  And we warn if any of the
-// member actions are in the same namespace but not present in the deployment.  The first restriction
-// is temporary: we should ultimately do a topo-sort of dependencies, deploy sequences in a workable
-// order, and only reject cycles.
-function deploySequences(todeploy: DeployStructure, feedback: Feedback): Promise<DeployResponse>[] {
-  const sequences = todeploy.sequences || []
-  const { credentials: { namespace } } = todeploy
-  const sequenceNames = sequences.map(sequence => fqnFromActionSpec(sequence, namespace))
-  const result: Promise<DeployResponse>[] = []
-  const actionFqns = getAllActionFqns(todeploy, namespace)
+// Order the sequences of this deployment so that ones that depend on others come later in the order.
+// Throw on cycle.
+function sortSequences(sequences: ActionSpec[], spec: DeployStructure): ActionSpec[] {
+  const { credentials: { namespace } } = spec
+  const actionNames = getAllActionFqns(spec, namespace)
+  const inProgress = new Set<string>()
+  const completed = new Set<string>()
+  const result: ActionSpec[] = []
+  for (const seq of sequences) {
+    if (!addSequenceToList(seq, namespace, result, inProgress, completed, sequences, actionNames, spec.feedback)) {
+      // Cycle detected
+      throw new Error('A cycle was detected in mutually dependent sequences')
+    }
+  }
+  return result
+}
+
+// Recursive subroutine of sortSequences to check and position an individual sequence so as to follow its dependencies.
+// To accomplish the goal, the dependencies are added first in the order found, and a "completed" set is used to prevent
+// duplicates.
+function addSequenceToList(seq: ActionSpec, namespace: string, result: ActionSpec[], inProgress: Set<string>, completed: Set<string>,
+  sequences: ActionSpec[], actionNames: Set<string>, feedback: Feedback): boolean {
+  const seqName = fqnFromActionSpec(seq, namespace)
+  seqDebug('addSequenceToList %s', seqName)
+  if (inProgress.has(seqName)) {
+    seqDebug('found in inProgress')
+    return false
+  }
+  if (completed.has(seqName)) {
+    seqDebug('found in completed')
+    return true
+  }
+  inProgress.add(seqName)
   const thisNsPrefix = '/' + namespace + '/'
-  for (const seq of (todeploy.sequences || [])) {
-    const members = seq.sequence.map(action => fqn(action, namespace))
-    debug('Sequence \'%s\' has members \'%O\'', seq.name, members)
-    members.forEach(action => {
-      if (sequenceNames.includes(action)) {
-        return wrapError(new Error('Temporary restriction: sequences in a project cannot refer to other sequences in the same project'), 'sequences')
+  for (const member of seq.sequence) {
+    const memberName = fqn(member, namespace)
+    const preReq = sequences.find(cand => memberName === fqnFromActionSpec(cand, namespace))
+    if (preReq) {
+      seqDebug('Found pre-requisite sequence %s', preReq.name)
+      if (!addSequenceToList(preReq, namespace, result, inProgress, completed, sequences, actionNames, feedback)) {
+        return false
       }
-      if (action.startsWith(thisNsPrefix) && !actionFqns.includes(action)) {
-        feedback.warn('Sequence \'%s\' contains action \'%s\' which is in the same namespace but not part of the deployment', seq.name, action)
-      }
-    })
-    const exec: openwhisk.Sequence = { kind: 'sequence', components: members }
-    result.push(deployActionFromCodeOrSequence(seq, todeploy, undefined, exec, isCleanPkg(todeploy, seq.package)))
+    }
+    if (memberName.startsWith(thisNsPrefix) && !actionNames.has(memberName)) {
+      feedback.warn('Sequence \'%s\' contains action \'%s\' which is in the same namespace but not part of the deployment', seq.name, memberName)
+    }
+  }
+  inProgress.delete(seqName)
+  completed.add(seqName)
+  seqDebug('adding %s to result', seqName)
+  result.push(seq)
+  return true
+}
+
+// Deploy the sequences of the project, if any.  These were identified while deploying the
+// actions.  Sequence actions were lightly checked, then deferred.   Here, we sort the sequences
+// so that dependent sequences are deployed before they are needed by other sequences.
+// If that works (no cycles) then we deploy the result.
+async function deploySequences(todeploy: DeployStructure): Promise<DeployResponse[]> {
+  try {
+    todeploy.sequences = sortSequences(todeploy.sequences || [], todeploy)
+  } catch (err) {
+    return [wrapError(err, 'sequences')]
+  }
+  const result: DeployResponse[] = []
+  for (const seq of todeploy.sequences) {
+    const components = seq.sequence.map(action => fqn(action, todeploy.credentials.namespace))
+    const exec: openwhisk.Sequence = { kind: 'sequence', components }
+    result.push(await deployActionFromCodeOrSequence(seq, todeploy, undefined, exec, isCleanPkg(todeploy, seq.package)))
   }
   return result
 }
@@ -365,11 +409,11 @@ function fqnFromActionSpec(spec: ActionSpec, namespace: string): string {
 }
 
 // Get the fqns of all actions in the spec
-function getAllActionFqns(spec: DeployStructure, namespace: string): string[] {
-  const ans: string[] = []
+function getAllActionFqns(spec: DeployStructure, namespace: string): Set<string> {
+  const ans = new Set<string>()
   for (const pkg of spec.packages) {
     if (pkg.actions) {
-      ans.push(...pkg.actions.map(action => fqnFromActionSpec(action, namespace)))
+      pkg.actions.forEach(action => ans.add(fqnFromActionSpec(action, namespace)))
     }
   }
   return ans

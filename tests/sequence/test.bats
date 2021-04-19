@@ -9,7 +9,7 @@ teardown_file() {
 }
 
 @test "invoking sequence runs individual actions" {
-	run $NIM action invoke test-sequence/mySequence --param payload '"Over-ripe sushi,\nThe Master\nIs full of regret."'
+	run $NIM action invoke test-sequence/mySequence --param-file $BATS_TEST_DIRNAME/sushi.json
 	assert_success
 	assert_output '{
   "length": 3,
@@ -18,5 +18,10 @@ teardown_file() {
     "Over-ripe sushi,",
     "The Master"
   ]
+}'
+  run $NIM action invoke test-sequence/incrFiveTimes -p value 0
+	assert_success
+	assert_output '{
+  "value": 5
 }'
 }
