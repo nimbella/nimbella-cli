@@ -11,3 +11,4 @@ productionProjects.json
 /oclif.manifest.json
 /bin/nim
 .nimbella
+__deployer__.zip
