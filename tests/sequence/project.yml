@@ -5,3 +5,17 @@ packages:
       sequence:
         - test-sequence/split
         - test-sequence/sort
+    - name: incrFiveTimes
+      sequence:
+        - test-sequence/incrTwice
+        - test-sequence/incrThreeTimes
+    - name: incrTwice
+      sequence:
+        - test-sequence/increment
+        - test-sequence/increment
+    - name: incrThreeTimes
+      sequence:
+        - test-sequence/increment
+        - test-sequence/increment
+        - test-sequence/increment
+        
