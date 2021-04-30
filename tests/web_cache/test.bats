@@ -13,11 +13,11 @@ teardown_file() {
 @test "deploy project web resources with caching on" {
 	run curl -I $($NIM web get test-web-cache.html --url)
 	assert_success
-	assert_output --partial "cache-control: public, max-age=3600"
+	assert_output --regexp "^.*cache-control: *public, *max-age=3600.*$"
 }
 
 @test "deploy project web resources with caching off" {
 	run curl -I $($NIM web get test-web-cache-off.html --url)
 	assert_success
-	assert_output --partial "cache-control: no-cache"
+	assert_output --regexp "^.*cache-control: *no-cache.*$"
 }
