@@ -19,8 +19,8 @@ import {
   CredentialStore, CredentialEntry, CredentialHostMap, Credentials, CredentialRow, Feedback
 } from './deploy-struct'
 import * as createDebug from 'debug'
-import { wskRequest, inBrowser, getStorageProvider } from './util'
-import { StorageKey } from '@nimbella/storage-provider'
+import { wskRequest, inBrowser } from './util'
+import { getStorageProvider, StorageKey } from '@nimbella/storage'
 const debug = createDebug('nimbella.cli')
 
 // Non-exported constants
@@ -401,7 +401,7 @@ function parseStorageString(storage: string, namespace: string): StorageKey {
   } catch {
     throw new Error(`Corrupt storage string for namespace '${namespace}'`)
   }
-  const provider = getStorageProvider(parsedStorage)
+  const provider = getStorageProvider(parsedStorage.provider || '@nimbella/storage-gcs')
   return provider.prepareCredentials(parsedStorage)
 }
 

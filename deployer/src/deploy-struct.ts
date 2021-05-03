@@ -12,7 +12,7 @@
  */
 
 import { Dict, Client, Limits, KeyVal as OWKeyVal } from 'openwhisk'
-import { StorageClient } from '@nimbella/storage-provider'
+import { StorageClient } from '@nimbella/storage'
 
 // Contains the primary type definition for the deployer structure.
 // The structure consists of the contents of a 'project' (its file and folder structure) along
