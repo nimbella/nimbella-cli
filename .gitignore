@@ -12,3 +12,9 @@ productionProjects.json
 /bin/nim
 .nimbella
 __deployer__.zip
+changes.html
+license.html
+thirdparty-licenses.md
+thirdparty-licenses.html
+sensitiveNamespaces.json
+*.bak
