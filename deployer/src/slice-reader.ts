@@ -17,7 +17,7 @@ import * as makeDebug from 'debug'
 import * as Zip from 'adm-zip'
 import * as rimraf from 'rimraf'
 import { Credentials, DeployStructure } from './deploy-struct'
-import { StorageClient } from '@nimbella/storage-provider'
+import { StorageClient } from '@nimbella/storage'
 import { getCredentials, authPersister } from './credentials'
 const debug = makeDebug('nim:deployer:slice-reader')
 const TEMP = process.platform === 'win32' ? process.env.TEMP : '/tmp'

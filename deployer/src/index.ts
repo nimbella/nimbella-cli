@@ -23,7 +23,7 @@ export {
 } from './deploy-struct'
 export {
   StorageProvider, StorageClient, RemoteFile
-} from '@nimbella/storage-provider'
+} from '@nimbella/storage'
 export { doLogin, doAdminLogin, doInteractiveLogin } from './login'
 export {
   addCredentialAndSave, getCredentials, getCredentialList, getCredentialDict, getCredentialsForNamespace, forgetNamespace, switchNamespace, getCurrentNamespace,

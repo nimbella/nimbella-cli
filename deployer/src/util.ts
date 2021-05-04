@@ -30,7 +30,6 @@ import * as yaml from 'js-yaml'
 import * as makeDebug from 'debug'
 import anymatch from 'anymatch'
 import { parseGithubRef } from './github'
-import { StorageProvider } from '@nimbella/storage-provider'
 import { nimbellaDir } from './credentials'
 const debug = makeDebug('nim:deployer:util')
 
@@ -1353,23 +1352,6 @@ export function wskRequest(url: string, auth: string = undefined): Promise<any> 
     }
     xhr.send()
   })
-}
-
-// Subroutine to get the correct storage provider based on what's in StorageKey "candidate"
-// (just a dictionary at this point)
-export function getStorageProvider(rawStorageCreds: Record<string, any>): StorageProvider {
-  const provider = rawStorageCreds.provider
-  // The static requires in the following are needed for webpacking the workbench correctly.
-  // Don't try to simplify them out of existence.
-  if (!provider || provider === '@nimbella/storage-gcs') {
-    // raw storage keys with no provider are grandfathered as gcs, but explicit is also fine
-    return require('@nimbella/storage-gcs').default
-  } else if (provider === '@nimbella/storage-s3') {
-    return require('@nimbella/storage-s3').default
-  } else {
-    // This won't work in the workbench but will work in the CLI when first introducing a new provider
-    return require(provider)
-  }
 }
 
 // Utility to rename a package in a DeployStructure in a safe and consistent way.
