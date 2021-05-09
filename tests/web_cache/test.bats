@@ -11,9 +11,14 @@ teardown_file() {
 }
 
 @test "deploy project web resources with caching on" {
+	APIHOST=$($NIM auth current --apihost)
 	run curl -I $($NIM web get test-web-cache.html --url)
 	assert_success
-	assert_output --regexp "^.*cache-control: *public, *max-age=3600.*$"
+	if [[ "$APIHOST" == *"eks"* ]]; then
+	  [[ "$output" != *"cache-control"* ]]
+	else 
+	  assert_output --regexp "^.*cache-control: *public, *max-age=3600.*$"
+	fi
 }
 
 @test "deploy project web resources with caching off" {
