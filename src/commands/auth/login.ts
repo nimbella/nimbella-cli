@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, parseAPIHost, doLogin, doAdminLogin, doInteractiveLogin, addCredentialAndSave, Credentials, authPersister, inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, doLogin, doAdminLogin, doInteractiveLogin, addCredentialAndSave, Credentials, authPersister, inBrowser } from '@nimbella/nimbella-deployer'
 
 import { doOAuthFlow, isFullCredentials } from '../../oauth'
 import { prompt } from '../../ui'

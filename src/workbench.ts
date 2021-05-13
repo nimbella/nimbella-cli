@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimLogger } from 'nimbella-deployer'
+import { NimLogger } from '@nimbella/nimbella-deployer'
 import { open } from './ui'
 const workbenchURL = 'https://apigcp.nimbella.io/wb'
 const previewURL = 'https://preview-apigcp.nimbella.io/workbench'

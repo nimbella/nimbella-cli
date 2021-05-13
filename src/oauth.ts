@@ -12,11 +12,11 @@
  */
 
 import * as querystring from 'querystring'
-import { NimLogger, OWOptions, wskRequest, inBrowser, FullCredentials, IdProvider } from 'nimbella-deployer'
+import { NimLogger, OWOptions, wskRequest, inBrowser, FullCredentials, IdProvider } from '@nimbella/nimbella-deployer'
 
 import { open } from './ui'
 
-import * as makeDebug from 'debug'
+import makeDebug from 'debug'
 const debug = makeDebug('nim:oauth')
 
 const DEFAULT_APIHOST = 'https://apigcp.nimbella.io'

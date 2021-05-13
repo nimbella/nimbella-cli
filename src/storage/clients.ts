@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { StorageClient, getCredentials, getCredentialsForNamespace, makeStorageClient, Credentials } from 'nimbella-deployer'
+import { StorageClient, getCredentials, getCredentialsForNamespace, makeStorageClient, Credentials } from '@nimbella/nimbella-deployer'
 
 type StorageClientResponse = {
     client: StorageClient

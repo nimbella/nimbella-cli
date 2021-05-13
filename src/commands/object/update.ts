@@ -15,7 +15,7 @@ import { flags } from '@oclif/command'
 import { basename, isAbsolute } from 'path'
 import { existsSync, lstatSync } from 'fs'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient, authPersister } from '@nimbella/nimbella-deployer'
 
 import { getObjectStorageClient } from '../../storage/clients'
 

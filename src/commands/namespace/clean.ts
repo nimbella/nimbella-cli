@@ -15,7 +15,7 @@ import { flags } from '@oclif/command'
 import {
   NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace, getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace,
   cleanBucket, Credentials, makeStorageClient
-} from 'nimbella-deployer'
+} from '@nimbella/nimbella-deployer'
 
 import { prompt, choicePrompter } from '../../ui'
 

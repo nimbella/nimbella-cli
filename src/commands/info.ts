@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, parseAPIHost, wskRequest, RuntimeTable, inBrowser, authPersister, getCredentials } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, wskRequest, RuntimeTable, inBrowser, authPersister, getCredentials } from '@nimbella/nimbella-deployer'
 import { open } from '../ui'
 
 export default class Info extends NimBaseCommand {

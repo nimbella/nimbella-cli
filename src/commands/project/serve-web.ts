@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, authPersister, getCredentials } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister, getCredentials } from '@nimbella/nimbella-deployer'
 import { existsSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { spawn } from 'child_process'

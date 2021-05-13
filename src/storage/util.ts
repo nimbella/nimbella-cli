@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimLogger, StorageClient } from 'nimbella-deployer'
+import { NimLogger, StorageClient } from '@nimbella/nimbella-deployer'
 import { bold } from 'chalk'
 
 // Constants used in formatting the file list

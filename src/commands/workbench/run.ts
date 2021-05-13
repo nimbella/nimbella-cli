@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '@nimbella/nimbella-deployer'
 import { openWorkbench } from '../../workbench'
 
 // Command to open the workbench from the CLI or switch between preview and production workbench for the purpose of running a command

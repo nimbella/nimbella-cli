@@ -14,7 +14,7 @@
 // Utilities for UI, versioned for CLI and workbench.   Interaction with the user has to be done differently
 // (in general) in the two cases.
 
-import { inBrowser } from 'nimbella-deployer'
+import { inBrowser } from '@nimbella/nimbella-deployer'
 
 let kuiPrompt: (msg: string) => Promise<string>
 let kuiOpen: (url: string) => Promise<any>
