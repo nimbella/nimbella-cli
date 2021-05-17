@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from '@nimbella/nimbella-deployer'
 
 import { createOrUpdateProject, seemsToBeProject } from '../../generator/project'
 import ProjectCreate from './create'

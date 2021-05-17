@@ -28,4 +28,4 @@ export {
   GithubDef, isGithubRef, parseGithubRef, fetchProject, // from './github'
   NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, // from './NimBaseCommand'
   deleteSlice // from './slice-reader'
-} from 'nimbella-deployer'
+} from '@nimbella/nimbella-deployer'

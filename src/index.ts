@@ -11,7 +11,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { CaptureLogger } from 'nimbella-deployer'
+import { CaptureLogger } from '@nimbella/nimbella-deployer'
 
 // Run a nim command programmatically with output capture
 export async function runNimCommand(command: string, args: string[]): Promise<CaptureLogger> {
@@ -26,6 +26,6 @@ export async function runNimCommand(command: string, args: string[]): Promise<Ca
 
 export { CaptureLogger }
 // Remaining exports are just for workbench incorporation and are not supported API
-export { setHelpHelper } from 'nimbella-deployer/lib/NimBaseCommand'
+export { setHelpHelper } from '@nimbella/nimbella-deployer/lib/NimBaseCommand'
 export { setKuiPrompter } from './ui'
 export { setKuiOpen } from './ui'

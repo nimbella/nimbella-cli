@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts } from '@nimbella/nimbella-deployer'
 
 import { prompt, choicePrompter } from '../../ui'
 

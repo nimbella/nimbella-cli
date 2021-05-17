@@ -16,7 +16,7 @@ import {
   NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
   readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
   isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice
-} from 'nimbella-deployer'
+} from '@nimbella/nimbella-deployer'
 import * as path from 'path'
 import { choicePrompter } from '../../ui'
 

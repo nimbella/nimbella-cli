@@ -12,7 +12,7 @@
  */
 
 import { Hook, IConfig } from '@oclif/config'
-import * as createDebug from 'debug'
+import createDebug from 'debug'
  type Options = { Command: any, argv: string[] } & { config: IConfig }
 
 const debug = createDebug('nimbella-prerun')

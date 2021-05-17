@@ -13,7 +13,7 @@
 
 import { flags } from '@oclif/command'
 import { spinner } from '../../ui'
-import { NimBaseCommand, NimLogger, StorageClient, authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, StorageClient, authPersister } from '@nimbella/nimbella-deployer'
 
 import { getWebStorageClient } from '../../storage/clients'
 

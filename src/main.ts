@@ -13,7 +13,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { initializeAPI } from 'nimbella-deployer'
+import { initializeAPI } from '@nimbella/nimbella-deployer'
 import { CLIError } from '@oclif/errors'
 
 // A screening function called at top level (before the real oclif dispatching begins).  Does various fixups.

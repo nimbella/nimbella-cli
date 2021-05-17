@@ -11,9 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { getCredentials, getCredentialsForNamespace, Credentials } from 'nimbella-deployer'
+import { getCredentials, getCredentialsForNamespace, Credentials } from '@nimbella/nimbella-deployer'
 
-import * as openwhisk from 'openwhisk'
+import openwhisk from 'openwhisk'
 const systemNamespace = 'nimbella'
 
 export async function queryKVStore(query: string, args: any, flags: any, authPersister: any): Promise<openwhisk.Dict> {

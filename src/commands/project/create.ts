@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, inBrowser } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, inBrowser } from '@nimbella/nimbella-deployer'
 
 import { createOrUpdateProject } from '../../generator/project'
 

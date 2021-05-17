@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, authPersister } from 'nimbella-deployer'
+import { NimBaseCommand, NimLogger, authPersister } from '@nimbella/nimbella-deployer'
 
 import { getObjectStorageClient } from '../../storage/clients'
 import { errorHandler } from '../../storage/util'
