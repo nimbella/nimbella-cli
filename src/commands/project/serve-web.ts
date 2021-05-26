@@ -22,6 +22,7 @@ export default class ProjectServeWeb extends NimBaseCommand {
   static flags = {
     namespace: flags.string({ description: 'The namespace to proxy (current namespace if omitted)' }),
     apihost: flags.string({ description: 'API host of the namespace' }),
+    port: flags.integer({ description: 'The port of the web server' }),
     ...NimBaseCommand.flags
   }
 
@@ -30,13 +31,13 @@ export default class ProjectServeWeb extends NimBaseCommand {
   ]
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
-    let webLocation = args.location
-    if (!webLocation.endsWith('/web')) webLocation = join(webLocation, 'web')
+    const webLocation = args.location
     if (!existsSync(webLocation)) { logger.log(`${webLocation} not found`); return }
 
     const cred = await getCredentials(authPersister)
     const url = new URL(cred.ow.apihost)
     const proxy = `https://${flags.namespace || cred.namespace}-${flags.apihost || url.hostname}`
+    const port = flags.port || 8080
 
     logger.log(`Proxying API call to ${proxy}`)
 
@@ -58,7 +59,7 @@ export default class ProjectServeWeb extends NimBaseCommand {
         this.wrap(content, packLocation, logger, code, signal)
       })
     } else {
-      const httpServer = spawn(`npx http-server --proxy ${proxy}`, {
+      const httpServer = spawn(`npx http-server -c-1 -p ${port} --proxy ${proxy}`, {
         stdio: 'inherit',
         shell: true,
         cwd: webLocation
