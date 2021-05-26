@@ -31,7 +31,8 @@ export default class ProjectServeWeb extends NimBaseCommand {
   ]
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
-    const webLocation = args.location
+    let webLocation = args.location
+    if (!webLocation.endsWith('/web')) webLocation = join(webLocation, 'web')
     if (!existsSync(webLocation)) { logger.log(`${webLocation} not found`); return }
 
     const cred = await getCredentials(authPersister)
