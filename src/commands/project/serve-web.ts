@@ -22,7 +22,7 @@ export default class ProjectServeWeb extends NimBaseCommand {
   static flags = {
     namespace: flags.string({ description: 'The namespace to proxy (current namespace if omitted)' }),
     apihost: flags.string({ description: 'API host of the namespace' }),
-    port: flags.integer({ description: 'The port of the web server' }),
+    port: flags.integer({ description: 'The port of the web server (default is 8080)' , default: 8080}),
     ...NimBaseCommand.flags
   }
 
