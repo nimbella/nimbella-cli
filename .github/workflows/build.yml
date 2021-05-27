@@ -34,5 +34,5 @@ jobs:
       run: npm pack
     - name: Run deployer tests
       run: |
-        npm start -- auth login --auth='${{ secrets.NAMESPACE_TOKEN }}'
+        npm start -- auth login '${{ secrets.NAMESPACE_TOKEN }}'
         npm test
