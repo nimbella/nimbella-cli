@@ -4,25 +4,28 @@ This directory contains the CLI test suite for verify the external CLI commands 
 
 ### Running the tests
 
-- Install the `bats` tool and plugins used.
+- Install the `bats` tool.
 
 ```
-brew install bats-core
-brew tap kaos/shell
-brew install bats-assert
-brew install bats-file
+npm install -g bats
 ```
 
-- Run the following command in the `tests` directory.
+- Install the `bats` plugin (managed as npm dev deps).
 
 ```
-bats -r */*bats
+npm install
+```
+
+- Run the following command.
+
+```
+npm test
 ```
 
 Output like this should be shown if all the tests pass:
 
 ```
-$ bats -r */*bats
+$ npm test
  ✓ cannot deploy project with invalid annotations
  ✓ cannot deploy project with invalid env
  ✓ cannot deploy project with invalid parameters
