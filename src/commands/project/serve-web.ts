@@ -38,7 +38,7 @@ export default class ProjectServeWeb extends NimBaseCommand {
     const cred = await getCredentials(authPersister)
     const url = new URL(cred.ow.apihost)
     const proxy = `https://${flags.namespace || cred.namespace}-${flags.apihost || url.hostname}`
-    const port = flags.port || 8080
+    const port = flags.port
 
     logger.log(`Proxying API call to ${proxy}`)
 
