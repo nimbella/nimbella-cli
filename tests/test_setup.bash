@@ -1,7 +1,6 @@
-BREW_PREFIX="$(brew --prefix)"
-load "${BREW_PREFIX}/lib/bats-support/load.bash"
-load "${BREW_PREFIX}/lib/bats-assert/load.bash"
-load "${BREW_PREFIX}/lib/bats-file/load.bash"
+load "./node_modules/bats-support/load.bash"
+load "./node_modules/bats-assert/load.bash"
+load "./node_modules/bats-file/load.bash"
 
 if [ -z "$NIM" ]; then
 	NIM=$BATS_TEST_DIRNAME/../../bin/run
