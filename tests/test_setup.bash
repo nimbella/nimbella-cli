@@ -10,16 +10,16 @@ fi
 # Turns into no-op if no resources are available in that package.
 delete_package() {
 	for action in $($NIM action list | grep -o "$1.*"); do
-		nim action delete $action
+		$NIM action delete $action
 	done
 	for package in $($NIM package list | grep -o "$1.*"); do
-		nim package delete $package
+		$NIM package delete $package
 	done
 }
 
 delete_web_content() {
 	for web in $($NIM web list | grep -o "$1.*"); do
-		nim web delete $web
+		$NIM web delete $web
 	done
 }
 
