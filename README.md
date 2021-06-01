@@ -33,10 +33,6 @@ It is possible to contribute. See [our contribution guide](CONTRIBUTING.md).
 To build the code, run the following commands from the project directory.
 
 ```
-cd deployer
-npm install
-npm pack
-cd ..
 npm install
 npm pack
 ```

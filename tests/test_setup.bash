@@ -1,7 +1,6 @@
-BREW_PREFIX="$(brew --prefix)"
-load "${BREW_PREFIX}/lib/bats-support/load.bash"
-load "${BREW_PREFIX}/lib/bats-assert/load.bash"
-load "${BREW_PREFIX}/lib/bats-file/load.bash"
+load "./node_modules/bats-support/load.bash"
+load "./node_modules/bats-assert/load.bash"
+load "./node_modules/bats-file/load.bash"
 
 if [ -z "$NIM" ]; then
 	NIM=$BATS_TEST_DIRNAME/../../bin/run
@@ -11,16 +10,16 @@ fi
 # Turns into no-op if no resources are available in that package.
 delete_package() {
 	for action in $($NIM action list | grep -o "$1.*"); do
-		nim action delete $action
+		$NIM action delete $action
 	done
 	for package in $($NIM package list | grep -o "$1.*"); do
-		nim package delete $package
+		$NIM package delete $package
 	done
 }
 
 delete_web_content() {
 	for web in $($NIM web list | grep -o "$1.*"); do
-		nim web delete $web
+		$NIM web delete $web
 	done
 }
 

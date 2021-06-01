@@ -1,6 +1,9 @@
-name: Nimbella CLI Build
+name: Nimbella CLI System Tests
 
-on: [pull_request]
+on:
+  push:
+  schedule:
+    - cron:  '0 0 * * *'
 
 jobs:
   build:
@@ -32,3 +35,8 @@ jobs:
       run: npm run lint
     - name: Check build process
       run: npm pack
+    - name: Run deployer tests
+      run: |
+        npm start -- auth login '${{ secrets.NAMESPACE_TOKEN }}'
+        npm install -g bats
+        npm test
