@@ -5,6 +5,8 @@ on:
   schedule:
     - cron:  '0 0 * * *'
 
+concurrency: single
+
 jobs:
   build:
     runs-on: ubuntu-latest
