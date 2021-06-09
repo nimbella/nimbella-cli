@@ -26,6 +26,5 @@ export async function runNimCommand(command: string, args: string[]): Promise<Ca
 
 export { CaptureLogger }
 // Remaining exports are just for workbench incorporation and are not supported API
-export { setHelpHelper } from '@nimbella/nimbella-deployer/lib/NimBaseCommand'
 export { setKuiPrompter } from './ui'
 export { setKuiOpen } from './ui'
