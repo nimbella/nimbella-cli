@@ -65,17 +65,17 @@ export default class AuthLogout extends NimBaseCommand {
       if (flags.all) {
         const allHosts = await getApiHosts(authPersister)
         for (const onehost of allHosts) {
-          const [namespace] = (await disambiguateNamespace(ns, onehost, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
-          await this.doLogout(namespace, onehost, logger)
+          const [namespace, selectedHost] = (await disambiguateNamespace(ns, onehost, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
+          await this.doLogout(namespace, selectedHost, logger)
         }
       } else {
-        const [namespace] = (await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
-        await this.doLogout(namespace, host, logger)
+        const [namespace, selectedHost] = (await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
+        await this.doLogout(namespace, selectedHost, logger)
       }
     }
   }
 
-  // Do logout of a namespace, with messages.  Note: the messages seem redundent but this is mostly to avoid breaking some existing tests.  We can
+  // Do logout of a namespace, with messages.  Note: the messages seem redundant but this is mostly to avoid breaking some existing tests.  We can
   // clean it up but then expect to have to fix the tests.
   async doLogout(namespace: string, host: string, logger: NimLogger): Promise<void> {
     const creds = await forgetNamespace(namespace, host, authPersister, new NimFeedback(logger)).catch(err => logger.handleError('', err))
