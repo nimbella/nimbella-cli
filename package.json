@@ -46,14 +46,16 @@
     "bats-assert": "github:bats-core/bats-assert",
     "bats-file": "github:bats-core/bats-file",
     "bats-support": "github:bats-core/bats-support",
+    "esbuild": "^0.12.8",
+    "esbuild-node-externals": "^1.2.0",
     "eslint": "^7.7.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "globby": "^11.0.3",
     "husky": "^5.1.2",
-    "minify": "^4.1.3",
     "typescript": "^3.4.3"
   },
   "engines": {
@@ -184,13 +186,13 @@
   "scripts": {
     "prepare": "npm run version-check && patch-package && husky install",
     "postpack": "rimraf oclif.manifest.json",
-    "prepack": "rimraf lib && tsc -b && npm run minify && oclif-dev manifest && oclif-dev readme",
+    "prepack": "npm run build && oclif-dev manifest && oclif-dev readme",
     "test": "npx bats -r tests/*/*bats",
     "version": "oclif-dev readme && git add README.md",
     "lint": "eslint 'src/**/*.ts'",
-    "minify": "test $NO_MINIFY || for i in `find lib -type f -name \\*.js`; do npx minify $i > minified; mv minified $i; done",
     "version-check": "npx check-node-version --node \">=10.0\"",
-    "start": "./bin/run"
+    "start": "./bin/run",
+    "build": "tsc && node esbuild.config.js"
   },
   "types": "lib/index.d.ts"
 }
