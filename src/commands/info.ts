@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, parseAPIHost, wskRequest, RuntimeTable, inBrowser, authPersister, getCredentials } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, wskRequest, inBrowser, authPersister, getCredentials, init as initRuntimes } from '@nimbella/nimbella-deployer'
 import { open } from '../ui'
 
 export default class Info extends NimBaseCommand {
@@ -83,13 +83,13 @@ export default class Info extends NimBaseCommand {
   }
 
   // Display the runtimes in a vaguely tabular format
-  async displayRuntimes(sysinfo: Record<string, any>, logger: NimLogger): Promise<void> {
+  async displayRuntimes(_: Record<string, any>, logger: NimLogger): Promise<void> {
     // Organize the information for display
     const rawDisplay: string[][] = []
-    const runtimes = sysinfo.runtimes as RuntimeTable
-    for (const language in runtimes) {
-      for (const entry of runtimes[language]) {
-        rawDisplay.push([language, entry.kind, entry.default ? '(default)' : ''])
+    const runtimes = await initRuntimes()
+    for (const lang in runtimes) {
+      for (const image of runtimes[lang]) {
+        rawDisplay.push([lang, image.kind, image.default ? '(default)' : ''])
       }
     }
     // Format for display

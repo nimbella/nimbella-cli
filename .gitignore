@@ -20,3 +20,5 @@ sensitiveNamespaces.json
 /dist/
 /tmp/
 /patches/
+.yalc/
+yalc.lock

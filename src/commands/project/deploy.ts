@@ -15,7 +15,7 @@ import { flags } from '@oclif/command'
 import {
   NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
   readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
-  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice
+  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice, init as initRuntimes
 } from '@nimbella/nimbella-deployer'
 import * as path from 'path'
 import { choicePrompter } from '../../ui'
@@ -129,7 +129,16 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
   } else {
     feedback = new NimFeedback(logger)
   }
-  let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, undefined, feedback)
+
+  let runtimes
+  try {
+    runtimes = await initRuntimes()
+  } catch (err) {
+    logger.displayError('Failed to retrieve runtimes.json from platform host.', err)
+    return false
+  }
+
+  let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, runtimes, undefined, feedback)
   if (!todeploy) {
     return false
   } else if (todeploy.error) {
@@ -139,7 +148,7 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
   if (!watching && !todeploy.slice) {
     displayHeader(project, todeploy.credentials, logger)
   }
-  todeploy = await buildProject(todeploy)
+  todeploy = await buildProject(todeploy, runtimes)
   if (todeploy.error) {
     logger.displayError('', todeploy.error)
     return false
