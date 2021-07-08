@@ -14,7 +14,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
-import { DeployStructure, PackageSpec, ActionSpec, extFromRuntime } from '@nimbella/nimbella-deployer'
+import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime } from '@nimbella/nimbella-deployer'
 import { samples } from './samples'
 
 // Working function used by both create and update
@@ -116,7 +116,7 @@ function languageToKindAndSample(language: string, logger: any): { kind: string,
 // pre-existing actions called 'hello'
 function generateSample(kind: string, config: DeployStructure | undefined, sampleText: string, defaultPackage: string) {
   kind = mapLanguage(kind)
-  const suffix = extFromRuntime(kind, false)
+  const suffix = fileExtensionForRuntime(kind, false)
   const file = path.join(defaultPackage, `hello.${suffix}`)
   fs.writeFileSync(file, sampleText)
   if (config) {
