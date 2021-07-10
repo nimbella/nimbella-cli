@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import { NimBaseCommand, NimLogger, inBrowser } from '@nimbella/nimbella-deployer'
 
-import { createOrUpdateProject } from '../../generator/project'
+import { createOrUpdateProject, languages } from '../../generator/project'
 
 export default class ProjectCreate extends NimBaseCommand {
   static strict = false
@@ -31,7 +31,7 @@ export default class ProjectCreate extends NimBaseCommand {
     language: flags.string({
       char: 'l',
       description: 'Language for the project (creates sample project unless source is specified)',
-      options: ['go', 'golang', 'js', 'javascript', 'ts', 'typescript', 'py', 'python', 'java', 'swift', 'php'],
+      options: languages,
       default: 'js'
     }),
     overwrite: flags.boolean({ char: 'o', description: 'Overwrites the existing file(s)' }),

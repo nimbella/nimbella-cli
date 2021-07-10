@@ -108,7 +108,7 @@ function languageToKindAndSample(language: string, logger: any): { kind: string,
   }
   // TODO the following should be coordinated with the runtime table and some common source of samples used by playground,
   // cloud editor, and this code
-  if (['go', 'golang', 'js', 'javascript', 'ts', 'typescript', 'py', 'python', 'java', 'swift', 'php'].includes(language)) { return { kind: language + ':default', sampleText: samples[language] } }
+  if (languages.includes(language)) { return { kind: language + ':default', sampleText: samples[language] } }
   logger.handleError(`${language} is not a supported language`)
 }
 
@@ -116,7 +116,8 @@ function languageToKindAndSample(language: string, logger: any): { kind: string,
 // pre-existing actions called 'hello'
 function generateSample(kind: string, config: DeployStructure | undefined, sampleText: string, defaultPackage: string) {
   kind = mapLanguage(kind)
-  const suffix = fileExtensionForRuntime(kind, false)
+  const [runtime] = kind.split(':')
+  const suffix = fileExtensionForRuntime(runtime, false)
   const file = path.join(defaultPackage, `hello.${suffix}`)
   fs.writeFileSync(file, sampleText)
   if (config) {
@@ -140,25 +141,37 @@ function generateSample(kind: string, config: DeployStructure | undefined, sampl
 }
 
 function mapLanguage(kind: string) {
-  let [language, variant] = kind.split(':')
+  const [language, variant] = kind.split(':')
+  let runtime = language
   switch (language) {
   case 'js':
   case 'javascript':
-    language = 'nodejs'
+    runtime = 'nodejs'
+    break
+  case 'cs':
+  case 'csharp':
+  case 'vb':
+    runtime = 'dotnet'
     break
   case 'ts':
-    language = 'typescript'
+    runtime = 'typescript'
     break
   case 'py':
-    language = 'python'
+    runtime = 'python'
+    break
+  case 'rb':
+    runtime = 'ruby'
+    break
+  case 'rs':
+    runtime = 'rust'
     break
   case 'golang':
-    language = 'go'
+    runtime = 'go'
     break
   default:
     break
   }
-  return `${language}:${variant}`
+  return `${runtime}:${variant}`
 }
 
 // Test whether a path in the file system is a project based on some simple heuristics.  The path is known to exist.
@@ -173,3 +186,6 @@ export function seemsToBeProject(path: string): boolean {
   }
   return false
 }
+
+export const languages = ['cs', 'csharp', 'deno', 'go', 'golang', 'java', 'js', 'javascript', 'php', 'py', 'python', 'rb', 'ruby', 'rs', 'rust', 'swift', 'ts', 'typescript']
+export const runtimes = ['ballerina', 'deno', 'dotnet', 'go', 'java', 'nodejs', 'php', 'python', 'ruby', 'rust', 'swift']

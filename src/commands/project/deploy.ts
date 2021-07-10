@@ -19,7 +19,6 @@ import {
 } from '@nimbella/nimbella-deployer'
 import * as path from 'path'
 import { choicePrompter } from '../../ui'
-
 export class ProjectDeploy extends NimBaseCommand {
   static description = 'Deploy Nimbella projects'
 
