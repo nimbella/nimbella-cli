@@ -14,7 +14,7 @@
   "author": "Nimbella Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#v2021-04-21-1",
+    "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#v2021-04-21-2",
     "@adobe/aio-lib-core-config": "^1.0.15",
     "@adobe/aio-lib-runtime": "^1.2.1",
     "@nimbella/nimbella-deployer": "^2.0.1",
