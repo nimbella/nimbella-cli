@@ -92,10 +92,73 @@ const go = `package main
       name = "stranger"
     }
     msg := make(map[string]interface{})
-    msg["body"] = "Hello, " + name + "!"
+    msg["body"] = "Hello " + name + "!"
     return msg
   }
   `
 const golang = go
 
-export const samples = { js, javascript, py, python, php, swift, java, go, golang, ts, typescript }
+const rust = `extern crate serde_json;
+
+use serde_derive::{Deserialize, Serialize};
+use serde_json::{Error, Value};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct Input {
+    #[serde(default = "stranger")]
+    name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct Output {
+    body: String,
+}
+
+fn stranger() -> String {
+    "stranger".to_string()
+}
+
+pub fn main(args: Value) -> Result<Value, Error> {
+    let input: Input = serde_json::from_value(args)?;
+    let output = Output {
+        body: format!("Hello, {}", input.name),
+    };
+    serde_json::to_value(output)
+}
+`
+
+const deno = `export default function main(args: {[key: string]: any}) {
+  return {
+    body: \`Hello \${args.name || "stranger"}!\`,
+  };
+};`
+
+const ruby = `def main(args)
+name = args["name"] || "stranger"
+greeting = "Hello #{name}!"
+puts greeting
+{ "body" => greeting }
+end`
+
+const csharp = `using System;
+using Newtonsoft.Json.Linq;
+
+namespace Nimbella.Example.Dotnet
+{
+    public class Hello
+    {
+        public JObject Main(JObject args)
+        {
+            string name = "stranger";
+            if (args.ContainsKey("name")) {
+                name = args["name"].ToString();
+            }
+            JObject message = new JObject();
+            message.Add("body", new JValue($"Hello {name}!"));
+            return (message);
+        }
+    }
+}`
+const cs = csharp
+
+export const samples = { deno, cs, csharp, go, golang, java, javascript, js, php, py, python, ruby, rust, swift, ts, typescript }
