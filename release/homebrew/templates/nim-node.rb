@@ -1,5 +1,5 @@
 
-class NimbellaNode < Formula
+class NimNode < Formula
   desc "node.js dependency for nimbella"
   homepage "https://docs.nimbella.com/command-summary"
   license "Apache-2.0"

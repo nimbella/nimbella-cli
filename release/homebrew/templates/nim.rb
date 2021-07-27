@@ -1,5 +1,5 @@
 
-class Nimbella < Formula
+class Nim < Formula
   desc "Everything you need to get started with Nimbella"
   homepage "https://docs.nimbella.com/command-summary"
   license "Apache-2.0"
