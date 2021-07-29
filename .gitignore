@@ -18,7 +18,7 @@ thirdparty-licenses.html
 sensitiveNamespaces.json
 *.bak
 /dist/
-/tmp/
+/**/tmp/
 /patches/
 .yalc/
 yalc.lock
