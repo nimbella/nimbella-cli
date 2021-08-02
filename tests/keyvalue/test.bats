@@ -36,7 +36,6 @@ teardown_file() { # kv delete also being tested here
 
   run $NIM key-value list
   assert_success
-  #assert_output "${listString1}"
   
   if [ "$listString1" == "$output" ]; then
     assert true
