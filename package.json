@@ -17,6 +17,7 @@
     "@adobe/aio-cli-plugin-runtime": "nimbella/aio-cli-plugin-runtime#v2021-04-21-2",
     "@adobe/aio-lib-core-config": "^1.0.15",
     "@adobe/aio-lib-runtime": "^1.2.1",
+    "@nimbella/commander-cli": "^1.1.1",
     "@nimbella/nimbella-deployer": "^2.0.1",
     "@oclif/command": "^1",
     "@oclif/config": "^1",
@@ -26,7 +27,6 @@
     "chalk": "^4.1.0",
     "check-node-version": "^4.0.3",
     "chokidar": "^3.4.0",
-    "commander": "nimbella/commander-cli#98a5b68c93786f21a8bc3ae6587dfeefc077faa0",
     "debug": "^4.1.1",
     "get-port": "^5.1.1",
     "js-yaml": "^3.13.1",
@@ -86,7 +86,7 @@
       "@oclif/plugin-autocomplete",
       "@oclif/plugin-update",
       "@oclif/plugin-plugins",
-      "commander"
+      "@nimbella/commander-cli"
     ],
     "macos": {
       "identifier": "com.nimbella.cli"
