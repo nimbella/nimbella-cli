@@ -3,72 +3,71 @@
 load ../test_setup.bash
 
 # constants
-obj1="test1.txt"
-obj2="test2.txt"
-obj3="test3.txt"
+FILES="$(pwd)/tests/object/test_files/*"
 
 @test "object create" { # object create test
-  
-  filePath="$(pwd)/tests/object/objectTesting/""${obj1}" # path to test1.txt
-
-  run $NIM object create "$filePath"
-  assert_success
-  assert_output --partial "done"
-
-	
+  for f in $FILES
+  do
+    run $NIM object create "$f"
+    assert_success
+    assert_output --partial "done"
+  done
 }
 
 @test "object get" { # object get test
-
-  run $NIM object get $obj1
-  assert_success
-  assert_output --partial "done"
-	
+  for f in $FILES
+  do
+    run $NIM object get "$(basename $f)"
+    assert_success
+    if assert_output --partial "done" | grep "Sample text" "$f"
+    then
+      assert true
+    else
+      assert false
+    fi
+  done
 }
 
 @test "object list" { # object list test
-  
-  filePath="$(pwd)/tests/object/objectTesting/""${obj2}" # path to test2.txt
-  run $NIM object create "$filePath" # creating another object to test list functionality
-
-  listString="${obj1}"$'\n'"${obj2}"
+  path="$(pwd)/tests/object/test_files"
+  list=$(ls -R $path)
 
   run $NIM object list
   assert_success
-  assert_output "${listString}"
-	
+  assert [ "$output" == "$list" ]
 }
 
 @test "object url" { # object url test
-  
-  filePath="$(pwd)/tests/object/objectTesting/""${obj3}" # path to test3.txt
-  run $NIM object create "$filePath" # creating another object to test url functionality
-
-  run $NIM object url $obj3
-  assert_success
-  if curl -s "$output" | grep "Hello World!" # curl output should equal text in test3.txt
-  then
-    assert true
-  else
-    assert false
+  for f in $FILES
+  do
+    run $NIM object url "$(basename $f)"
+    assert_success
+    echo "$output"
+    if curl -s "$output" | grep "Sample text"
+    then
+      assert true
+    else
+      assert false
   fi
-	
+  done
 }
 
 @test "object update" { # object update test
-
-  run $NIM object update ${obj1}
-  assert_success
-  assert_output --partial "done"
-	
+  for f in $FILES
+  do
+    run $NIM object update "$f"
+    assert_success
+    assert_output --partial "done"
+  done
 }
 
 @test "object delete" { # object delete test
-
-  run $NIM object delete ${obj2}
-  assert_success
-  assert_output --partial "done"
-	
+  for f in $FILES
+  do
+    run $NIM object delete "$(basename $f)"
+    assert_success
+    assert_output --partial "done"
+  done
 }
 
 @test "object clean" { # object clean test
@@ -79,6 +78,4 @@ obj3="test3.txt"
   run $NIM object list
   assert_success
   assert_output ""
-	
 }
-
