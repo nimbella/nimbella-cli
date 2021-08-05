@@ -31,25 +31,33 @@ teardown_file() { # kv delete also being tested here
 
   run $NIM key-value set ANOTHER_KEY "ANOTHER_VALUE" # adding another item to populate list
 
-  listString="ANOTHER_KEY"$'\n'"${KEY_NAME}"
+  listString1="ANOTHER_KEY"$'\n'"${KEY_NAME}"
+  listString2="${KEY_NAME}"$'\n'"ANOTHER_KEY"
 
   run $NIM key-value list
   assert_success
-  assert_output "${listString}"
+  
+  if [ "$listString1" == "$output" ]; then
+    assert true
+  elif [ "$listString2" == "$output" ]; then
+    assert true
+  else
+   assert false
+  fi
 	
 }
 
 @test "kv expire/ttl" { # kv expire/ttl test
 
-  run $NIM key-value expire $KEY_NAME "3" # expire time set for 3 seconds
+  run $NIM key-value expire $KEY_NAME "6" # expire time set for 6 seconds
   assert_success
   assert_output "1"
 
   run $NIM key-value ttl $KEY_NAME # checking remaining time of key
   assert_success
-  [ "$status" -le "3" ]
+  [ "$status" -le "6" ]
 
-  sleep 3 # pausing script for 3 seconds
+  sleep 6 # pausing script for 6 seconds
 
   run $NIM key-value get $KEY_NAME # checking to see if key still exists
   assert_success
