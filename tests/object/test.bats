@@ -3,7 +3,7 @@
 load ../test_setup.bash
 
 # constants
-FILES="$(pwd)/tests/object/test_files/*"
+FILES=$BATS_TEST_DIRNAME/test_files/*
 
 @test "object create" { # object create test
   for f in $FILES
@@ -17,19 +17,18 @@ FILES="$(pwd)/tests/object/test_files/*"
 @test "object get" { # object get test
   for f in $FILES
   do
-    run $NIM object get "$(basename $f)"
+    filename=$(basename $f)
+    run $NIM object get -p $filename
     assert_success
-    if assert_output --partial "done" | grep "Sample text" "$f"
-    then
-      assert true
-    else
-      assert false
-    fi
+    assert_output --partial "done" 
+    assert_output --partial "getting $filename" 
+    # check file contents is correct
+    assert_output --partial "$(cat $f)" 
   done
 }
 
 @test "object list" { # object list test
-  path="$(pwd)/tests/object/test_files"
+  path=$BATS_TEST_DIRNAME/test_files
   list=$(ls -R $path)
 
   run $NIM object list
@@ -40,15 +39,11 @@ FILES="$(pwd)/tests/object/test_files/*"
 @test "object url" { # object url test
   for f in $FILES
   do
-    run $NIM object url "$(basename $f)"
+    filename=$(basename $f)
+    run $NIM object url $filename
     assert_success
-    echo "$output"
-    if curl -s "$output" | grep "Sample text"
-    then
-      assert true
-    else
-      assert false
-  fi
+    run diff $f <(curl -s $output)
+    assert_success
   done
 }
 
