@@ -29,7 +29,7 @@ FILES=$BATS_TEST_DIRNAME/test_files/*
 
 @test "object list" { # object list test
   path=$BATS_TEST_DIRNAME/test_files
-  list=$(ls -R $path)
+  list=$(ls $path)
 
   run $NIM object list
   assert_success
