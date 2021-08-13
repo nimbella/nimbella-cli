@@ -18,7 +18,7 @@
     "@adobe/aio-lib-core-config": "^2.0.0",
     "@adobe/aio-lib-runtime": "^2.0.0",
     "@nimbella/commander-cli": "^1.1.1",
-    "@nimbella/nimbella-deployer": "^2.0.1",
+    "@nimbella/nimbella-deployer": "^2.1.0",
     "@oclif/command": "^1",
     "@oclif/config": "^1",
     "@oclif/plugin-autocomplete": "^0.1.5",
