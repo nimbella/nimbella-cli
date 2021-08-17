@@ -37,14 +37,19 @@ FILES=$BATS_TEST_DIRNAME/test_files/*
   elif [ "$listString2" == "$output" ]; then
     assert true
   else
-   assert false
+    echo "$output"
+    assert false
   fi
 }
 
 @test "web update" { # web update test
   for f in $FILES
   do
-    run $NIM web update "$f"
+    run $NIM web create $BATS_TEST_DIRNAME/updated_files/test1.html
+    assert_success
+    assert_output --partial "done"
+
+    run $NIM web update "$f" -d $BATS_TEST_DIRNAME/updated_files/test1.html
     assert_success
     assert_output --partial "done"
   done
@@ -56,6 +61,11 @@ FILES=$BATS_TEST_DIRNAME/test_files/*
     run $NIM web delete "$(basename $f)"
     assert_success
     assert_output --partial "done"
+
+    filename=$(basename $f)
+    run $NIM web get -p $filename
+    assert_success
+    assert_output --partial "couldn't print content"
   done
 }
 
