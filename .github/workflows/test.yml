@@ -39,6 +39,8 @@ jobs:
     - name: Check build process
       run: npm pack
     - name: Run deployer tests
+      env:
+        GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
       run: |
         npm start -- auth login '${{ secrets.NAMESPACE_TOKEN }}'
         npm install -g bats
