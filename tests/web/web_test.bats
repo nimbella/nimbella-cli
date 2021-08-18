@@ -5,6 +5,12 @@ load ../test_setup.bash
 # constants
 FILES=$BATS_TEST_DIRNAME/test_files/*
 
+
+# Ensure no previous test files are left over
+setup_file() {
+  $NIM web clean --force
+}
+
 @test "web create" { # web create test
   for f in $FILES
   do
@@ -27,31 +33,27 @@ FILES=$BATS_TEST_DIRNAME/test_files/*
 }
 
 @test "web list" { # web list test, 404.html is default in namespaces
-  listString1="404.html"$'\n'"test1.html"
-  listString2="test1.html"$'\n'"404.html"
+  file_list="404.html"$'\n'"test1.html"$'\n'"test2.html"
 
   run $NIM web list
   assert_success
-  if [ "$listString1" == "$output" ]; then
-    assert true
-  elif [ "$listString2" == "$output" ]; then
-    assert true
-  else
-    echo "$output"
-    assert false
-  fi
+  run diff <(echo $output) <(echo $file_list)
+  assert_success
 }
 
 @test "web update" { # web update test
   for f in $FILES
   do
-    run $NIM web create $BATS_TEST_DIRNAME/updated_files/test1.html
+    filename=$(basename $f)
+    updated_file=$BATS_TEST_DIRNAME/updated_files/$filename
+
+    run $NIM web update -d "$filename" $updated_file
     assert_success
     assert_output --partial "done"
 
-    run $NIM web update "$f" -d $BATS_TEST_DIRNAME/updated_files/test1.html
+    run $NIM web get -p $filename
     assert_success
-    assert_output --partial "done"
+    assert_output --partial "$(cat $updated_file)" # checking if file content is correct
   done
 }
 
