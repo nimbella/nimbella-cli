@@ -12,7 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, getGithubAccounts, deleteGithubAccount, switchGithubAccount, addGithubAccount, authPersister } from '@nimbella/nimbella-deployer'
+import { getGithubAccounts, deleteGithubAccount, switchGithubAccount, addGithubAccount, authPersister } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import { isGithubProvider, doOAuthFlow } from '../../oauth'
 
 import { prompt } from '../../ui'

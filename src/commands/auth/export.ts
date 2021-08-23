@@ -11,7 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace, getCredentials, getCredentialsForNamespace, authPersister } from '@nimbella/nimbella-deployer'
+import { getCredentials, getCredentialsForNamespace, authPersister } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger, disambiguateNamespace, parseAPIHost } from '../../NimBaseCommand'
 import { flags } from '@oclif/command'
 
 import { getCredentialsToken } from '../../oauth'

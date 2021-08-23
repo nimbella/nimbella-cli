@@ -12,8 +12,8 @@
  */
 
 import * as querystring from 'querystring'
-import { NimLogger, OWOptions, wskRequest, inBrowser, FullCredentials, IdProvider } from '@nimbella/nimbella-deployer'
-
+import { OWOptions, wskRequest, inBrowser, FullCredentials, IdProvider } from '@nimbella/nimbella-deployer'
+import { NimLogger } from './NimBaseCommand'
 import { open } from './ui'
 
 import makeDebug from 'debug'

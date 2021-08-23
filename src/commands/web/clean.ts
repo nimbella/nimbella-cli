@@ -13,7 +13,8 @@
 
 import { flags } from '@oclif/command'
 import { spinner, prompt } from '../../ui'
-import { NimBaseCommand, NimLogger, StorageClient, authPersister, restore404Page, OWOptions } from '@nimbella/nimbella-deployer'
+import { StorageClient, authPersister, restore404Page, OWOptions } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import { getWebStorageClient } from '../../storage/clients'
 
 export default class WebContentClean extends NimBaseCommand {

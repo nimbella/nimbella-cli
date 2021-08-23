@@ -13,10 +13,11 @@
 
 import { flags } from '@oclif/command'
 import {
-  NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
   readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
   isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice, init as initRuntimes
 } from '@nimbella/nimbella-deployer'
+
+import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger } from '../../NimBaseCommand'
 import * as path from 'path'
 import { choicePrompter } from '../../ui'
 export class ProjectDeploy extends NimBaseCommand {

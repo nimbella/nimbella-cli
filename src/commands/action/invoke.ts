@@ -11,7 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, inBrowser, CaptureLogger } from '@nimbella/nimbella-deployer'
+import { inBrowser } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger, CaptureLogger } from '../../NimBaseCommand'
 import { flags } from '@oclif/command'
 import { Action } from 'openwhisk'
 import { open } from '../../ui'

@@ -12,7 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, getCredentialDict, authPersister, CredentialRow, parseAPIHost } from '@nimbella/nimbella-deployer'
+import { getCredentialDict, authPersister, CredentialRow } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost } from '../../NimBaseCommand'
 
 import { bold } from 'chalk'
 

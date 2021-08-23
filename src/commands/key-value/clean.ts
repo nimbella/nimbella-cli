@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, authPersister } from '@nimbella/nimbella-deployer'
-
+import { authPersister } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import { queryKVStore } from '../../storage/key-value'
 import { prompt } from '../../ui'
 

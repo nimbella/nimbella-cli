@@ -11,7 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, inBrowser, getCredentials, wipePackage, authPersister } from '@nimbella/nimbella-deployer'
+import { inBrowser, getCredentials, wipePackage, authPersister } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 import { flags } from '@oclif/command'
 
