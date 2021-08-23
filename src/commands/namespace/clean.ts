@@ -13,10 +13,10 @@
 
 import { flags } from '@oclif/command'
 import {
-  NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace, getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace,
+  getCredentialsForNamespace, getCredentials, authPersister, wipeNamespace,
   cleanBucket, Credentials, makeStorageClient
 } from '@nimbella/nimbella-deployer'
-
+import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from '../../NimBaseCommand'
 import { prompt, choicePrompter } from '../../ui'
 
 export default class NamespaceClean extends NimBaseCommand {

@@ -11,7 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, makeStorageClient, getCredentials, authPersister } from '@nimbella/nimbella-deployer'
+import { makeStorageClient, getCredentials, authPersister } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import { flags } from '@oclif/command'
 
 export default class AuthInspect extends NimBaseCommand {

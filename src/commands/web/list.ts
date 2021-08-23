@@ -12,8 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger, StorageClient, authPersister } from '@nimbella/nimbella-deployer'
-
+import { StorageClient, authPersister } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import { getWebStorageClient } from '../../storage/clients'
 import { fileMetaLong, fileMetaShort } from '../../storage/util'
 

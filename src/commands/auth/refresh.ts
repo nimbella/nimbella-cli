@@ -12,9 +12,9 @@
  */
 
 import {
-  NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace,
   doLogin, getCredentials, getCredentialsForNamespace, authPersister
 } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from '../../NimBaseCommand'
 import { flags } from '@oclif/command'
 import { getCredentialsToken } from '../../oauth'
 import { choicePrompter } from '../../ui'

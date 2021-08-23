@@ -12,8 +12,8 @@
  */
 
 import * as WorkbenchRun from './run'
-import { NimBaseCommand, NimLogger, authPersister, getCredentials } from '@nimbella/nimbella-deployer'
-
+import { authPersister, getCredentials } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import { openWorkbench } from '../../workbench'
 
 import { getCredentialsToken } from '../../oauth'

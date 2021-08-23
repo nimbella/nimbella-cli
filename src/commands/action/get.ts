@@ -11,8 +11,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, CaptureLogger, authPersister, getCredentialsForNamespace, inBrowser } from '@nimbella/nimbella-deployer'
-
+import { authPersister, getCredentialsForNamespace, inBrowser } from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger, CaptureLogger } from '../../NimBaseCommand'
 import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
 const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/get')
 
