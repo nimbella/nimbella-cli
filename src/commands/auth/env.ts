@@ -11,8 +11,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimBaseCommand, NimLogger, getCredentials, authPersister } from '@nimbella/nimbella-deployer'
+import { getCredentials, authPersister } from '@nimbella/nimbella-deployer'
 import { StorageKey } from '@nimbella/storage'
+import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 import { flags } from '@oclif/command'
 
 // Theoretically, there is no guarantee that the following constants align with conventions in @nimbella/storage.
