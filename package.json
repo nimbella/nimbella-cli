@@ -1,5 +1,5 @@
 {
-  "name": "nimbella-cli",
+  "name": "@nimbella/nimbella-cli",
   "version": "1.17.0",
   "description": "A comprehensive CLI for the Nimbella stack",
   "main": "lib/index.js",
@@ -185,7 +185,7 @@
   },
   "scripts": {
     "prepare": "npm run version-check && patch-package && husky install",
-    "postpack": "rimraf oclif.manifest.json",
+    "postpack": "rimraf oclif.manifest.json && cp nimbella-nimbella-cli-*.tgz nimbella-cli.tgz",
     "prepack": "npm run build && oclif-dev manifest && oclif-dev readme",
     "test": "npx bats -r tests/*/*bats",
     "version": "oclif-dev readme && git add README.md",
