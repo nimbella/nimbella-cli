@@ -47,5 +47,5 @@ export const brewHook: Hook<'update'> = async function() {
 
   debug('migrating from brew')
   brew(['uninstall', 'nim'])
-  brew(['install', 'nimbella/brew/nim'])
+  brew(['install', 'nimbella/brew/nimbella'])
 }

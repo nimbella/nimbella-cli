@@ -60,7 +60,9 @@ The current build will create a version of `nim` suitable for use with services 
 #### Brew formula
 For every release the [github workflow](/.github/workflows/bumpbrew.yml) updates the [brew formula](https://github.com/nimbella/homebrew-brew/blob/master/Formula/nimbella.rb) in [nimbella/brew](https://github.com/nimbella/homebrew-brew) repo.
 
-At times when node dependency needs to updated, after updating `package.json`, run 
+*Node version update:*
+
+When node dependency version is updated in `package.json`, run `npm run pack`, make a fresh release and run
 > `node release/homebrew/homebrew.js`
 
 It updates nimbella and nimbella-node formulas in [nimbella/brew](https://github.com/nimbella/homebrew-brew) repo.
