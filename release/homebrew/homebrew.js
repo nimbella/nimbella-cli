@@ -146,6 +146,8 @@ async function updateHomebrew() {
   if (process.env.SKIP_GIT_PUSH === undefined) {
     await git(['push', 'origin', 'master'])
   }
+
+  rm(homebrewDir, _ => { console.log(`done removing ${homebrewDir}`) })
 }
 
 updateHomebrew().catch((err) => {
