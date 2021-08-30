@@ -69,7 +69,7 @@ const TEMPLATES = path.join(ROOT, 'templates')
 const CLI_ASSETS_URL = process.env.CLI_ASSETS_URL || 'https://apigcp.nimbella.io/downloads/nim'
 
 async function updateNimbellaFormula(brewDir) {
-  const templatePath = path.join(TEMPLATES, 'nim.rb')
+  const templatePath = path.join(TEMPLATES, 'nimbella.rb')
   const template = fs.readFileSync(templatePath).toString('utf-8')
 
   const pathToDist = path.join(DIST_DIR, `nim-v${SHORT_VERSION}`, `nim-v${SHORT_VERSION}.tar.gz`)
@@ -82,11 +82,11 @@ async function updateNimbellaFormula(brewDir) {
       .replace('__CLI_SHA256__', sha256)
       .replace('__NODE_VERSION__', NODE_VERSION)
 
-  fs.writeFileSync(path.join(brewDir, 'Formula', 'nim.rb'), templateReplaced)
+  fs.writeFileSync(path.join(brewDir, 'Formula', 'nimbella.rb'), templateReplaced)
 }
 
 async function updateNimbellaNodeFormula(brewDir) {
-  const formulaPath = path.join(brewDir, 'Formula', 'nim-node.rb')
+  const formulaPath = path.join(brewDir, 'Formula', 'nimbella-node.rb')
 
   console.log(`updating nimbella-node Formula in ${formulaPath}`)
   console.log(`getting SHA and URL for Node.js version ${NODE_VERSION}`)
@@ -99,7 +99,7 @@ async function updateNimbellaNodeFormula(brewDir) {
   console.log(`done getting SHA for Node.js version ${NODE_VERSION}: ${sha256}`)
   console.log(`done getting URL for Node.js version ${NODE_VERSION}: ${url}`)
 
-  const templatePath = path.join(TEMPLATES, 'nim-node.rb')
+  const templatePath = path.join(TEMPLATES, 'nimbella-node.rb')
   const template = fs.readFileSync(templatePath).toString('utf-8')
 
   const templateReplaced =

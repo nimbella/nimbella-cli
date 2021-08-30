@@ -14,8 +14,8 @@ jobs:
       - uses: mislav/bump-homebrew-formula-action@v1
         if: "!contains(github.ref, '-')" # skip prereleases
         with:
-          formula-name: nim.rb
-          formula-path: Formula/nim.rb          
+          formula-name: nimbella.rb
+          formula-path: Formula/nimbella.rb          
           homebrew-tap: nimbella/homebrew-brew
           base-branch: master
           download-url: https://apigcp.nimbella.io/downloads/nim/nim-v${{version}}/nim-v${{version}}.tar.gz
