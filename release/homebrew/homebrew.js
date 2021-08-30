@@ -147,7 +147,9 @@ async function updateHomebrew() {
     await git(['push', 'origin', 'master'])
   }
 
-  rm(homebrewDir, _ => { console.log(`done removing ${homebrewDir}`) })
+  // delete temp dir
+  rm.sync(homebrewDir)
+  console.log(`done removing ${homebrewDir}`)
 }
 
 updateHomebrew().catch((err) => {
