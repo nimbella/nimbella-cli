@@ -56,3 +56,13 @@ The build process above gives you a tarball that can be installed globally or us
 3. Complete the build.
 
 The current build will create a version of `nim` suitable for use with services on `nimbella.io`. It presumes the runtime repertoire that is present there, and uses the "error page" (404.html) that is used on `nimbella.io`. You can change these things by placing your own files `runtimes.json` or `404.html` in the `deployer` directory.
+
+#### Brew formula
+For every release the [github workflow](/.github/workflows/bumpbrew.yml) updates the [brew formula](https://github.com/nimbella/homebrew-brew/blob/master/Formula/nimbella.rb) in [nimbella/brew](https://github.com/nimbella/homebrew-brew) repo.
+
+*Node version update:*
+
+When node dependency version is updated in `package.json`, run `npm run pack`, make a fresh release and run
+> `node release/homebrew/homebrew.js`
+
+It updates nimbella and nimbella-node formulas in [nimbella/brew](https://github.com/nimbella/homebrew-brew) repo.

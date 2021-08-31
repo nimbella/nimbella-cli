@@ -1,0 +1,24 @@
+on:
+  push:
+    tags: 'v*'
+
+jobs:
+  homebrew:
+    name: Bump Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version
+        id: extract-version
+        run: |
+          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"    
+      - uses: mislav/bump-homebrew-formula-action@v1
+        if: "!contains(github.ref, '-')" # skip prereleases
+        with:
+          formula-name: nimbella.rb
+          formula-path: Formula/nimbella.rb          
+          homebrew-tap: nimbella/homebrew-brew
+          base-branch: master
+          download-url: https://apigcp.nimbella.io/downloads/nim/nim-v${{version}}/nim-v${{version}}.tar.gz
+          commit-message: ${{formulaName}} ${{version}}
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
