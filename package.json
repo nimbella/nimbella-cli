@@ -187,7 +187,7 @@
   "scripts": {
     "prepare": "npm run version-check && patch-package && husky install",
     "postpack": "rimraf oclif.manifest.json && cp nimbella-nimbella-cli-*.tgz nimbella-cli.tgz",
-    "pack":"oclif-dev pack",
+    "pack": "oclif-dev pack",
     "prepack": "npm run build && oclif-dev manifest && oclif-dev readme",
     "test": "npx bats -r tests/*/*bats",
     "version": "oclif-dev readme && git add README.md",
