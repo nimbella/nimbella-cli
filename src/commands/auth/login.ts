@@ -34,7 +34,7 @@ export default class AuthLogin extends NimBaseCommand {
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     let credentials: Credentials
-    const apihost = parseAPIHost(flags.apihost) || (flags.admin ? undefined : 'https://apigcp.nimbella.io')
+    const apihost = parseAPIHost(flags.apihost) // No default, so result may be undefined
     if (args.token) {
       if (flags.auth) {
         logger.handleError('You cannot specify both a login token and an auth key.  Use one or the other')
@@ -42,6 +42,11 @@ export default class AuthLogin extends NimBaseCommand {
       if (flags.admin || flags.namespace) {
         logger.handleError('Internal error: incorrect use of administrative flags')
       }
+      // May throw if (1) apihost arg is undefined AND (2) there is no API host encoded in the token.
+      // If both are present and are the same, the value is silently used.  If both are present and differ,
+      // there will also be a thrown error but it will call out the fact of the difference.  IMO this is better
+      // then either (1) silently ignoring the provided API host or (2) sending the token to it (it will be rejected
+      // and that will be harder for the user to understand).
       credentials = await doLogin(args.token, authPersister, apihost).catch((err: Error) => this.handleError('', err))
     } else if (flags.admin) {
       if (flags.auth || flags.namespace || !apihost) {
@@ -51,10 +56,14 @@ export default class AuthLogin extends NimBaseCommand {
     } else if (flags.auth) {
       // Low level login: set 'allowReplace' to false to guard against an overwrite that loses storage or redis.  An exception to this
       // is when the (hidden) namespace flag is provided.  This is to enable low level logins by nimadmin when doing a deploy.
+      if (!apihost) {
+        logger.handleError('The --apihost flag is required when using --auth')
+      }
       credentials = await addCredentialAndSave(apihost, flags.auth, undefined, false, authPersister, flags.namespace, !!flags.namespace)
         .catch((err: Error) => logger.handleError('', err))
       authPersister.saveLegacyInfo(apihost, flags.auth)
     } else {
+      // If apihost is undefined, doOAuthFlow will apply a default of https://apigcp.nimbella.io
       const response = await doOAuthFlow(logger, false, apihost).catch(err => logger.handleError('', err))
       if (isFullCredentials(response)) {
         credentials = await doInteractiveLogin(response, authPersister).catch(err => logger.handleError('', err))
