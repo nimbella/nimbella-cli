@@ -84,6 +84,6 @@ export default class AuthLogin extends NimBaseCommand {
         logger.handleError(`Login failed.  Response was '${response}'`)
       }
     }
-    logger.log(`Stored a credential set for namespace '${credentials.namespace}' on host '${apihost}'`)
+    logger.log(`Stored a credential set for namespace '${credentials.namespace}' on host '${credentials.ow.apihost}'`)
   }
 }
