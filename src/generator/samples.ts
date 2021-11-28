@@ -86,16 +86,16 @@ const java = `import com.google.gson.JsonObject;
 
 const go = `package main
 
-  func Main(args map[string]interface{}) map[string]interface{} {
-    name, ok := args["name"].(string)
-    if !ok {
-      name = "stranger"
-    }
-    msg := make(map[string]interface{})
-    msg["body"] = "Hello " + name + "!"
-    return msg
-  }
-  `
+func Main(args map[string]interface{}) map[string]interface{} {
+\tname, ok := args["name"].(string)
+\tif !ok {
+\t\tname = "stranger"
+\t}
+\tmsg := make(map[string]interface{})
+\tmsg["body"] = "Hello " + name + "!"
+\treturn msg
+}
+`
 const golang = go
 
 const rust = `extern crate serde_json;
