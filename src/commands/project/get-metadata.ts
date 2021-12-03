@@ -13,7 +13,8 @@
 
 import { flags } from '@oclif/command'
 import {
-  readProject, Flags, isGithubRef, getGithubAuth, authPersister, inBrowser, makeIncluder, init as initRuntimes, Runtime
+  readProject, Flags, isGithubRef, getGithubAuth, authPersister, inBrowser, makeIncluder,
+  init as initRuntimes, Runtime, getRuntimeForAction
 } from '@nimbella/nimbella-deployer'
 
 import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
@@ -63,6 +64,19 @@ export class ProjectMetadata extends NimBaseCommand {
 
     // Read the project
     const result = await readProject(args.project, env, includer, false, undefined, runtimes)
+
+    // Fill in any missing runtimes
+    if (result.packages) {
+      for (const pkg of result.packages) {
+        if (pkg.actions) {
+          for (const action of pkg.actions) {
+            action.runtime = await getRuntimeForAction(action, result.reader, runtimes)
+          }
+        }
+      }
+    }
+
+    // Display result
     logger.logJSON(result as Record<string, unknown>)
   }
 }
