@@ -45,6 +45,7 @@ export class ProjectMetadata extends NimBaseCommand {
       production: false,
       incremental: false,
       env,
+      buildEnv: undefined,
       yarn: false,
       include,
       exclude,
