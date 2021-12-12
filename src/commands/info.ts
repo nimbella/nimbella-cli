@@ -12,7 +12,7 @@
  */
 
 import { flags } from '@oclif/command'
-import { wskRequest, inBrowser, authPersister, getCredentials, init as initRuntimes } from '@nimbella/nimbella-deployer'
+import { wskRequest, inBrowser, authPersister, getCredentials, initRuntimes } from '@nimbella/nimbella-deployer'
 import { NimBaseCommand, NimLogger, parseAPIHost } from '../NimBaseCommand'
 import { open } from '../ui'
 
