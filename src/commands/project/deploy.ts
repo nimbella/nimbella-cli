@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import {
   readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
-  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice, init as initRuntimes
+  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice, initRuntimes
 } from '@nimbella/nimbella-deployer'
 
 import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger } from '../../NimBaseCommand'
