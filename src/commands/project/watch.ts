@@ -25,6 +25,7 @@ export default class ProjectWatch extends NimBaseCommand {
   static flags: any = {
     target: ProjectDeploy.flags.target,
     env: ProjectDeploy.flags.env,
+    'build-env': ProjectDeploy.flags['build-env'],
     apihost: ProjectDeploy.flags.apihost,
     auth: ProjectDeploy.flags.auth,
     insecure: ProjectDeploy.flags.insecure,
@@ -62,6 +63,7 @@ export default class ProjectWatch extends NimBaseCommand {
       production: false,
       incremental: true,
       env,
+      buildEnv: flags['build-env'],
       yarn,
       webLocal: flags['web-local'],
       include,
