@@ -54,23 +54,16 @@ export class ProjectMetadata extends NimBaseCommand {
     this.debug('cmdFlags', cmdFlags)
     // Convert include/exclude flags into an Includer object
     const includer = makeIncluder(flags.include, flags.exclude)
-    // Obtain runtimes table
-    let runtimes: Record<string, Runtime[]>
-    try {
-      runtimes = await initRuntimes()
-    } catch (err) {
-      logger.handleError('Failed to retrieve runtimes.json from platform host.', err)
-    }
 
     // Read the project
-    const result = await readProject(args.project, env, includer, false, undefined, runtimes)
+    const result = await readProject(args.project, env, includer, false, undefined, {})
 
     // Fill in any missing runtimes
     if (result.packages) {
       for (const pkg of result.packages) {
         if (pkg.actions) {
           for (const action of pkg.actions) {
-            action.runtime = await getRuntimeForAction(action, result.reader, runtimes)
+            action.runtime = await getRuntimeForAction(action, result.reader, {})
           }
         }
       }
