@@ -1,0 +1,5 @@
+packages:
+  - name: test-build-env
+    actions:
+      - name: test
+        runtime: 'nodejs:default'
