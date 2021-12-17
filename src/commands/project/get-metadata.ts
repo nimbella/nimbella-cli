@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import {
   readProject, Flags, isGithubRef, getGithubAuth, authPersister, inBrowser, makeIncluder,
-  initRuntimes, Runtime, getRuntimeForAction
+  getRuntimeForAction, emptyStructure
 } from '@nimbella/nimbella-deployer'
 
 import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
@@ -56,7 +56,13 @@ export class ProjectMetadata extends NimBaseCommand {
     const includer = makeIncluder(flags.include, flags.exclude)
 
     // Read the project
-    const result = await readProject(args.project, env, includer, false, undefined, {})
+    let result = await readProject(args.project, env, includer, false, undefined, {})
+    const unresolvedVariables = result.unresolvedVariables
+    if (unresolvedVariables) {
+      result = Object.assign(emptyStructure(), { unresolvedVariables })
+    } else if (result.error) {
+      logger.handleError('  ', result.error)
+    }
 
     // Fill in any missing runtimes
     if (result.packages) {
