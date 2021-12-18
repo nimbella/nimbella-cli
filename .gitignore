@@ -22,3 +22,4 @@ sensitiveNamespaces.json
 /patches/
 .yalc/
 yalc.lock
+config.json
