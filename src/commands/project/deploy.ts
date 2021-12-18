@@ -25,7 +25,8 @@ export class ProjectDeploy extends NimBaseCommand {
 
   static flags = {
     target: flags.string({ description: 'The target namespace' }),
-    env: flags.string({ description: 'Path to environment file' }),
+    env: flags.string({ description: 'Path to runtime environment file' }),
+    'build-env': flags.string({ description: 'Path to build-time environment file' }),
     apihost: flags.string({ description: 'API host to use' }),
     auth: flags.string({ description: 'OpenWhisk auth token to use' }),
     insecure: flags.boolean({ description: 'Ignore SSL Certificates', default: false }),
@@ -68,6 +69,7 @@ export class ProjectDeploy extends NimBaseCommand {
       production,
       incremental,
       env,
+      buildEnv: flags['build-env'],
       yarn,
       webLocal: flags['web-local'],
       include,

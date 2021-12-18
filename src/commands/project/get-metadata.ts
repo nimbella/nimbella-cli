@@ -45,6 +45,7 @@ export class ProjectMetadata extends NimBaseCommand {
       production: false,
       incremental: false,
       env,
+      buildEnv: undefined,
       yarn: false,
       include,
       exclude,
@@ -56,7 +57,7 @@ export class ProjectMetadata extends NimBaseCommand {
     const includer = makeIncluder(flags.include, flags.exclude)
 
     // Read the project
-    let result = await readProject(args.project, env, includer, false, undefined, {})
+    let result = await readProject(args.project, env, undefined, includer, false, undefined, {})
     const unresolvedVariables = result.unresolvedVariables
     if (unresolvedVariables) {
       result = Object.assign(emptyStructure(), { unresolvedVariables })
