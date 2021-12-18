@@ -28,6 +28,7 @@ FILES=$BATS_TEST_DIRNAME/test_files/*
 }
 
 @test "object list" { # object list test
+  skip "Object list test needs to be rewritten to tolerate other objects present in the bucket"
   path=$BATS_TEST_DIRNAME/test_files
   list=$(ls $path)
 
