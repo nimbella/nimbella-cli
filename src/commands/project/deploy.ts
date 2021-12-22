@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import {
   readAndPrepare, buildProject, deploy, Flags, OWOptions, DeployResponse, Credentials, getCredentialsForNamespace,
-  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice, initRuntimes
+  isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice, initRuntimes, RuntimesConfig
 } from '@nimbella/nimbella-deployer'
 
 import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger } from '../../NimBaseCommand'
@@ -46,7 +46,7 @@ export class ProjectDeploy extends NimBaseCommand {
   static args = [{ name: 'projects', description: 'One or more paths to projects' }]
   static strict = false
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
+  async runCommand(_rawArgv: string[], argv: string[], _args: any, flags: any, logger: NimLogger): Promise<void> {
     // If no projects specified, display help
     if (argv.length === 0) {
       this.doHelp()
@@ -132,7 +132,7 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
     feedback = new NimFeedback(logger)
   }
 
-  let runtimes
+  let runtimes: RuntimesConfig
   try {
     runtimes = await initRuntimes()
   } catch (err) {
