@@ -7,13 +7,10 @@ if [ -z "$NIM" ]; then
 fi
 
 # Utility function to clear our all package resources.
-# Turns into no-op if no resources are available in that package.
+# Turns into no-op if no packages match the argument
 delete_package() {
-	for action in $($NIM action list | grep -o "$1.*"); do
-		$NIM action delete $action
-	done
 	for package in $($NIM package list | grep -o "$1.*"); do
-		$NIM package delete $package
+		$NIM package delete $package --recursive
 	done
 }
 
