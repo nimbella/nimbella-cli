@@ -80,6 +80,8 @@ export class NimFeedback implements Feedback {
 export class CaptureLogger implements NimLogger {
   command: string[] // The oclif command sequence being captured (aio only)
   table: Record<string, unknown>[] // The output table (array of entity) if that kind of output was produced
+  tableColumns: Record<string, unknown> // The column definition needed to format the table with cli-ux
+  tableOptions: Record<string, unknown> // The options definition needed to format the table with cli-ux
   captured: string[] = [] // Captured line by line output (flowing via Logger.log)
   entity: Record<string, unknown> // An output entity if that kind of output was produced
   log(msg = '', ...args: any[]): void {
@@ -124,7 +126,7 @@ class AioCommand extends Command {
   handleError(_msg?: string, _err?: any) { /* no-op */ }
   parsed: { argv: string[], args: string[], flags: any }
   logJSON(_hdr: string, _entity: Record<string, unknown>) { /* no-op */ }
-  table(data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}) { /* no-op */ }
+  table(_data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}) { /* no-op */ }
   async run(_argv?: string[]) { /* no-op */ }
   setNamespaceHeaderOmission(_newValue: boolean) { /* no-op */ }
 }
@@ -222,9 +224,11 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
 
   // Replacement for table function in RuntimeBaseCommand when running with capture
   // TODO this will not work for namespace get, which produces multiple tables.  Should generalize to a list.
-  saveTable = (logger: CaptureLogger) => (data: Record<string, unknown>[], _columns: Record<string, unknown>, _options: Record<string, unknown> = {}): void => {
+  saveTable = (logger: CaptureLogger) => (data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown> = {}): void => {
     debug('Call to saveTable with %O', data)
     logger.table = data
+    logger.tableColumns = columns
+    logger.tableOptions = options
   }
 
   // Generic kui runner.  Unlike run(), this gets partly pre-parsed input and doesn't do a full oclif parse.
