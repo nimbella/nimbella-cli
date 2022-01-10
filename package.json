@@ -22,7 +22,6 @@
     "@oclif/config": "^1",
     "@oclif/plugin-autocomplete": "^0.3.0",
     "@oclif/plugin-plugins": "^1.9.0",
-    "@oclif/plugin-update": "^1.3.9",
     "chalk": "^4.1.0",
     "check-node-version": "^4.0.3",
     "chokidar": "^3.4.0",
@@ -85,16 +84,12 @@
     "scope": "nimbella",
     "plugins": [
       "@oclif/plugin-autocomplete",
-      "@oclif/plugin-update",
       "@oclif/plugin-plugins"
     ],
     "macos": {
       "identifier": "com.nimbella.cli"
     },
     "update": {
-      "s3": {
-        "host": "https://apigcp.nimbella.io/downloads/nim"
-      },
       "node": {
         "version": "14.4.0"
       }
