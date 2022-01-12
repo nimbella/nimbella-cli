@@ -38,6 +38,7 @@ import { GaxiosError } from 'gaxios'
 import createDebug from 'debug'
 const debug = createDebug('nim:base')
 const verboseError = createDebug('nim:error')
+const debugJSON = createDebug('nim:json')
 
 // A place where workbench can store its help helper
 let helpHelper: (usage: Record<string, any>) => never
@@ -170,6 +171,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
 
   // Implement logJSON for logger interface.  Since this context assumes textual output we just stringify the JSON
   logJSON(entity: Record<string, unknown>): void {
+    debugJSON('JSON logging invoked')
     const output = JSON.stringify(entity, null, 2)
     const lines = output.split('\n')
     for (const line of lines) {
@@ -180,6 +182,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   // Default implementation of logTable uses cli_ux.  That module must be lazy-loaded so that loading it at module scope
   // doesn't break the workbench (this function will not be called in the workbench since a CaptureLogger will always be used).
   logTable(data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown> = {}): void {
+    debugJSON('Table logging invoked')
     if (!cli) {
       cli = require('cli-ux').cli
     }
@@ -223,7 +226,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
       cmd.handleError = logger.handleError.bind(logger)
       debug('aio handleError intercepted in capture mode')
       cmd.parsed = { argv, args, flags }
-      cmd.logJSON = this.makeLogJSON(logger)
+      cmd.logJSON = logger.logJSON.bind(logger)
       cmd.table = logger.logTable.bind(logger)
       logger.command = this.command
       debug('aio capture intercepts installed')
@@ -234,11 +237,6 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
       debug('handleError intercepted in non-capture mode')
       await cmd.run(rawArgv)
     }
-  }
-
-  // Replacement for logJSON function in RuntimeBaseCommand when running with capture
-  makeLogJSON = (logger: CaptureLogger) => (_ignored: string, entity: Record<string, unknown>): void => {
-    logger.entity = entity
   }
 
   // Generic kui runner.  Unlike run(), this gets partly pre-parsed input and doesn't do a full oclif parse.
@@ -304,7 +302,8 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   static flags = {
     debug: flags.string({ description: 'Debug level output', hidden: true }),
     verbose: flags.boolean({ char: 'v', description: 'Greater detail in error messages' }),
-    help: flags.boolean({ description: 'Show help' })
+    help: flags.boolean({ description: 'Show help' }),
+    json: flags.boolean({ description: 'Provide output in JSON form' })
   }
 }
 

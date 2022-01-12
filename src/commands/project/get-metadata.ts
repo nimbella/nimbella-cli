@@ -28,13 +28,14 @@ export class ProjectMetadata extends NimBaseCommand {
     ...NimBaseCommand.flags
   }
 
-  static args = [{ name: 'project', description: 'The project whose metadata is requested' }]
+  static args = [{ name: 'project', description: 'The project whose metadata is requested', required: true }]
 
-  async runCommand(_rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
-    const isGithub = argv.some(project => isGithubRef(project))
+  async runCommand(_rawArgv: string[], _argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
+    const project = args.project
+    const isGithub = isGithubRef(project)
     const { env, include, exclude } = flags
     if (inBrowser && !isGithub) {
-      logger.handleError('only GitHub projects are deployable from the cloud')
+      logger.handleError('only GitHub projects are accessible from the cloud')
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
       logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github --initial\' to activate it.')

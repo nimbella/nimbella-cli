@@ -23,7 +23,6 @@ export default class WebList extends NimBaseCommand {
     static flags = {
       apihost: flags.string({ description: 'API host of the namespace to list web content from' }),
       long: flags.boolean({ char: 'l', description: 'Displays additional file info such as last update, owner and md5hash' }),
-      json: flags.boolean({ char: 'j', description: 'Displays output in JSON form' }),
       namespace: flags.string({ description: 'The namespace to list web content from (current namespace if omitted)' }),
       ...NimBaseCommand.flags
     }
