@@ -42,6 +42,9 @@ const verboseError = createDebug('nim:error')
 // A place where workbench can store its help helper
 let helpHelper: (usage: Record<string, any>) => never
 
+// A place to store a loaded cli-ux module (lazy loaded to avoid breaking workbench)
+let cli: any
+
 // Called from workbench init
 export function setHelpHelper(helper: (usage: Record<string, any>) => never): void {
   helpHelper = helper
@@ -56,6 +59,7 @@ export interface NimLogger {
   exit: (code: number) => void // don't use 'never' here because 'exit' doesn't always exit
   displayError: (msg: string, err?: Error) => void
   logJSON: (entity: Record<string, unknown>) => void
+  logTable: (data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown>) => void
 }
 
 // Wrap the logger in a Feedback for using the deployer API.
@@ -108,6 +112,12 @@ export class CaptureLogger implements NimLogger {
 
   logJSON(entity: Record<string, unknown>): void {
     this.entity = entity
+  }
+
+  logTable(data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown> = {}): void {
+    this.table = data
+    this.tableColumns = columns
+    this.tableOptions = options
   }
 }
 
@@ -167,6 +177,15 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     }
   }
 
+  // Default implementation of logTable uses cli_ux.  That module must be lazy-loaded so that loading it at module scope
+  // doesn't break the workbench (this function will not be called in the workbench since a CaptureLogger will always be used).
+  logTable(data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown> = {}): void {
+    if (!cli) {
+      cli = require('cli-ux').cli
+    }
+    cli.table(data, columns, options)
+  }
+
   // Generic oclif run() implementation.   Parses and then invokes the abstract runCommand method
   async run(): Promise<void> {
     const { argv, args, flags } = this.parse(this.constructor as typeof NimBaseCommand)
@@ -205,7 +224,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
       debug('aio handleError intercepted in capture mode')
       cmd.parsed = { argv, args, flags }
       cmd.logJSON = this.makeLogJSON(logger)
-      cmd.table = this.saveTable(logger)
+      cmd.table = logger.logTable.bind(logger)
       logger.command = this.command
       debug('aio capture intercepts installed')
       cmd.setNamespaceHeaderOmission(true)
@@ -220,15 +239,6 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   // Replacement for logJSON function in RuntimeBaseCommand when running with capture
   makeLogJSON = (logger: CaptureLogger) => (_ignored: string, entity: Record<string, unknown>): void => {
     logger.entity = entity
-  }
-
-  // Replacement for table function in RuntimeBaseCommand when running with capture
-  // TODO this will not work for namespace get, which produces multiple tables.  Should generalize to a list.
-  saveTable = (logger: CaptureLogger) => (data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown> = {}): void => {
-    debug('Call to saveTable with %O', data)
-    logger.table = data
-    logger.tableColumns = columns
-    logger.tableOptions = options
   }
 
   // Generic kui runner.  Unlike run(), this gets partly pre-parsed input and doesn't do a full oclif parse.
