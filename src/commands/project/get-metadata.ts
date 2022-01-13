@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import {
   readProject, Flags, isGithubRef, getGithubAuth, authPersister, inBrowser, makeIncluder,
-  getRuntimeForAction, emptyStructure
+  getRuntimeForAction
 } from '@nimbella/nimbella-deployer'
 
 import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
