@@ -23,7 +23,6 @@ export default class ObjectsList extends NimBaseCommand {
     static flags = {
       apihost: flags.string({ description: 'API host of the namespace to list objects from' }),
       long: flags.boolean({ char: 'l', description: 'Displays additional object info such as last update, owner and md5hash' }),
-      json: flags.boolean({ char: 'j', description: 'Displays output in JSON form' }),
       namespace: flags.string({ description: 'The namespace to list objects from (current namespace if omitted)' }),
       ...NimBaseCommand.flags
     }

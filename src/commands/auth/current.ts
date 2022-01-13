@@ -74,7 +74,8 @@ export default class AuthInspect extends NimBaseCommand {
     if (Object.keys(ans).length === 1) {
       logger.log(String(Object.values(ans)[0]))
     } else {
-      logger.log(JSON.stringify(ans, null, 2))
+      // The 'json' flag is not consulted because JSON output is assumed
+      logger.logJSON(ans)
     }
   }
 }

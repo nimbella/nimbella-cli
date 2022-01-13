@@ -24,7 +24,6 @@ export default class AuthExport extends NimBaseCommand {
   static flags = {
     apihost: flags.string({ description: 'API host serving the namespace' }),
     'non-expiring': flags.boolean({ description: 'Generate non-expiring token (for functional ids and integrations)' }),
-    json: flags.boolean({ description: 'Get response as a JSON object with a "token:" member' }),
     ...NimBaseCommand.flags
   }
 
