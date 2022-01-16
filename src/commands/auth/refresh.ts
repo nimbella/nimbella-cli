@@ -43,10 +43,18 @@ export default class AuthRefresh extends NimBaseCommand {
 
     const creds = await (namespace ? getCredentialsForNamespace(namespace, host, authPersister)
       : getCredentials(authPersister)).catch(err => logger.handleError('', err))
-    logger.log('Contacting the backend')
+    if (!flags.json) {
+      logger.log('Contacting the backend')
+    }
     const token = await getCredentialsToken(creds.ow, logger)
-    logger.log('Refreshing credentials')
+    if (!flags.json) {
+      logger.log('Refreshing credentials')
+    }
     await doLogin(token, authPersister, creds.ow.apihost)
-    logger.log(`New credentials stored for namespace '${creds.namespace}'`)
+    if (flags.json) {
+      logger.logJSON({ status: 'Ok', namespace: creds.namespace })
+    } else {
+      logger.log(`New credentials stored for namespace '${creds.namespace}'`)
+    }
   }
 }

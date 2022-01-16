@@ -36,12 +36,32 @@ export default class AuthList extends NimBaseCommand {
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     const dict = await getCredentialDict(authPersister)
+    let host: string
     if (flags.apihost) {
-      const host = parseAPIHost(flags.apihost)
-      if (host in dict) {
-        logger.log(`${bold(`On API host ${host}:`)}`)
-        await this.formatCredentialList(dict[host], logger)
+      host = parseAPIHost(flags.apihost)
+      if (!(host in dict)) {
+        logger.handleError(`No credentials for API host ${host}`)
       }
+    }
+    // We respect the --json flag here, but, because of the multi-part nature of the output when there is more than
+    // one API host being reported, we won't use logTable but rather,
+    //   - if JSON is requested, return a map from API host to CredentialRow, either for all hosts or just one
+    //   - if JSON is not requested, format the table the traditional way using the code already here
+    if (flags.json) {
+      if (host) {
+        const subDict = {}
+        subDict[host] = dict[host]
+        logger.logJSON(subDict)
+      } else {
+        const toLog = Object.entries(dict).filter(([_, rows]) => rows.length > 0)
+        logger.logJSON(Object.fromEntries(toLog))
+      }
+      return
+    }
+    // Non-JSON output
+    if (host) {
+      logger.log(`${bold(`On API host ${host}:`)}`)
+      await this.formatCredentialList(dict[host], logger)
     } else {
       if (Object.keys(dict).length === 1) {
         await this.formatCredentialList(Object.values(dict)[0], logger)

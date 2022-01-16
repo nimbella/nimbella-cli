@@ -42,20 +42,28 @@ export default class AuthEnv extends NimBaseCommand {
     if (!namespace || !apiHost) {
       logger.handleError('Your current namespace lacks complete information ... doing nothing')
     }
+    const output: Record<string, string> = {}
     const provider = storage.provider || GCS_PROVIDER
     if (provider === GCS_PROVIDER) {
       // The local storage form for this provider differs from what needs to be in the environment (historical).
       const { credentials, project_id } = storage
       const { client_email, private_key } = credentials
-      printOutput('__NIM_STORAGE_KEY', JSON.stringify({ client_email, private_key, project_id }), logger, flags.quote)
+      addToOutput(output, '__NIM_STORAGE_KEY', JSON.stringify({ client_email, private_key, project_id }), flags.quote && !flags.json)
     } else if (provider === S3_PROVIDER) {
       // The S3 provider assumes what's in the environment === what would be stored.
-      printOutput('__NIM_STORAGE_KEY', JSON.stringify(storage), logger, flags.quote)
+      addToOutput(output, '__NIM_STORAGE_KEY', JSON.stringify(storage), flags.quote && !flags.json)
     } else {
       logger.handleError(`No support for storage provider '${provider}'`)
     }
-    printOutput('__OW_NAMESPACE', namespace, logger, false)
-    printOutput('__OW_API_HOST', apiHost, logger, false)
+    addToOutput(output, '__OW_NAMESPACE', namespace, false)
+    addToOutput(output, '__OW_API_HOST', apiHost, false)
+    if (flags.json) {
+      logger.logJSON(output)
+    } else {
+      for (const key in output) {
+        logger.log(`${key}=${output[key]}`)
+      }
+    }
   }
 }
 
@@ -64,9 +72,9 @@ function escapeAndQuote(input: string): string {
   return `"${input}"`
 }
 
-function printOutput(key: string, value: string, logger: NimLogger, quote: boolean) {
+function addToOutput(output: Record<string, string>, key: string, value: string, quote: boolean) {
   if (quote) {
     value = escapeAndQuote(value)
   }
-  logger.log(`${key}=${value}`)
+  output[key] = value
 }
