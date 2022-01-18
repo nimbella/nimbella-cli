@@ -51,7 +51,8 @@ export class ProjectMetadata extends NimBaseCommand {
       include,
       exclude,
       remoteBuild: false,
-      webLocal: undefined
+      webLocal: undefined,
+      json: true // output will always be JSON
     }
     this.debug('cmdFlags', cmdFlags)
     // Convert include/exclude flags into an Includer object
@@ -76,7 +77,7 @@ export class ProjectMetadata extends NimBaseCommand {
     }
 
     // Display result
-    logger.logJSON(result as Record<string, unknown>)
+    logger.logJSON(result)
   }
 }
 

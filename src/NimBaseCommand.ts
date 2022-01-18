@@ -59,7 +59,7 @@ export interface NimLogger {
   handleError: (msg: string, err?: Error) => never
   exit: (code: number) => void // don't use 'never' here because 'exit' doesn't always exit
   displayError: (msg: string, err?: Error) => void
-  logJSON: (entity: Record<string, unknown>) => void
+  logJSON: (entity: any) => void
   logTable: (data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown>) => void
   logOutput: (json: any, msgs: string[]) => void
 }
@@ -179,11 +179,11 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     }
   }
 
-  // Implement logJSON for logger interface.  Since this context assumes textual output we just stringify the JSON
-  // Behavior is not conditioned on the useJSON variable.
+  // Implement logJSON for logger interface.  Since this context assumes textual output we just
+  // stringify the JSON.  Behavior is not conditioned on the useJSON variable.
   logJSON(entity: any): void {
     debugJSON('JSON logging invoked')
-    const output = JSON.stringify(entity, null, 2)
+    const output = JSON.stringify(entity, replaceErrors, 2)
     const lines = output.split('\n')
     for (const line of lines) {
       // Bypass the shim to avoid misleading debug messages.
@@ -345,6 +345,18 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     help: flags.boolean({ description: 'Show help' }),
     json: flags.boolean({ description: 'Provide output in JSON form' })
   }
+}
+
+// For JSON stringify, to ensure that errors are printed
+export function replaceErrors(_key: string, value: any): any {
+  if (value instanceof Error) {
+    const error = {}
+    Object.getOwnPropertyNames(value).forEach(function(key) {
+      error[key] = value[key]
+    })
+    return error
+  }
+  return value
 }
 
 // Improves an error message based on analyzing the accompanying Error object (based on similar code in RuntimeBaseCommand)

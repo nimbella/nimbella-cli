@@ -75,11 +75,14 @@ export async function createOrUpdateProject(updating: boolean, args: any, flags:
   }
 
   if (updating) {
-    logger.log(`The project '${args.project}' was updated.`)
-  } else { // create or flags.overwrite
-    logger.log(`A sample project called '${args.project}' was created for you.`)
-    logger.log('You may deploy it by running the command shown on the next line:')
-    logger.log(`  nim project deploy ${args.project}`)
+    logger.logOutput({ status: 'Updated', project: args.project }, [`The project '${args.project}' was updated.`])
+  } else {
+    const msgs = [
+      `A sample project called '${args.project}' was created for you.`,
+      'You may deploy it by running the command shown on the next line:',
+      `  nim project deploy ${args.project}`
+    ]
+    logger.logOutput({ status: 'Created', project: args.project }, msgs)
   }
 }
 
