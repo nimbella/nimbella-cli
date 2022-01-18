@@ -56,7 +56,7 @@ export default class ProjectWatch extends NimBaseCommand {
     if (isGithub && !flags['anon-github']) {
       logger.handleError('you don\'t have github authorization.  Use \'nim auth github --initial\' to activate it.')
     }
-    const { target, env, apihost, auth, insecure, yarn, include, exclude } = flags
+    const { target, env, apihost, auth, insecure, yarn, include, exclude, json } = flags
     const cmdFlags: Flags = {
       verboseBuild: flags['verbose-build'],
       verboseZip: flags.verboseZip,
@@ -68,7 +68,8 @@ export default class ProjectWatch extends NimBaseCommand {
       webLocal: flags['web-local'],
       include,
       exclude,
-      remoteBuild: flags['remote-build']
+      remoteBuild: flags['remote-build'],
+      json
     }
     this.debug('cmdFlags', cmdFlags)
     const { creds, owOptions } = await processCredentials(insecure, apihost, auth, target, logger)

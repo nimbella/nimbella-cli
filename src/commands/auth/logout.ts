@@ -12,8 +12,10 @@
  */
 
 import { flags } from '@oclif/command'
-import { getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace } from '../../NimBaseCommand'
+import { getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts }
+  from '@nimbella/nimbella-deployer'
+import { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger }
+  from '../../NimBaseCommand'
 import { prompt, choicePrompter } from '../../ui'
 
 export default class AuthLogout extends NimBaseCommand {
@@ -53,7 +55,7 @@ export default class AuthLogout extends NimBaseCommand {
       if (!flags.force) {
         const ans = await prompt(`Type 'yes' to logout '${creds.namespace}' namespace on API host '${creds.ow.apihost}'`)
         if (ans !== 'yes') {
-          logger.log('Doing nothing.')
+          logger.logOutput({ status: 'Aborted' }, ['Doing nothing.'])
           return
         }
       }
@@ -64,10 +66,16 @@ export default class AuthLogout extends NimBaseCommand {
     for (const ns of argv) {
       if (flags.all) {
         const allHosts = await getApiHosts(authPersister)
+        const jsons: any[] = []
+        const msgs: string[] = []
         for (const onehost of allHosts) {
           const [namespace, selectedHost] = (await disambiguateNamespace(ns, onehost, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
-          await this.doLogout(namespace, selectedHost, logger)
+          const subLogger = new CaptureLogger()
+          await this.doLogout(namespace, selectedHost, subLogger)
+          jsons.push(subLogger.entity)
+          msgs.push(...subLogger.captured)
         }
+        logger.logOutput(jsons, msgs)
       } else {
         const [namespace, selectedHost] = (await disambiguateNamespace(ns, host, choicePrompter).catch(err => logger.handleError('', err))).split(' on ')
         await this.doLogout(namespace, selectedHost, logger)
@@ -75,12 +83,15 @@ export default class AuthLogout extends NimBaseCommand {
     }
   }
 
-  // Do logout of a namespace, with messages.  Note: the messages seem redundant but this is mostly to avoid breaking some existing tests.  We can
-  // clean it up but then expect to have to fix the tests.
+  // Do logout of a namespace, with messages.  Note: the messages seem redundant but this is mostly to
+  // avoid breaking some existing tests.  We can clean it up but then expect to have to fix the tests.
   async doLogout(namespace: string, host: string, logger: NimLogger): Promise<void> {
     const creds = await forgetNamespace(namespace, host, authPersister, new NimFeedback(logger)).catch(err => logger.handleError('', err))
-    logger.log(`Ok.  Removed the namespace '${namespace}' on host '${creds.ow.apihost}' from the credential store`)
-    logger.log(`Successful logout from namespace '${namespace}' on API host '${creds.ow.apihost}'`)
+    const msgs = [
+      `Ok.  Removed the namespace '${namespace}' on host '${creds.ow.apihost}' from the credential store`,
+      `Successful logout from namespace '${namespace}' on API host '${creds.ow.apihost}'`
+    ]
+    logger.logOutput({ status: 'Ok', namespace, apihost: creds.ow.apihost }, msgs)
   }
 
   // Logout of 'all' namespaces (possibly qualified by API host)
@@ -90,7 +101,7 @@ export default class AuthLogout extends NimBaseCommand {
     if (!force) {
       const ans = await prompt(`Type 'yes' to logout ${context}`)
       if (ans !== 'yes') {
-        logger.log('Doing nothing.')
+        logger.logOutput({ status: 'Aborted' }, ['Doing nothing.'])
         return
       }
     }

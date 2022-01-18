@@ -17,7 +17,9 @@ import {
   isGithubRef, authPersister, inBrowser, getGithubAuth, deleteSlice, initRuntimes, RuntimesConfig
 } from '@nimbella/nimbella-deployer'
 
-import { NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger } from '../../NimBaseCommand'
+import {
+  NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger, replaceErrors
+} from '../../NimBaseCommand'
 import * as path from 'path'
 import { choicePrompter } from '../../ui'
 export class ProjectDeploy extends NimBaseCommand {
@@ -53,7 +55,8 @@ export class ProjectDeploy extends NimBaseCommand {
     }
     // Otherwise ...
     const isGithub = argv.some(project => isGithubRef(project))
-    const { target, env, apihost, auth, insecure, production, yarn, incremental, include, exclude } = flags
+    const multiple = argv.length > 1
+    const { target, env, apihost, auth, insecure, production, yarn, incremental, include, exclude, json } = flags
     if (incremental && isGithub) {
       logger.handleError('\'--incremental\' may not be used with GitHub projects')
     }
@@ -62,6 +65,9 @@ export class ProjectDeploy extends NimBaseCommand {
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
       logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github --initial\' to activate it.')
+    }
+    if (multiple && json) {
+      logger.handleError('the --json flag may not be used when deploying multiple projects')
     }
     const cmdFlags: Flags = {
       verboseBuild: flags['verbose-build'],
@@ -74,7 +80,8 @@ export class ProjectDeploy extends NimBaseCommand {
       webLocal: flags['web-local'],
       include,
       exclude,
-      remoteBuild: flags['remote-build']
+      remoteBuild: flags['remote-build'],
+      json
     }
     this.debug('cmdFlags', cmdFlags)
     const { creds, owOptions } = await processCredentials(insecure, apihost, auth, target, logger)
@@ -82,7 +89,6 @@ export class ProjectDeploy extends NimBaseCommand {
 
     // Deploy each project
     let success = true
-    const multiple = argv.length > 1
     for (const project of argv) {
       if (multiple) {
         logger.log(`\nReading project '${project}`)
@@ -125,7 +131,7 @@ export async function processCredentials(ignore_certs: boolean, apihost: string|
 export async function doDeploy(project: string, cmdFlags: Flags, creds: Credentials|undefined, owOptions: OWOptions, watching: boolean,
   logger: NimLogger): Promise<boolean> {
   let feedback: NimFeedback
-  if (project.startsWith('slice:')) {
+  if (project.startsWith('slice:') || cmdFlags.json) {
     feedback = new NimFeedback(new CaptureLogger())
     feedback.warnOnly = true
   } else {
@@ -136,29 +142,28 @@ export async function doDeploy(project: string, cmdFlags: Flags, creds: Credenti
   try {
     runtimes = await initRuntimes()
   } catch (err) {
-    logger.displayError('Failed to retrieve runtimes.json from platform host.', err)
-    return false
+    logger.handleError('Failed to retrieve runtimes.json from platform host.', err)
   }
 
   let todeploy = await readAndPrepare(project, owOptions, creds, authPersister, cmdFlags, runtimes, undefined, feedback)
   if (!todeploy) {
     return false
-  } else if (todeploy.error) {
+  } else if (todeploy.error && !cmdFlags.json) {
     logger.displayError('', todeploy.error)
     return false
   }
-  if (!watching && !todeploy.slice) {
+  if (!watching && !todeploy.slice && !cmdFlags.json) {
     displayHeader(project, todeploy.credentials, logger)
   }
   todeploy = await buildProject(todeploy, runtimes)
-  if (todeploy.error) {
+  if (todeploy.error && !cmdFlags.json) {
     logger.displayError('', todeploy.error)
     return false
   }
   const result: DeployResponse = await deploy(todeploy)
-  if (todeploy.slice) {
-    const success = displaySliceResult(result, logger, feedback)
-    if (success) {
+  if (cmdFlags.json || todeploy.slice) {
+    const success = displayJSONResult(result, logger, feedback, todeploy.slice)
+    if (success && todeploy.slice) {
       await deleteSlice(todeploy)
     }
     return success
@@ -181,23 +186,20 @@ function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
   logger.log(`Deploying project '${projectPath}'${namespaceClause}${hostClause}`)
 }
 
-// Display the result of a successful run when deploying a slice
+// Display the result of a successful run when deploying a slice or when JSON is requested.
 // The output should be the DeployResponse as JSON on a single line, combined with the Feedback transcript if any
-function displaySliceResult(outcome: DeployResponse, logger: NimLogger, feedback: any): boolean {
-  function replaceErrors(_key: string, value: any) {
-    if (value instanceof Error) {
-      const error = {}
-      Object.getOwnPropertyNames(value).forEach(function(key) {
-        error[key] = value[key]
-      })
-      return error
-    }
-    return value
-  }
+function displayJSONResult(outcome: DeployResponse, logger: NimLogger, feedback: any, slice: boolean): boolean {
   const transcript = feedback.logger.captured
   const result = { transcript, outcome }
-  const toDisplay = JSON.stringify(result, replaceErrors)
-  logger.log(toDisplay)
+  if (slice) {
+    // Not using logJSON here because we need single-line output.
+    // This is executing in a builder action anyway ... doesn't matter how output is produced.
+    const toDisplay = JSON.stringify(result, replaceErrors)
+    logger.log(toDisplay)
+  } else {
+    // Normal JSON, print normally with indentation
+    logger.logJSON(result)
+  }
   return outcome.failures.length === 0
 }
 

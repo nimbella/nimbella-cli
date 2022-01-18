@@ -59,8 +59,9 @@ export interface NimLogger {
   handleError: (msg: string, err?: Error) => never
   exit: (code: number) => void // don't use 'never' here because 'exit' doesn't always exit
   displayError: (msg: string, err?: Error) => void
-  logJSON: (entity: Record<string, unknown>) => void
+  logJSON: (entity: any) => void
   logTable: (data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown>) => void
+  logOutput: (json: any, msgs: string[]) => void
 }
 
 // Wrap the logger in a Feedback for using the deployer API.
@@ -89,6 +90,7 @@ export class CaptureLogger implements NimLogger {
   tableOptions: Record<string, unknown> // The options definition needed to format the table with cli-ux
   captured: string[] = [] // Captured line by line output (flowing via Logger.log)
   entity: Record<string, unknown> // An output entity if that kind of output was produced
+
   log(msg = '', ...args: any[]): void {
     const msgs = String(msg).split('\n')
     for (const msg of msgs) {
@@ -120,6 +122,11 @@ export class CaptureLogger implements NimLogger {
     this.tableColumns = columns
     this.tableOptions = options
   }
+
+  logOutput(json: Record<string, unknown>, msgs: string[]): void {
+    this.entity = json
+    this.captured = msgs
+  }
 }
 
 // Test if a supplied logger is a CaptureLogger
@@ -145,7 +152,7 @@ class AioCommand extends Command {
 // The base for all our commands, including the ones that delegate to aio.  There are methods designed to be called from the
 // kui repl as well as ones that implement the oclif command model.
 export abstract class NimBaseCommand extends Command implements NimLogger {
-  // Superclass must implement for dual invocation by kui and oclif.  Arguments are
+  // Subclass must implement for dual invocation by kui and oclif.  Arguments are
   //  - rawArgv -- what the process would call argv
   //  - argv -- what oclif calls argv and kui calls argvNoOptions (rawArgv with flags stripped out)
   //  - args -- the args (oclif's argv) reorganized as a dictionary based on assigning names (oclif calls this 'args')
@@ -160,6 +167,9 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   // Usage model for when running with kui
   usage: Record<string, any>
 
+  // Saved value of the --json flag from the command invocation
+  useJSON: boolean
+
   // A general way of running help from a command.  Use _help in oclif and helpHelper in kui
   doHelp(): void {
     if (helpHelper && this.usage) {
@@ -169,30 +179,60 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     }
   }
 
-  // Implement logJSON for logger interface.  Since this context assumes textual output we just stringify the JSON
-  logJSON(entity: Record<string, unknown>): void {
+  // Implement logJSON for logger interface.  Since this context assumes textual output we just
+  // stringify the JSON.  Behavior is not conditioned on the useJSON variable.
+  logJSON(entity: any): void {
     debugJSON('JSON logging invoked')
-    const output = JSON.stringify(entity, null, 2)
+    const output = JSON.stringify(entity, replaceErrors, 2)
     const lines = output.split('\n')
     for (const line of lines) {
-      this.log(line)
+      // Bypass the shim to avoid misleading debug messages.
+      super.log(line)
     }
   }
 
-  // Default implementation of logTable uses cli_ux.  That module must be lazy-loaded so that loading it at module scope
-  // doesn't break the workbench (this function will not be called in the workbench since a CaptureLogger will always be used).
+  // Implement logTable for logger interface.  This context assumes textual output, but it matters whether the
+  // user requested JSON or not.  If useJSON is true, we just use the logJSON logic on the array value.  If
+  // it is false, we use cli_ux to format and display the table.  That module must be lazy-loaded so that loading
+  // it at module scope doesn't break the workbench (this function will not be called in the workbench since a
+  // CaptureLogger will always be used).
   logTable(data: Record<string, unknown>[], columns: Record<string, unknown>, options: Record<string, unknown> = {}): void {
-    debugJSON('Table logging invoked')
+    if (this.useJSON) {
+      this.logJSON(data)
+      return
+    }
     if (!cli) {
       cli = require('cli-ux').cli
     }
     cli.table(data, columns, options)
   }
 
+  // Add a shim around Command.log to debug usage of the --json flag
+  log(message = '', ...args: any[]): void {
+    if (this.useJSON) {
+      debugJSON('Normal log method called with --json in effect')
+    }
+    super.log(message, ...args)
+  }
+
+  // The logOutput command either logs JSON or normal output depending on the flag.
+  // Its use by commands is optional.
+  logOutput(entity: any, msgs: string[]): void {
+    if (this.useJSON) {
+      this.logJSON(entity)
+      return
+    }
+    for (const msg of msgs) {
+      this.log(msg)
+    }
+  }
+
   // Generic oclif run() implementation.   Parses and then invokes the abstract runCommand method
   async run(): Promise<void> {
     const { argv, args, flags } = this.parse(this.constructor as typeof NimBaseCommand)
     debug('run with rawArgv: %O, argv: %O, args: %O, flags: %O', this.argv, argv, args, flags)
+    // Not clear that we should have to do the following but apparently we do.  It might be
+    // a consequence of the token-ungluing/regluing that we do in main.ts.  TODO investigate.
     const bad = argv.find(arg => arg.startsWith('-'))
     if (bad) { this.handleError(`Unrecognized flag: ${bad}`) }
     // Allow for a logger to be passed in when invoked programmatically.  This only has effect on aio commands if the logger is a CaptureLogger
@@ -203,6 +243,8 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     }
     const options = (this.config as ExtIConfig).options
     const logger = options ? options.logger : undefined
+    // Set global json flag for correct handling of tables and optional debugging of command conformance.
+    this.useJSON = flags.json
     await this.runCommand(this.argv, argv, args, flags, logger || this)
   }
 
@@ -242,9 +284,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   // Generic kui runner.  Unlike run(), this gets partly pre-parsed input and doesn't do a full oclif parse.
   // It also uses the CaptureLogger so it can return the output in the forms appropriate for kui display
   // (worst case, just an array of text lines).  In addition to kui's 'argv' and 'parsedOptions' values,
-  // it gets a 'skip' value (the number of arguments consumed by the command itself), and the static
-  // args member of the concrete subclass of this class that is being dispatched to.   That could probably
-  // be computed here but would require more introspective code; easier for the caller to do it.
+  // it gets a 'skip' value (the number of arguments consumed by the command itself).
   async dispatch(argv: string[], skip: number, argTemplates: IArg<string>[], parsedOptions: any): Promise<CaptureLogger> {
     // Duplicate oclif's args parsing conventions.  Some parsing has already been done by kui
     debug('dispatch with argv: %O, skip: %d, argTemplates: %O, parsedOptions: %O', argv, skip, argTemplates, parsedOptions)
@@ -305,6 +345,18 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     help: flags.boolean({ description: 'Show help' }),
     json: flags.boolean({ description: 'Provide output in JSON form' })
   }
+}
+
+// For JSON stringify, to ensure that errors are printed
+export function replaceErrors(_key: string, value: any): any {
+  if (value instanceof Error) {
+    const error = {}
+    Object.getOwnPropertyNames(value).forEach(function(key) {
+      error[key] = value[key]
+    })
+    return error
+  }
+  return value
 }
 
 // Improves an error message based on analyzing the accompanying Error object (based on similar code in RuntimeBaseCommand)

@@ -18,6 +18,15 @@ import { isGithubProvider, doOAuthFlow } from '../../oauth'
 
 import { prompt } from '../../ui'
 
+type AuthGithubStatus = 'AlreadyHave' | 'MadeCurrent' | 'Ok' | 'DeletedOk' | 'DeletedDangling'
+interface AuthGithubResult {
+  status: AuthGithubStatus
+  replaced?: boolean
+  accounts?: string[]
+  messages?: string[]
+  tokenValue?: string
+}
+
 export default class AuthGithub extends NimBaseCommand {
   static description = 'Manage GitHub accounts'
 
@@ -34,9 +43,8 @@ export default class AuthGithub extends NimBaseCommand {
   }
 
   static args = []
-  static strict = false
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
+  async runCommand(_rawArgv: string[], _argv: string[], _args: any, flags: any, logger: NimLogger): Promise<void> {
     const flagCount = [flags.add, flags.initial, flags.switch, flags.list, flags.delete, flags.show].filter(Boolean).length
     if (flagCount > 1) {
       logger.handleError('only one of \'--add\', \'--initial\', \'--list\', \'--switch\', \'--delete\', or \'--show\' may be specified')
@@ -45,34 +53,40 @@ export default class AuthGithub extends NimBaseCommand {
     } else if ((flags.token && !flags.username) || (flags.username && !flags.token)) {
       logger.handleError('--token and --username must both be specified if either one is specified')
     }
+    let result: AuthGithubResult
     if (flags.switch) {
-      await this.doSwitch(flags.switch, logger)
+      result = await this.doSwitch(flags.switch, logger)
     } else if (flags.list) {
-      await this.doList(logger)
+      result = await this.doList(logger)
     } else if (flags.add || flags.initial) {
-      await this.doAdd(logger, flags.initial, undefined, undefined)
+      result = await this.doAdd(logger, flags.initial, undefined, undefined)
     } else if (flags.token && flags.username) {
-      await this.doAdd(logger, false, flags.username, flags.token)
+      result = await this.doAdd(logger, false, flags.username, flags.token)
     } else if (flags.delete) {
-      await this.doDelete(flags.delete, logger)
+      result = await this.doDelete(flags.delete, logger)
     } else if (flags.show) {
-      await this.doShow(flags.show, logger)
+      result = await this.doShow(flags.show, logger)
     } else {
       this.doHelp()
+      return
     }
+    const msgs = result.messages || []
+    delete result.messages
+    logger.logOutput(result, msgs)
   }
 
   // Add a github credential.  Called for --add, --initial, and the combination --username + --token
-  private async doAdd(logger: NimLogger, isInitial: boolean, name: string, token: string) {
+  private async doAdd(logger: NimLogger, isInitial: boolean, name: string, token: string): Promise<AuthGithubResult> {
     if (name && token) {
       await addGithubAccount(name, token, authPersister)
     } else {
       const existing = await getGithubAccounts(authPersister)
       if (isInitial && Object.keys(existing).length > 0) {
         const list = Object.keys(existing).join(', ')
-        logger.log(`you already have GitHub credentials: ${list}`)
-        logger.log("Doing nothing.  Use '--add' if you really want to add more accounts")
-        return
+        return {
+          status: 'AlreadyHave',
+          messages: [`you already have GitHub credentials: ${list}`, 'Doing nothing.  Use "--add" if you really want to add more accounts']
+        }
       } else {
         const authResponse = await doOAuthFlow(logger, true, undefined)
         if (isGithubProvider(authResponse)) {
@@ -80,64 +94,63 @@ export default class AuthGithub extends NimBaseCommand {
           await addGithubAccount(authResponse.name, authResponse.key, authPersister)
           name = authResponse.name
           if (warn) {
-            logger.log(`You already had an entry for username '${authResponse.name}'.  It was replaced`)
+            return { status: 'MadeCurrent', replaced: true, messages: [`You already had an entry for username '${authResponse.name}'.  It was replaced`] }
           }
         } else if (authResponse === true) {
           // We assume this happens only in the workbench; prompt should appear as placeholder text in the CLI pane
           await prompt('Workbench will restart with added GitHub credentials (please wait)')
-          return
+          return { status: 'MadeCurrent' }
         } else {
           logger.handleError(`GitHub authentication failed, response was '${authResponse}'`)
         }
       }
     }
-    logger.log(`the GitHub account of user name '${name}' was added and is now current`)
+    return { status: 'MadeCurrent', messages: [`the GitHub account of user name '${name}' was added and is now current`] }
   }
 
-  private async doSwitch(name: string, logger: NimLogger) {
+  private async doSwitch(name: string, logger: NimLogger): Promise<AuthGithubResult> {
     const status = await switchGithubAccount(name, authPersister)
     if (status) {
-      logger.log(`the GitHub account of user name '${name}' is now current`)
+      return { status: 'MadeCurrent', messages: [`the GitHub account of user name '${name}' is now current`] }
     } else {
       logger.handleError(`${name} is not a previously added GitHub account`)
     }
   }
 
-  private async doList(logger: NimLogger) {
+  private async doList(_logger: NimLogger): Promise<AuthGithubResult> {
     const accounts = await getGithubAccounts(authPersister)
     this.debug('accounts: %O', accounts)
     const accountNames = Object.keys(accounts)
     this.debug('accountNames: %O', accountNames)
+    let msg = 'no previously added GitHub accounts'
     if (accountNames.length > 0) {
       const list = accountNames.join(', ')
-      logger.log(`previously added GitHub accounts: ${list}`)
-    } else {
-      logger.log('no previously added GitHub accounts')
+      msg = `previously added GitHub accounts: ${list}`
     }
+    return { status: 'Ok', accounts: accountNames, messages: [msg] }
   }
 
-  private async doShow(name: string, logger: NimLogger) {
+  private async doShow(name: string, logger: NimLogger): Promise<AuthGithubResult> {
     const accounts = await getGithubAccounts(authPersister)
     if (accounts[name]) {
-      logger.log(accounts[name])
+      return { status: 'Ok', tokenValue: accounts[name], messages: [accounts[name]] }
     } else {
       logger.handleError(`${name} is not a previously added GitHub account`)
     }
   }
 
-  private async doDelete(name: string, logger: NimLogger) {
+  private async doDelete(name: string, logger: NimLogger): Promise<AuthGithubResult> {
     const status = await deleteGithubAccount(name, authPersister)
+    const messages = [`the GitHub account of user name '${name}' is removed from the credential store`]
     switch (status) {
     case 'DeletedOk':
-      logger.log(`the GitHub account of user name '${name}' is removed from the credential store`)
       break
     case 'DeletedDangling':
-      logger.log(`the GitHub account of user name '${name}' is removed from the credential store`)
-      logger.log(`'${name}' was the current account; use 'nim auth github [ --add | --switch ] to establish a new one`)
+      messages.push(`'${name}' was the current account; use 'nim auth github [ --add | --switch ] to establish a new one`)
       break
     case 'NotExists':
       logger.handleError(`${name} does not denote a previously added GitHub account`)
-      break
     }
+    return { status, messages }
   }
 }

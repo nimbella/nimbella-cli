@@ -28,7 +28,7 @@ export default class AuthLogin extends NimBaseCommand {
     ...NimBaseCommand.flags
   }
 
-  static args = [{ name: 'token', description: 'String provided by Nimbella Corp', required: false }]
+  static args = [{ name: 'token', description: 'A string provided to you for login purposes', required: false }]
 
   static aliases = ['login']
 
@@ -76,14 +76,20 @@ export default class AuthLogin extends NimBaseCommand {
           // In the CLI, a true response indicates a "long" provisioning (the wait for the redirect timed out).
           // It can also happen if the user just ignores the browser and does nothing.
           // We also reassure the user, but with some more instructions.
-          logger.log('If you logged in, your account is being provisioned and should be ready in a minute or two.')
-          logger.log("Try another 'nim auth login' then.")
+          const msgs = [
+            'If you logged in, your account is being provisioned and should be ready in a minute or two.',
+            'Try another \'nim auth login\' then.'
+          ]
+          logger.logOutput({ status: 'ShouldRetry' }, msgs)
         }
         return
       } else {
         logger.handleError(`Login failed.  Response was '${response}'`)
       }
     }
-    logger.log(`Stored a credential set for namespace '${credentials.namespace}' on host '${credentials.ow.apihost}'`)
+    const msgs = [
+      `Stored a credential set for namespace '${credentials.namespace}' on host '${credentials.ow.apihost}'`
+    ]
+    logger.logOutput({ status: 'Ok', namespace: credentials.namespace, apihost: credentials.ow.apihost }, msgs)
   }
 }

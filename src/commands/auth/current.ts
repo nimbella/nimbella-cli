@@ -71,10 +71,10 @@ export default class AuthInspect extends NimBaseCommand {
     if (production) {
       ans.production = creds.production
     }
-    if (Object.keys(ans).length === 1) {
+    if (Object.keys(ans).length === 1 && !flags.json) {
       logger.log(String(Object.values(ans)[0]))
     } else {
-      // The 'json' flag is not consulted because JSON output is assumed
+      // In addition to respecting --json, this command does JSON output anyway if there is more than one element
       logger.logJSON(ans)
     }
   }
