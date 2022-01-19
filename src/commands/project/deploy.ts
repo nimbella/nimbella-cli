@@ -64,7 +64,7 @@ export class ProjectDeploy extends NimBaseCommand {
       logger.handleError('only GitHub projects are deployable from the cloud')
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
-      logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github --initial\' to activate it.')
+      logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github\' to activate it.')
     }
     if (multiple && json) {
       logger.handleError('the --json flag may not be used when deploying multiple projects')

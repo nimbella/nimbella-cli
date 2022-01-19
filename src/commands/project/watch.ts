@@ -42,7 +42,7 @@ export default class ProjectWatch extends NimBaseCommand {
   static args = ProjectDeploy.args
   static strict = false
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
+  async runCommand(_rawArgv: string[], argv: string[], _args: any, flags: any, logger: NimLogger): Promise<void> {
     // If no projects specified, display help
     if (argv.length === 0) {
       this.doHelp()
@@ -54,7 +54,7 @@ export default class ProjectWatch extends NimBaseCommand {
     // Otherwise ...
     const isGithub = argv.some(project => isGithubRef(project))
     if (isGithub && !flags['anon-github']) {
-      logger.handleError('you don\'t have github authorization.  Use \'nim auth github --initial\' to activate it.')
+      logger.handleError('you don\'t have github authorization.  Use \'nim auth github\' to activate it.')
     }
     const { target, env, apihost, auth, insecure, yarn, include, exclude, json } = flags
     const cmdFlags: Flags = {

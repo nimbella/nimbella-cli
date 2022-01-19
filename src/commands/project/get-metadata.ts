@@ -38,7 +38,7 @@ export class ProjectMetadata extends NimBaseCommand {
       logger.handleError('only GitHub projects are accessible from the cloud')
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
-      logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github --initial\' to activate it.')
+      logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github\' to activate it.')
     }
     const cmdFlags: Flags = {
       verboseBuild: false,
