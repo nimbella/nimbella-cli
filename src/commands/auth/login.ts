@@ -12,10 +12,8 @@
  */
 
 import { flags } from '@oclif/command'
-import { doLogin, doAdminLogin, doInteractiveLogin, addCredentialAndSave, Credentials, authPersister, inBrowser } from '@nimbella/nimbella-deployer'
+import { doLogin, doAdminLogin, addCredentialAndSave, Credentials, authPersister } from '@nimbella/nimbella-deployer'
 import { NimBaseCommand, NimLogger, parseAPIHost } from '../../NimBaseCommand'
-import { doOAuthFlow, isFullCredentials } from '../../oauth'
-import { prompt } from '../../ui'
 
 export default class AuthLogin extends NimBaseCommand {
   static description = 'Gain access to a Nimbella namespace'
@@ -28,11 +26,12 @@ export default class AuthLogin extends NimBaseCommand {
     ...NimBaseCommand.flags
   }
 
+  // Token is not required but, if it is omitted, some flags are required.  This is checked below.
   static args = [{ name: 'token', description: 'A string provided to you for login purposes', required: false }]
 
   static aliases = ['login']
 
-  async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
+  async runCommand(_rawArgv: string[], _argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
     let credentials: Credentials
     const apihost = parseAPIHost(flags.apihost) // No default, so result may be undefined
     if (args.token) {
@@ -63,29 +62,7 @@ export default class AuthLogin extends NimBaseCommand {
         .catch((err: Error) => logger.handleError('', err))
       authPersister.saveLegacyInfo(apihost, flags.auth)
     } else {
-      // If apihost is undefined, doOAuthFlow will apply a default of https://apigcp.nimbella.io
-      const response = await doOAuthFlow(logger, false, apihost).catch(err => logger.handleError('', err))
-      if (isFullCredentials(response)) {
-        credentials = await doInteractiveLogin(response, authPersister).catch(err => logger.handleError('', err))
-      } else if (response === true) {
-        // We have two different logics here, one for CLI and one for workbench.
-        if (inBrowser) {
-          // In the workbench, a true response is the norm.  We just need to reassure the user.
-          await prompt('Login will restart the workbench with appropriate credentials (please wait)')
-        } else {
-          // In the CLI, a true response indicates a "long" provisioning (the wait for the redirect timed out).
-          // It can also happen if the user just ignores the browser and does nothing.
-          // We also reassure the user, but with some more instructions.
-          const msgs = [
-            'If you logged in, your account is being provisioned and should be ready in a minute or two.',
-            'Try another \'nim auth login\' then.'
-          ]
-          logger.logOutput({ status: 'ShouldRetry' }, msgs)
-        }
-        return
-      } else {
-        logger.handleError(`Login failed.  Response was '${response}'`)
-      }
+      logger.handleError('You must supply either a token or both --auth and --apihost')
     }
     const msgs = [
       `Stored a credential set for namespace '${credentials.namespace}' on host '${credentials.ow.apihost}'`
