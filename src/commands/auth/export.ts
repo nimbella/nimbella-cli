@@ -12,7 +12,7 @@
  */
 
 import { getCredentials, getCredentialsForNamespace, authPersister } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, disambiguateNamespace, parseAPIHost } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, disambiguateNamespace, parseAPIHost, branding } from '../../NimBaseCommand'
 import { flags } from '@oclif/command'
 
 import { getCredentialsToken } from '../../oauth'
@@ -46,9 +46,9 @@ export default class AuthExport extends NimBaseCommand {
     } else {
       logger.log(`The following token encodes credentials for namespace '${creds.namespace}' on host '${creds.ow.apihost}'`)
       if (nonExpiring) {
-        logger.log('It may be used with `nim auth login` and does not expire.')
+        logger.log(`It may be used with '${branding.cmdName} auth login' and does not expire.`)
       } else {
-        logger.log('It may be used with `nim auth login` within the next five minutes.')
+        logger.log(`It may be used with '${branding.cmdName} auth login' within the next five minutes.`)
       }
       logger.log(token)
     }

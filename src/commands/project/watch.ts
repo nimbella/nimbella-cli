@@ -12,7 +12,7 @@
  */
 
 import { Flags, Credentials, OWOptions, inBrowser, isGithubRef, delay, isExcluded } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 import { ProjectDeploy, processCredentials, doDeploy } from './deploy'
 
 import * as fs from 'fs'
@@ -20,7 +20,7 @@ import * as chokidar from 'chokidar'
 import * as path from 'path'
 
 export default class ProjectWatch extends NimBaseCommand {
-  static description = 'Watch Nimbella projects, deploying incrementally on change'
+  static description = `Watch ${branding.brand} projects, deploying incrementally on change`
 
   static flags: any = {
     target: ProjectDeploy.flags.target,
@@ -54,7 +54,7 @@ export default class ProjectWatch extends NimBaseCommand {
     // Otherwise ...
     const isGithub = argv.some(project => isGithubRef(project))
     if (isGithub && !flags['anon-github']) {
-      logger.handleError('you don\'t have github authorization.  Use \'nim auth github\' to activate it.')
+      logger.handleError(`you don't have github authorization.  Use '${branding.cmdName} auth github' to activate it.`)
     }
     const { target, env, apihost, auth, insecure, yarn, include, exclude, json } = flags
     const cmdFlags: Flags = {

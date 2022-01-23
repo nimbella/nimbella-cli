@@ -13,14 +13,14 @@
 
 import * as WorkbenchRun from './run'
 import { authPersister, getCredentials } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 import { openWorkbench } from '../../workbench'
 
 import { getCredentialsToken } from '../../oauth'
 
 // Command to open the workbench from the CLI or switch between preview and production workbench for the purpose of transferring credentials
 export default class WorkbenchLogin extends NimBaseCommand {
-  static description = 'Open the Nimbella Workbench, logging in with current credentials'
+  static description = `Open the ${branding.brand} Workbench, logging in with current credentials`
 
   static flags: typeof WorkbenchRun.default.flags = WorkbenchRun.default.flags
 

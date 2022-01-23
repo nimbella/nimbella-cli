@@ -14,12 +14,12 @@
 import { flags } from '@oclif/command'
 import { getCredentials, forgetNamespace, getCredentialList, authPersister, getApiHosts }
   from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger }
+import { NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger, branding }
   from '../../NimBaseCommand'
 import { prompt, choicePrompter } from '../../ui'
 
 export default class AuthLogout extends NimBaseCommand {
-  static description = 'Drop access to Nimbella namespaces'
+  static description = `Drop access to ${branding.brand} namespaces`
 
   static flags = {
     apihost: flags.string({ description: 'API host serving the namespace(s)' }),
