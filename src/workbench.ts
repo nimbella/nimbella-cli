@@ -11,20 +11,22 @@
  * governing permissions and limitations under the License.
  */
 
-import { NimLogger } from './NimBaseCommand'
+import { NimLogger, branding } from './NimBaseCommand'
 import { open } from './ui'
-const workbenchURL = 'https://apigcp.nimbella.io/wb'
-const previewURL = 'https://preview-apigcp.nimbella.io/workbench'
 
 // Utility to open the workbench with or without an initial command.
 // Used by both "workbench:run" and "workbench:login".
 // Not expected to be used in the browser.
 
-export function openWorkbench(command: string, preview: boolean, _logger: NimLogger): void {
+export function openWorkbench(command: string, preview: boolean, logger: NimLogger): void {
+  const url = preview ? branding.previewWorkbenchURL : branding.workbenchURL
+  if (!url) {
+    const wbName = preview ? 'A preview workbench' : 'The workbench'
+    logger.handleError(wbName + ' is not available for the current API host')
+  }
   let query = ''
   if (command) {
     query = '?command=' + encodeURIComponent(command)
   }
-  const url = (preview ? previewURL : workbenchURL) + query
-  open(url)
+  open(url + query)
 }

@@ -48,10 +48,14 @@ export interface Branding {
   cmdName: string
   // The default API host suffix
   defaultHostSuffix: string
-  // Do full API Host names start with 'api' by convention?
-  hostsStartWithApi: boolean
+  // Typical prefix on most API host names
+  hostPrefix: string
   // Instructions to user to recover when there is no current namespace
   namespaceRepair: string
+  // Production workbench URL (may be blank)
+  workbenchURL: string
+  // Preview workbench URL
+  previewWorkbenchURL: string
 }
 
 // Branding.  The values here reflect the standard 'nim from Nimbella' branding.
@@ -59,8 +63,10 @@ export let branding: Branding = {
   brand: 'Nimbella',
   cmdName: 'nim',
   defaultHostSuffix: '.nimbella.io',
-  hostsStartWithApi: true,
-  namespaceRepair: "Use 'nim logon' to create a new one or 'nim auth switch' to use an existing one"
+  hostPrefix: 'api',
+  namespaceRepair: "Use 'nim logon' to create a new one or 'nim auth switch' to use an existing one",
+  workbenchURL: 'https://apigcp.nimbella.io/wb',
+  previewWorkbenchURL: 'https://preview-apigcp.nimbella.io/workbench'
 }
 
 // A place where workbench can store its help helper
@@ -476,8 +482,8 @@ export function parseAPIHost(host: string | undefined): string | undefined {
   if (host.includes('.')) {
     return 'https://' + host
   }
-  if (branding.hostsStartWithApi && !host.startsWith('api')) {
-    host = 'api' + host
+  if (branding.hostPrefix && !host.startsWith(branding.hostPrefix)) {
+    host = branding.hostPrefix + host
   }
   return 'https://' + host + branding.defaultHostSuffix
 }
