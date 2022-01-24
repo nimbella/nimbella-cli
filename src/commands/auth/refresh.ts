@@ -14,13 +14,13 @@
 import {
   doLogin, getCredentials, getCredentialsForNamespace, authPersister
 } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace, branding } from '../../NimBaseCommand'
 import { flags } from '@oclif/command'
 import { getCredentialsToken } from '../../oauth'
 import { choicePrompter } from '../../ui'
 
 export default class AuthRefresh extends NimBaseCommand {
-    static description = 'Refresh Nimbella namespace credentials by re-reading the latest from the backend'
+    static description = `Refresh ${branding.brand} namespace credentials by re-reading the latest from the backend`
 
   static flags = {
     apihost: flags.string({ description: 'API host serving the namespace' }),

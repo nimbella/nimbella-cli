@@ -13,10 +13,10 @@
 
 import { flags } from '@oclif/command'
 import { doLogin, doAdminLogin, addCredentialAndSave, Credentials, authPersister } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, parseAPIHost } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, parseAPIHost, branding } from '../../NimBaseCommand'
 
 export default class AuthLogin extends NimBaseCommand {
-  static description = 'Gain access to a Nimbella namespace'
+  static description = `Gain access to a ${branding.brand} namespace`
 
   static flags = {
     apihost: flags.string({ description: 'API host to use for authentication' }),

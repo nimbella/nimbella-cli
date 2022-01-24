@@ -13,11 +13,11 @@
 
 import { flags } from '@oclif/command'
 import { switchNamespace, authPersister } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, parseAPIHost, disambiguateNamespace, branding } from '../../NimBaseCommand'
 import { choicePrompter } from '../../ui'
 
 export default class AuthSwitch extends NimBaseCommand {
-  static description = 'Switch to a different Nimbella namespace'
+  static description = `Switch to a different ${branding.brand} namespace`
 
   static flags = {
     apihost: flags.string({ description: 'API host serving the target namespace' }),

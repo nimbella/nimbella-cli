@@ -13,7 +13,7 @@
 
 import { flags } from '@oclif/command'
 import { getCredentialDict, authPersister, CredentialRow } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, parseAPIHost } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, parseAPIHost, branding } from '../../NimBaseCommand'
 
 import { bold } from 'chalk'
 
@@ -25,7 +25,7 @@ const NO = '    no  '
 const MAYBE = '   -?-  '
 
 export default class AuthList extends NimBaseCommand {
-  static description = 'List all your Nimbella namespaces'
+  static description = `List all your ${branding.brand} namespaces`
 
   static flags = {
     apihost: flags.string({ description: 'Only list namespaces for the specified API host' }),

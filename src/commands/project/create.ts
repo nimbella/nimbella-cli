@@ -13,12 +13,12 @@
 
 import { flags } from '@oclif/command'
 import { inBrowser } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 import { createOrUpdateProject, languages } from '../../generator/project'
 
 export default class ProjectCreate extends NimBaseCommand {
   static strict = false
-  static description = 'Create a Nimbella Project'
+  static description = `Create a ${branding.brand} Project`
   static plugins = { postman: 'ppm', openapi: 'poa', sample: 'sample' }
 
   static flags = {
@@ -58,7 +58,7 @@ export default class ProjectCreate extends NimBaseCommand {
       this.doHelp()
     }
     if (inBrowser) {
-      logger.handleError('\'project create\' needs local file access. Use the \'nim\' CLI on your local machine')
+      logger.handleError(`'project create' needs local file access. Use the '${branding.cmdName}' CLI on your local machine`)
     }
     if (flags.type && flags.type === 'sample') {
       args.project = args.project || flags.type
@@ -68,7 +68,7 @@ export default class ProjectCreate extends NimBaseCommand {
       if (command) {
         await command.load().run(rawArgv)
       } else {
-        logger.handleError(`the ${flags.type} plugin is not installed. try 'nim plugins add ${flags.type}'`)
+        logger.handleError(`the ${flags.type} plugin is not installed. try '${branding.cmdName} plugins add ${flags.type}'`)
       }
     } else {
       await createOrUpdateProject(false, args, flags, logger)

@@ -16,7 +16,7 @@ import { basename, isAbsolute, join } from 'path'
 import { existsSync, lstatSync } from 'fs'
 import { spinner } from '../../ui'
 import { StorageClient, authPersister } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 
 import { getWebStorageClient } from '../../storage/clients'
 
@@ -63,7 +63,7 @@ export default class WebContentCreate extends NimBaseCommand {
 
       const exists = await client.file(targetPath).exists()
       if (exists) {
-        logger.handleError(`${targetPath} already exists, use 'web:update' to update it. e.g. nim web update ${contentName}`)
+        logger.handleError(`${targetPath} already exists, use 'web:update' to update it. e.g. ${branding.cmdName} web update ${contentName}`)
       }
 
       loader.start(`adding ${contentName}`, 'uploading', { stdout: true })

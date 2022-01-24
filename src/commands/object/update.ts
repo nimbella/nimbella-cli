@@ -16,7 +16,7 @@ import { basename, isAbsolute } from 'path'
 import { existsSync, lstatSync } from 'fs'
 import { spinner } from '../../ui'
 import { StorageClient, authPersister } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 import { getObjectStorageClient } from '../../storage/clients'
 
 export default class ObjectUpdate extends NimBaseCommand {
@@ -57,7 +57,7 @@ export default class ObjectUpdate extends NimBaseCommand {
 
       const exists = await client.file(targetPath).exists()
       if (!exists) {
-        logger.handleError(`${targetPath} doesn't exist, use 'object:add' to add it. e.g. nim object add ${objectName}`)
+        logger.handleError(`${targetPath} doesn't exist, use 'object:add' to add it. e.g. ${branding.cmdName} object add ${objectName}`)
       }
 
       loader.start(`updating ${targetPath}`, 'uploading', { stdout: true })

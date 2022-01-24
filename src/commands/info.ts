@@ -13,17 +13,17 @@
 
 import { flags } from '@oclif/command'
 import { wskRequest, inBrowser, authPersister, getCredentials, initRuntimes } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger, parseAPIHost } from '../NimBaseCommand'
+import { NimBaseCommand, NimLogger, parseAPIHost, branding } from '../NimBaseCommand'
 import { open } from '../ui'
 
 export default class Info extends NimBaseCommand {
-  static description = "Show information about this version of 'nim'"
+  static description = `Show information about this version of '${branding.cmdName}'`
 
   static flags = {
     license: flags.boolean({ description: 'Display the license', hidden: inBrowser }),
     changes: flags.boolean({ description: 'Display the change history', hidden: inBrowser }),
     runtimes: flags.boolean({ description: 'List the supported runtimes' }),
-    limits: flags.boolean({ description: 'List the applicable Nimbella system limits' }),
+    limits: flags.boolean({ description: `List the applicable ${branding.brand} system limits` }),
     apihost: flags.string({ description: 'API host to query for runtimes and limits (ignored otherwise)', hidden: true }),
     ...NimBaseCommand.flags
   }
@@ -60,14 +60,14 @@ export default class Info extends NimBaseCommand {
       }
       const cli = pj?.version?.includes('-') ? pj : (vj || pj)
       const aio = require('@adobe/aio-cli-plugin-runtime/package.json')
-      logger.log(`Nimbella CLI version: ${cli.version}`)
+      logger.log(`${branding.brand} CLI version: ${cli.version}`)
       logger.log(`Adobe I/O version:    ${aio.version}`)
       if (!inBrowser) {
-        logger.log("'nim info --license' to display the license")
-        logger.log("'nim info --changes' to display the change history")
+        logger.log(`'${branding.cmdName} info --license' to display the license`)
+        logger.log(`'${branding.cmdName} info --changes' to display the change history`)
       }
-      logger.log("'nim info --runtimes' to display the supported runtimes")
-      logger.log("'nim info --limits' to display the limits")
+      logger.log(`'${branding.cmdName} info --runtimes' to display the supported runtimes`)
+      logger.log(`'${branding.cmdName} info --limits' to display the limits`)
     }
   }
 

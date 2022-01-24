@@ -18,12 +18,13 @@ import {
 } from '@nimbella/nimbella-deployer'
 
 import {
-  NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger, replaceErrors
+  NimBaseCommand, NimLogger, NimFeedback, parseAPIHost, disambiguateNamespace, CaptureLogger,
+  replaceErrors, branding
 } from '../../NimBaseCommand'
 import * as path from 'path'
 import { choicePrompter } from '../../ui'
 export class ProjectDeploy extends NimBaseCommand {
-  static description = 'Deploy Nimbella projects'
+  static description = `Deploy ${branding.brand} projects`
 
   static flags = {
     target: flags.string({ description: 'The target namespace' }),
@@ -64,7 +65,7 @@ export class ProjectDeploy extends NimBaseCommand {
       logger.handleError('only GitHub projects are deployable from the cloud')
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
-      logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github\' to activate it.')
+      logger.handleError(`you don't have GitHub authorization.  Use '${branding.cmdName} auth github' to activate it.`)
     }
     if (multiple && json) {
       logger.handleError('the --json flag may not be used when deploying multiple projects')
@@ -254,7 +255,7 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
       logger.log(`Skipped ${skippedWeb} unchanged web resources${bucketClause}`)
     }
     if (actions.length > 0) {
-      logger.log('Deployed actions (\'nim action get <actionName> --url\' for URL):')
+      logger.log(`Deployed actions ('${branding.brand} action get <actionName> --url' for URL):`)
       for (const action of actions) {
         logger.log(`  - ${action}`)
       }

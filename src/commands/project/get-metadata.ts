@@ -17,9 +17,9 @@ import {
   getRuntimeForAction
 } from '@nimbella/nimbella-deployer'
 
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 export class ProjectMetadata extends NimBaseCommand {
-  static description = 'Obtain metadata of a Nimbella project'
+  static description = `Obtain metadata of a ${branding.brand} project`
 
   static flags = {
     env: flags.string({ description: 'Path to environment file' }),
@@ -38,7 +38,7 @@ export class ProjectMetadata extends NimBaseCommand {
       logger.handleError('only GitHub projects are accessible from the cloud')
     }
     if (isGithub && !flags['anon-github'] && !getGithubAuth(authPersister)) {
-      logger.handleError('you don\'t have GitHub authorization.  Use \'nim auth github\' to activate it.')
+      logger.handleError(`you don't have GitHub authorization.  Use '${branding.cmdName} auth github' to activate it.`)
     }
     const cmdFlags: Flags = {
       verboseBuild: false,

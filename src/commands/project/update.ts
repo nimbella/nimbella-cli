@@ -12,14 +12,14 @@
  */
 
 import { inBrowser } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 import { createOrUpdateProject, seemsToBeProject } from '../../generator/project'
 import ProjectCreate from './create'
 import { flags } from '@oclif/command'
 
 const plugins = { postman: 'ppm', openapi: 'poa', sample: 'sample', apispecgen: 'pas' }
 export default class ProjectUpdate extends NimBaseCommand {
-  static description = 'Update a Nimbella Project'
+  static description = `Update a ${branding.brand} Project`
   static strict = false
   static flags = Object.assign(
     ProjectCreate.flags,
@@ -49,7 +49,7 @@ export default class ProjectUpdate extends NimBaseCommand {
       this.doHelp()
     }
     if (inBrowser) {
-      logger.handleError('\'project update\' needs local file access. Use the \'nim\' CLI on your local machine')
+      logger.handleError(`'project update' needs local file access. Use the '${branding.cmdName}' CLI on your local machine`)
     }
     if (!seemsToBeProject(args.project)) {
       logger.handleError(`${args.project} doesn't appear to be a project`)
@@ -61,7 +61,7 @@ export default class ProjectUpdate extends NimBaseCommand {
       if (command) {
         await command.load().run(rawArgv)
       } else {
-        logger.handleError(`the ${configCommand} plugin is not installed. try 'nim plugins add ${configCommand}'`)
+        logger.handleError(`the ${configCommand} plugin is not installed. try '${branding.cmdName} plugins add ${configCommand}'`)
       }
       return
     }
@@ -71,7 +71,7 @@ export default class ProjectUpdate extends NimBaseCommand {
       if (command) {
         await command.load().run(rawArgv)
       } else {
-        logger.handleError(`the ${flags.type} plugin is not installed. try 'nim plugins add ${flags.type}'`)
+        logger.handleError(`the ${flags.type} plugin is not installed. try '${branding.cmdName} plugins add ${flags.type}'`)
       }
     } else {
       await createOrUpdateProject(true, args, flags, logger)

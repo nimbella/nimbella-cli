@@ -12,12 +12,12 @@
  */
 
 import { flags } from '@oclif/command'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
 import { openWorkbench } from '../../workbench'
 
 // Command to open the workbench from the CLI or switch between preview and production workbench for the purpose of running a command
 export default class WorkbenchRun extends NimBaseCommand {
-  static description = 'Open the Nimbella Workbench and run a command there'
+  static description = `Open the ${branding.brand} Workbench and run a command there`
 
   static flags = {
     ...NimBaseCommand.flags,

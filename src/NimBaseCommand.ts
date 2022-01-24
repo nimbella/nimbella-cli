@@ -40,6 +40,35 @@ const debug = createDebug('nim:base')
 const verboseError = createDebug('nim:error')
 const debugJSON = createDebug('nim:json')
 
+// Schema that the 'branding' structure is expected to follow
+export interface Branding {
+  // The major brand
+  brand: string
+  // The command name
+  cmdName: string
+  // The default API host suffix
+  defaultHostSuffix: string
+  // Typical prefix on most API host names
+  hostPrefix: string
+  // Instructions to user to recover when there is no current namespace
+  namespaceRepair: string
+  // Production workbench URL (may be blank)
+  workbenchURL: string
+  // Preview workbench URL
+  previewWorkbenchURL: string
+}
+
+// Branding.  The values here reflect the standard 'nim from Nimbella' branding.
+export let branding: Branding = {
+  brand: 'Nimbella',
+  cmdName: 'nim',
+  defaultHostSuffix: '.nimbella.io',
+  hostPrefix: 'api',
+  namespaceRepair: "Use 'nim logon' to create a new one or 'nim auth switch' to use an existing one",
+  workbenchURL: 'https://apigcp.nimbella.io/wb',
+  previewWorkbenchURL: 'https://preview-apigcp.nimbella.io/workbench'
+}
+
 // A place where workbench can store its help helper
 let helpHelper: (usage: Record<string, any>) => never
 
@@ -49,6 +78,11 @@ let cli: any
 // Called from workbench init
 export function setHelpHelper(helper: (usage: Record<string, any>) => never): void {
   helpHelper = helper
+}
+
+// May be called from main or from a library interface to set branding
+export function setBranding(newValue: Branding): void {
+  branding = newValue
 }
 
 // Common behavior expected by runCommand implementations ... abstracts some features of
@@ -382,7 +416,7 @@ function improveErrorMsg(msg: string, err?: any): string {
       }
     } else if (err instanceof GaxiosError) {
       pretty = `An error occurred communicating with Cloud Storage.
-This may be a problem with your Nimbella credentials.
+This may be a problem with your ${branding.brand} credentials.
 Repeat the command with the '--verbose' flag for more detail`
     } // add more case logic here
   }
@@ -448,10 +482,10 @@ export function parseAPIHost(host: string | undefined): string | undefined {
   if (host.includes('.')) {
     return 'https://' + host
   }
-  if (!host.startsWith('api')) {
-    host = 'api' + host
+  if (branding.hostPrefix && !host.startsWith(branding.hostPrefix)) {
+    host = branding.hostPrefix + host
   }
-  return 'https://' + host + '.nimbella.io'
+  return 'https://' + host + branding.defaultHostSuffix
 }
 
 // Stuff API host and AUTH key into the environment so that AIO does not look for these in .wskprops when invoked by nim.
@@ -480,7 +514,7 @@ function fixAioCredentials(logger: NimLogger, flags: any) {
       debug(`Error retrieving credentials for '${currentNamespace}' on host '${currentHost}'`)
     }
   } else {
-    logger.handleError("You do not have a current namespace.  Use 'nim auth login' to create a new one or 'nim auth switch' to use an existing one")
+    logger.handleError(`You do not have a current namespace.  ${branding.namespaceRepair}`)
   }
   process.env.AIO_RUNTIME_APIHOST = currentHost
   process.env.AIO_RUNTIME_AUTH = currentAuth
