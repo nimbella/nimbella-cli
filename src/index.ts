@@ -26,7 +26,7 @@ export async function runNimCommand(command: string, args: string[]): Promise<Ca
 
 export {
   NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger,
-  setBranding, setHelpHelper
+  Branding, setBranding, setHelpHelper
 } from './NimBaseCommand'
 // Remaining exports are just for workbench incorporation and are not supported API
 export { setKuiOpen, setKuiPrompter } from './ui'
