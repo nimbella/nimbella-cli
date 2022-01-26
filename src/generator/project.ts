@@ -16,6 +16,7 @@ import * as path from 'path'
 import * as yaml from 'js-yaml'
 import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime } from '@nimbella/nimbella-deployer'
 import { samples } from './samples'
+import { branding } from '../NimBaseCommand'
 
 // Working function used by both create and update
 export async function createOrUpdateProject(updating: boolean, args: any, flags: any, logger: any): Promise<void> {
@@ -80,7 +81,7 @@ export async function createOrUpdateProject(updating: boolean, args: any, flags:
     const msgs = [
       `A sample project called '${args.project}' was created for you.`,
       'You may deploy it by running the command shown on the next line:',
-      `  nim project deploy ${args.project}`
+      `  ${branding.cmdName} project deploy ${args.project}`
     ]
     logger.logOutput({ status: 'Created', project: args.project }, msgs)
   }

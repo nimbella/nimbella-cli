@@ -13,7 +13,7 @@
 
 import { flags } from '@oclif/command'
 import { getGithubAccounts, deleteGithubAccount, switchGithubAccount, addGithubAccount, authPersister } from '@nimbella/nimbella-deployer'
-import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
+import { branding, NimBaseCommand, NimLogger } from '../../NimBaseCommand'
 
 type AuthGithubStatus = 'AlreadyHave' | 'MadeCurrent' | 'Ok' | 'DeletedOk' | 'DeletedDangling'
 interface AuthGithubResult {
@@ -112,7 +112,7 @@ export default class AuthGithub extends NimBaseCommand {
     case 'DeletedOk':
       break
     case 'DeletedDangling':
-      messages.push(`'${name}' was the current account; use 'nim auth github' to switch to a different account or add a new one`)
+      messages.push(`'${name}' was the current account; use '${branding.cmdName} auth github' to switch to a different account or add a new one`)
       break
     case 'NotExists':
       logger.handleError(`${name} does not denote a previously added GitHub account`)
