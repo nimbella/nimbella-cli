@@ -19,18 +19,12 @@ import { createOrUpdateProject, languages } from '../../generator/project'
 export default class ProjectCreate extends NimBaseCommand {
   static strict = false
   static description = `Create a ${branding.brand} Project`
-  static plugins = { postman: 'ppm', openapi: 'poa', sample: 'sample' }
 
   static flags = {
-    config: flags.boolean({ description: 'Generate template config file' }),
-    type: flags.string({
-      char: 't',
-      description: 'API specs source',
-      options: Object.keys(ProjectCreate.plugins)
-    }),
+    config: flags.boolean({ description: 'Generate template config file (now the default)', hidden: true }),
     language: flags.string({
       char: 'l',
-      description: 'Language for the project (creates sample project unless source is specified)',
+      description: 'Language for the project\'s initial sample',
       options: languages,
       default: 'js'
     }),
@@ -38,40 +32,12 @@ export default class ProjectCreate extends NimBaseCommand {
     ...NimBaseCommand.flags
   }
 
-  static args = [{ name: 'project', description: 'project path in the file system', required: false }]
-
-  getCommand = (type: string): any => {
-    const pluginCommands = this.config.commands.filter(c => c.pluginName.endsWith(type))
-    if (pluginCommands.length) {
-      const pluginCommand = pluginCommands.filter(c => c.id === ProjectCreate.plugins[type])
-      return pluginCommand[0]
-    }
-  }
-
-  async init():Promise<any> {
-    const { flags } = this.parse(ProjectCreate)
-    ProjectCreate.flags = Object.assign(ProjectCreate.flags, (this.getCommand(flags.type) || '').flags)
-  }
+  static args = [{ name: 'project', description: 'project path in the file system', required: true }]
 
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger):Promise<any> {
-    if (!args.project && !flags.type) {
-      this.doHelp()
-    }
     if (inBrowser) {
       logger.handleError(`'project create' needs local file access. Use the '${branding.cmdName}' CLI on your local machine`)
     }
-    if (flags.type && flags.type === 'sample') {
-      args.project = args.project || flags.type
-      await createOrUpdateProject(false, args, flags, logger)
-    } else if (flags.type) {
-      const command = this.getCommand(flags.type)
-      if (command) {
-        await command.load().run(rawArgv)
-      } else {
-        logger.handleError(`the ${flags.type} plugin is not installed. try '${branding.cmdName} plugins add ${flags.type}'`)
-      }
-    } else {
-      await createOrUpdateProject(false, args, flags, logger)
-    }
+    await createOrUpdateProject(args.project, flags, logger)
   }
 }
