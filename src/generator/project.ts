@@ -19,12 +19,24 @@ import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime } fro
 import { samples } from './samples'
 import { branding } from '../NimBaseCommand'
 
-// Working function used by both create and update
-export async function createOrUpdateProject(project: string, flags: any, logger: any): Promise<void> {
+// Contents of a "standard" .gitigore file
+// Note that we do not attempt to list typical IDE and editor temporaries here.
+// It is considered best practice for developers to list these in a personal global
+// ignore file (`core.excludesfile` in the git config) and not in a committed .gitignore.
+const gitignores = `.nimbella
+__deployer__.zip
+__pycache__/
+node_modules
+.DS_Store
+`
+
+// Working function used by project create
+export async function createProject(project: string, flags: any, logger: any): Promise<void> {
   const { overwrite, language } = flags
   const { kind, sampleText } = languageToKindAndSample(language, logger)
   const projectConfig: DeployStructure = configTemplate()
   const configFile = path.join(project, 'project.yml')
+  const gitignoreFile = path.join(project, '.gitignore')
   const samplePackage = path.join(project, 'packages', 'sample')
   if (fs.existsSync(project) && !(fs.readdirSync(project).length === 0)) {
     if (overwrite) {
@@ -33,14 +45,15 @@ export async function createOrUpdateProject(project: string, flags: any, logger:
       logger.handleError(`Cannot create project because '${project}' already exists in the file system. Use '-o' to overwrite`)
     }
   }
-  createProject(samplePackage)
+  createProjectPackage(samplePackage)
   if (kind) {
     generateSample(kind, projectConfig, sampleText, samplePackage)
   }
   // Write the config.
   const data = yaml.safeDump(projectConfig)
   fs.writeFileSync(configFile, data)
-
+  // Add the .gitignore
+  fs.writeFileSync(gitignoreFile, gitignores)
   const msgs = [
     `A sample project called '${project}' was created for you.`,
     'You may deploy it by running the command shown on the next line:',
@@ -49,7 +62,7 @@ export async function createOrUpdateProject(project: string, flags: any, logger:
   logger.logOutput({ status: 'Created', project: project }, msgs)
 }
 
-function createProject(samplePackage: string) {
+function createProjectPackage(samplePackage: string) {
   fs.mkdirSync(samplePackage, { recursive: true })
 }
 

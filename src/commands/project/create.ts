@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import { inBrowser } from '@nimbella/nimbella-deployer'
 import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
-import { createOrUpdateProject, languages } from '../../generator/project'
+import { createProject, languages } from '../../generator/project'
 
 export default class ProjectCreate extends NimBaseCommand {
   static strict = false
@@ -38,6 +38,6 @@ export default class ProjectCreate extends NimBaseCommand {
     if (inBrowser) {
       logger.handleError(`'project create' needs local file access. Use the '${branding.cmdName}' CLI on your local machine`)
     }
-    await createOrUpdateProject(args.project, flags, logger)
+    await createProject(args.project, flags, logger)
   }
 }
