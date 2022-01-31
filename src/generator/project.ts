@@ -110,9 +110,19 @@ function generateSample(kind: string, config: DeployStructure, sampleText: strin
     parameters: {},
     environment: {},
     annotations: {},
-    limits: {}
+    limits: limitsFor(runtime)
   }
   sampPkg.actions.push(action)
+}
+
+// Set time limits based on the runtime.  Most runtimes are fine with the default
+function limitsFor(runtime: string): any {
+  switch (runtime) {
+  case 'typescript':
+  case 'swift':
+    return { timeout: 5000 }
+  }
+  return {}
 }
 
 function mapLanguage(kind: string) {
