@@ -123,11 +123,6 @@ function mapLanguage(kind: string) {
   case 'javascript':
     runtime = 'nodejs'
     break
-  case 'cs':
-  case 'csharp':
-  case 'vb':
-    runtime = 'dotnet'
-    break
   case 'ts':
     runtime = 'typescript'
     break
@@ -162,5 +157,5 @@ export function seemsToBeProject(path: string): boolean {
   return false
 }
 
-export const languages = ['cs', 'csharp', 'deno', 'go', 'golang', 'java', 'js', 'javascript', 'php', 'py', 'python', 'rb', 'ruby', 'rs', 'rust', 'swift', 'ts', 'typescript']
-export const runtimes = ['ballerina', 'deno', 'dotnet', 'go', 'java', 'nodejs', 'php', 'python', 'ruby', 'rust', 'swift']
+export const languages = ['deno', 'go', 'golang', 'java', 'js', 'javascript', 'php', 'py', 'python', 'rb', 'ruby', 'rs', 'rust', 'swift', 'ts', 'typescript']
+export const runtimes = ['ballerina', 'deno', 'go', 'java', 'nodejs', 'php', 'python', 'ruby', 'rust', 'swift']
