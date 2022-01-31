@@ -14,90 +14,63 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
+import * as rimraf from 'rimraf'
 import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime } from '@nimbella/nimbella-deployer'
 import { samples } from './samples'
 import { branding } from '../NimBaseCommand'
 
-// Working function used by both create and update
-export async function createOrUpdateProject(updating: boolean, args: any, flags: any, logger: any): Promise<void> {
-  const { target, clean, config } = flags
-  const { kind, sampleText } = languageToKindAndSample(flags.language, logger)
-  let projectConfig: DeployStructure = config ? configTemplate() : (target || clean) ? {} : undefined
-  const configFile = path.join(args.project, 'project.yml')
-  const defaultPackage = path.join(args.project, 'packages', 'default')
-  if (fs.existsSync(args.project)) {
-    const isEmpty = fs.readdirSync(args.project).length === 0
-    if (updating || flags.overwrite) {
-      // TODO this code is not being exercised due to test above.  When it is re-enabled it will require change
-      if (seemsToBeProject(args.project)) {
-        if (fs.existsSync(configFile)) {
-          const configContents = String(fs.readFileSync(configFile))
-          if (configContents.includes('${')) {
-            // TODO address how this can also work if the file contains symbolic substitutions.  At present there is no safe way of
-            // auto-modifying such a file because symbols will not survive a load/store cycle as symbols (they will either break or be
-            // resolved).
-            logger.handleError('Current restriction: project update does not work if there are symbolic substitutions in the configuration')
-          }
-          projectConfig = yaml.safeLoad(configContents) as DeployStructure
-        }
-        if (kind && !fs.existsSync(defaultPackage)) {
-          fs.mkdirSync(defaultPackage, { recursive: true })
-        }
-      } else {
-        logger.handleError(`A directory or file '${args.project}' does not appear to be a project`)
-      }
-    } else if (isEmpty) {
-      createProject(defaultPackage, args)
-    } else if (seemsToBeProject(args.project)) {
-      logger.handleError(`Cannot create project because '${args.project}' already exists in the file system, use '-o' to overwrite`)
-    } else {
-      logger.handleError(`Cannot create project because '${args.project}' already exists in the file system and is non empty`)
-    }
-  } else {
-    // Create the project from scratch
-    createProject(defaultPackage, args)
-  }
-  // Add material to the project.
-  if (target) {
-    // To remove a target, user specifies '' as the target
-    projectConfig.targetNamespace = target
-  }
-  if (typeof clean === 'boolean') {
-    // TODO does oclif actually distinguish absent from negated in this way?  Moot until we re-enable update
-    projectConfig.cleanNamespace = clean
-  }
-  if (kind) {
-    generateSample(kind, config ? projectConfig : undefined, sampleText, defaultPackage)
-  }
-  // (Re)write the config.  TODO: in the update case, in addition to the problem with symbols, rewriting the config will lose the comments
-  if (projectConfig) {
-    const data = yaml.safeDump(projectConfig)
-    fs.writeFileSync(configFile, data)
-  }
+// Contents of a "standard" .gitigore file
+// Note that we do not attempt to list typical IDE and editor temporaries here.
+// It is considered best practice for developers to list these in a personal global
+// ignore file (`core.excludesfile` in the git config) and not in a committed .gitignore.
+const gitignores = `.nimbella
+__deployer__.zip
+__pycache__/
+node_modules
+.DS_Store
+`
 
-  if (updating) {
-    logger.logOutput({ status: 'Updated', project: args.project }, [`The project '${args.project}' was updated.`])
-  } else {
-    const msgs = [
-      `A sample project called '${args.project}' was created for you.`,
-      'You may deploy it by running the command shown on the next line:',
-      `  ${branding.cmdName} project deploy ${args.project}`
-    ]
-    logger.logOutput({ status: 'Created', project: args.project }, msgs)
+// Working function used by project create
+export async function createProject(project: string, flags: any, logger: any): Promise<void> {
+  const { overwrite, language } = flags
+  const { kind, sampleText } = languageToKindAndSample(language, logger)
+  const projectConfig: DeployStructure = configTemplate()
+  const configFile = path.join(project, 'project.yml')
+  const gitignoreFile = path.join(project, '.gitignore')
+  const samplePackage = path.join(project, 'packages', 'sample')
+  if (fs.existsSync(project) && !(fs.readdirSync(project).length === 0)) {
+    if (overwrite) {
+      rimraf.sync(project)
+    } else {
+      logger.handleError(`Cannot create project because '${project}' already exists in the file system. Use '-o' to overwrite`)
+    }
   }
+  createProjectPackage(samplePackage)
+  if (kind) {
+    generateSample(kind, projectConfig, sampleText, samplePackage)
+  }
+  // Write the config.
+  const data = yaml.safeDump(projectConfig)
+  fs.writeFileSync(configFile, data)
+  // Add the .gitignore
+  fs.writeFileSync(gitignoreFile, gitignores)
+  const msgs = [
+    `A sample project called '${project}' was created for you.`,
+    'You may deploy it by running the command shown on the next line:',
+    `  ${branding.cmdName} project deploy ${project}`
+  ]
+  logger.logOutput({ status: 'Created', project: project }, msgs)
 }
 
-function createProject(defaultPackage: string, args: any) {
-  fs.mkdirSync(defaultPackage, { recursive: true })
-  const web = path.join(args.project, 'web')
-  fs.mkdirSync(web)
+function createProjectPackage(samplePackage: string) {
+  fs.mkdirSync(samplePackage, { recursive: true })
 }
 
 // Make a more fully populated config (with defaults filled in and comments)
 // TODO we don't have an internal representation of comments, so we punt on that for the moment.
 function configTemplate(): DeployStructure {
   const config: DeployStructure = { targetNamespace: '', cleanNamespace: false, bucket: {}, parameters: {}, packages: [] }
-  const defPkg: PackageSpec = { name: 'default', shared: false, clean: false, environment: {}, parameters: {}, annotations: {}, actions: [] }
+  const defPkg: PackageSpec = { name: 'sample', shared: false, clean: false, environment: {}, parameters: {}, annotations: {}, actions: [] }
   config.packages.push(defPkg)
   return config
 }
@@ -116,32 +89,41 @@ function languageToKindAndSample(language: string, logger: any): { kind: string,
   logger.handleError(`${language} is not a supported language`)
 }
 
-// Generate a sample.   The sample is called 'hello'.   When we support update we will need to elaborate this when there are
-// pre-existing actions called 'hello'
-function generateSample(kind: string, config: DeployStructure | undefined, sampleText: string, defaultPackage: string) {
+// Generate a sample.   The sample is called 'hello'.
+function generateSample(kind: string, config: DeployStructure, sampleText: string, samplePackage: string) {
   kind = mapLanguage(kind)
   const [runtime] = kind.split(':')
   const suffix = fileExtensionForRuntime(runtime, false)
-  const file = path.join(defaultPackage, `hello.${suffix}`)
+  const actionDir = path.join(samplePackage, 'hello')
+  fs.mkdirSync(actionDir, { recursive: true })
+  const file = path.join(actionDir, `hello.${suffix}`)
   fs.writeFileSync(file, sampleText)
-  if (config) {
-    // Here we assume if we are given a config it is a full template already containing a default package
-    const defPkg = config.packages.find(pkg => pkg.name === 'default')
-    const action: ActionSpec = {
-      name: 'hello',
-      clean: false,
-      binary: false,
-      main: '',
-      runtime: kind,
-      web: true,
-      webSecure: false,
-      parameters: {},
-      environment: {},
-      annotations: {},
-      limits: {}
-    }
-    defPkg.actions.push(action)
+  const sampPkg = config.packages.find(pkg => pkg.name === 'sample')
+  const action: ActionSpec = {
+    name: 'hello',
+    clean: false,
+    binary: false,
+    main: '',
+    runtime: kind,
+    web: true,
+    webSecure: false,
+    parameters: {},
+    environment: {},
+    annotations: {},
+    limits: limitsFor(runtime)
   }
+  sampPkg.actions.push(action)
+}
+
+// Set time limits based on the runtime.  Most runtimes are fine with the default
+function limitsFor(runtime: string): any {
+  switch (runtime) {
+  case 'typescript':
+  case 'swift':
+  case 'java':
+    return { timeout: 5000 }
+  }
+  return {}
 }
 
 function mapLanguage(kind: string) {
@@ -151,11 +133,6 @@ function mapLanguage(kind: string) {
   case 'js':
   case 'javascript':
     runtime = 'nodejs'
-    break
-  case 'cs':
-  case 'csharp':
-  case 'vb':
-    runtime = 'dotnet'
     break
   case 'ts':
     runtime = 'typescript'
@@ -191,5 +168,5 @@ export function seemsToBeProject(path: string): boolean {
   return false
 }
 
-export const languages = ['cs', 'csharp', 'deno', 'go', 'golang', 'java', 'js', 'javascript', 'php', 'py', 'python', 'rb', 'ruby', 'rs', 'rust', 'swift', 'ts', 'typescript']
-export const runtimes = ['ballerina', 'deno', 'dotnet', 'go', 'java', 'nodejs', 'php', 'python', 'ruby', 'rust', 'swift']
+export const languages = ['deno', 'go', 'golang', 'java', 'js', 'javascript', 'php', 'py', 'python', 'rb', 'ruby', 'rs', 'rust', 'swift', 'ts', 'typescript']
+export const runtimes = ['ballerina', 'deno', 'go', 'java', 'nodejs', 'php', 'python', 'ruby', 'rust', 'swift']

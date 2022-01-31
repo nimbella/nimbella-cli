@@ -17,11 +17,9 @@
     "@adobe/aio-cli-plugin-runtime": "github:nimbella/aio-cli-plugin-runtime#v2021-11-19-1",
     "@adobe/aio-lib-core-config": "^2.0.0",
     "@adobe/aio-lib-runtime": "^2.0.0",
-    "@nimbella/nimbella-deployer": "^3.1.10",
+    "@nimbella/nimbella-deployer": "^3.1.11",
     "@oclif/command": "^1",
     "@oclif/config": "^1",
-    "@oclif/plugin-autocomplete": "^0.3.0",
-    "@oclif/plugin-plugins": "^1.9.0",
     "chalk": "^4.1.0",
     "check-node-version": "^4.0.3",
     "chokidar": "^3.4.0",
@@ -82,10 +80,6 @@
       "prerun": "./lib/hooks/prerun"
     },
     "scope": "nimbella",
-    "plugins": [
-      "@oclif/plugin-autocomplete",
-      "@oclif/plugin-plugins"
-    ],
     "macos": {
       "identifier": "com.nimbella.cli"
     },

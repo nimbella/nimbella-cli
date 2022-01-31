@@ -121,7 +121,7 @@ fn stranger() -> String {
 pub fn main(args: Value) -> Result<Value, Error> {
     let input: Input = serde_json::from_value(args)?;
     let output = Output {
-        body: format!("Hello, {}", input.name),
+        body: format!("Hello {}", input.name),
     };
     serde_json::to_value(output)
 }
