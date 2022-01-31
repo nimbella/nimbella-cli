@@ -120,6 +120,7 @@ function limitsFor(runtime: string): any {
   switch (runtime) {
   case 'typescript':
   case 'swift':
+  case 'java':
     return { timeout: 5000 }
   }
   return {}
