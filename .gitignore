@@ -24,4 +24,5 @@ sensitiveNamespaces.json
 yalc.lock
 config.json
 /tests/toomany/packages
+/tests/project-create/hello
 branding.json
