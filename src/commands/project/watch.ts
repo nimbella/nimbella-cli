@@ -109,6 +109,12 @@ async function fireDeploy(project: string, filename: string, cmdFlags: Flags, cr
     // Don't fire on directory add ... it never represents a complete change.
     return
   }
+  if (event === 'add' && isSymlink(filename)) {
+    // There may be a bug in chokidar ... we seem to get spurious add events for symlinks.
+    // We strongly discourage symlinks within projects, so a new symlink is likely to be inside
+    // a node_modules where we can ignore it.
+    return
+  }
   await reset()
   logger.log(`\nDeploying '${project}' due to change in '${filename}'`)
   let error = false
@@ -119,6 +125,16 @@ async function fireDeploy(project: string, filename: string, cmdFlags: Flags, cr
   if (error || !result) { return }
   logger.log('Deployment complete.  Resuming watch.\n')
   await delay(200).then(() => watch())
+}
+
+// Test whether a file is a symlink
+function isSymlink(filename: string): boolean {
+  try {
+    const stat = fs.lstatSync(filename)
+    return stat.isSymbolicLink()
+  } catch {
+    return false
+  }
 }
 
 // Validate a project argument to ensure that it denotes an actual directory that "looks like a project".
