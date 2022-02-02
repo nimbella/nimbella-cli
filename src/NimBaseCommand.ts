@@ -280,6 +280,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     // Set global json flag for correct handling of tables and optional debugging of command conformance.
     this.useJSON = flags.json
     await this.runCommand(this.argv, argv, args, flags, logger || this)
+    debug('runCommand returned')
   }
 
   // Helper used in the runCommand methods of aio shim classes.  Not used by Nimbella-sourced command classes.

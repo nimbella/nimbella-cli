@@ -24,6 +24,15 @@ export async function runNimCommand(command: string, args: string[]): Promise<Ca
   return logger
 }
 
+// Variant on runNimCommand with no capture (output to stdout)
+export async function runNimCommandNoCapture(command: string, args: string[]): Promise<void> {
+  const cmd = require('./commands/' + command)
+  if (!cmd || !cmd.default) {
+    throw new Error(`'${command}' is not a 'nim' command`)
+  }
+  await cmd.default.run(args, { root: __dirname })
+}
+
 export {
   NimBaseCommand, NimLogger, parseAPIHost, NimFeedback, disambiguateNamespace, CaptureLogger,
   Branding, setBranding, setHelpHelper
