@@ -7,9 +7,9 @@ teardown_file() {
 @test "deploy java projects with remote build" {
   run $NIM project deploy $BATS_TEST_DIRNAME --remote-build
 	assert_success
-	assert_line "Submitted action 'default' for remote building and deployment in runtime java:default"
-	assert_line "Submitted action 'mvn' for remote building and deployment in runtime java:default"
-	assert_line "Submitted action 'gradle' for remote building and deployment in runtime java:default"
+	assert_line -p "Submitted action 'default' for remote building and deployment in runtime java:default"
+	assert_line -p "Submitted action 'mvn' for remote building and deployment in runtime java:default"
+	assert_line -p "Submitted action 'gradle' for remote building and deployment in runtime java:default"
 }
 
 @test "invoke remotely built java lang actions" {
