@@ -1,0 +1,8 @@
+{
+    "name": "something",
+    "version": "1.0.0",
+    "main": "main.js",
+    "dependencies": {
+        "to-words": "^3.1.0"
+    }
+}
