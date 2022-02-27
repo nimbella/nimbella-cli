@@ -15,7 +15,7 @@ teardown_file() { # kv delete also being tested here
 }
 
 @test "kv set/get" { # kv set/get test
-  testValue=$(date)
+  testValue=$(date +%Y-%m-%dT%H:%M:%S%z)
 
   run $NIM key-value set $KEY_NAME "$testValue"
   assert_success
