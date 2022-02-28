@@ -26,3 +26,4 @@ config.json
 /tests/toomany/packages
 /tests/project-create/hello
 branding.json
+tests/shared_build/build/package-lock.json
