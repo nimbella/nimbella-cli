@@ -18,15 +18,17 @@ import { createProject, languages } from '../../generator/project'
 
 export default class ProjectCreate extends NimBaseCommand {
   static strict = false
-  static description = `Create a ${branding.brand} Project`
+  static description = `Create a ${branding.brand} Project.
+This command creates a ${branding.brand} project for you to evolve and modify.
+The project begins with some sample code in a chosen programming language.
+For a list of supported languages see '${branding.cmdName}' info --runtimes'.`
 
   static flags = {
     config: flags.boolean({ description: 'Generate template config file (now the default)', hidden: true }),
     language: flags.string({
       char: 'l',
       description: 'Language for the project\'s initial sample',
-      options: languages,
-      default: 'js'
+      default: 'javascript'
     }),
     overwrite: flags.boolean({ char: 'o', description: 'Overwrites the existing file(s)' }),
     ...NimBaseCommand.flags
