@@ -35,13 +35,11 @@ export default class Info extends NimBaseCommand {
       await this.displayAncillary('license', logger)
     } else if (flags.changes && !inBrowser) {
       await this.displayAncillary('changes', logger)
-    } else if (flags.runtimes || flags.limits) {
+    } else if (flags.runtimes) {
+      await this.displayRuntimes(logger)
+    } else if (flags.limits) {
       const sysinfo = await this.getSystemInfo(flags.apihost, logger)
-      if (flags.runtimes) {
-        this.displayRuntimes(sysinfo, logger)
-      } else {
-        this.displayLimits(sysinfo, logger)
-      }
+      this.displayLimits(sysinfo, logger)
     } else {
       // We want the version to include a githash.  Versions taken from package.json will have one if they were installed
       // via an update "channel" and these also have the advantage of including a channel name.  However, "stable" versions
@@ -84,7 +82,7 @@ export default class Info extends NimBaseCommand {
   }
 
   // Display the runtimes in a vaguely tabular format
-  async displayRuntimes(_: Record<string, any>, logger: NimLogger): Promise<void> {
+  async displayRuntimes(logger: NimLogger): Promise<void> {
     // Organize the information for display
     const rawDisplay: string[][] = []
     const runtimes = await initRuntimes()
@@ -94,7 +92,10 @@ export default class Info extends NimBaseCommand {
       }
     }
     // Format for display
-    const maxLanguage: number = rawDisplay.reduce((prev, curr) => curr[0].length > prev ? curr[0].length : prev, 0)
+    let maxLanguage: number = rawDisplay.reduce((prev, curr) => curr[0].length > prev ? curr[0].length : prev, 0)
+    if ('Language'.length > maxLanguage) {
+      maxLanguage = 'Language'.length
+    }
     const maxKind = rawDisplay.reduce((prev, curr) => curr[1].length > prev ? curr[1].length : prev, 0)
     const display: string[] = rawDisplay.map(entry => entry[0].padEnd(maxLanguage + 1, ' ') +
       entry[1].padEnd(maxKind + 1, ' ') + entry[2])

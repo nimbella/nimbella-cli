@@ -15,7 +15,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
 import * as rimraf from 'rimraf'
-import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime } from '@nimbella/nimbella-deployer'
+import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime, RuntimesConfig, initRuntimes, isValidRuntime } from '@nimbella/nimbella-deployer'
 import { samples } from './samples'
 import { branding } from '../NimBaseCommand'
 
@@ -34,6 +34,10 @@ node_modules
 export async function createProject(project: string, flags: any, logger: any): Promise<void> {
   const { overwrite, language } = flags
   const { kind, sampleText } = languageToKindAndSample(language, logger)
+  const validKind = await isKindAValidRuntime(kind)
+  if (!validKind) {
+    logger.handleError(`${language} is not a supported language`)
+  }
   const projectConfig: DeployStructure = configTemplate()
   const configFile = path.join(project, 'project.yml')
   const gitignoreFile = path.join(project, '.gitignore')
@@ -62,6 +66,17 @@ export async function createProject(project: string, flags: any, logger: any): P
   logger.logOutput({ status: 'Created', project: project }, msgs)
 }
 
+async function isKindAValidRuntime(kind: string): Promise<boolean> {
+  try {
+    const runtimes = await initRuntimes()
+    return isValidRuntime(runtimes, kind)
+  } catch (err) {
+    // We can't get the runtimes from the controller, hence we can't check, so we optimistically assume
+    // it's ok.  TODO perhaps we should issue a warning for this case?
+    return true
+  }
+}
+
 function createProjectPackage(samplePackage: string) {
   fs.mkdirSync(samplePackage, { recursive: true })
 }
@@ -78,20 +93,16 @@ function configTemplate(): DeployStructure {
 // Convert a user-specified language name to a runtime kind plus a sample.
 // Handle the error case of user requesting an unsupported language.
 function languageToKindAndSample(language: string, logger: any): { kind: string, sampleText: string } {
-  if (!language) {
-    return { kind: undefined, sampleText: undefined } // normal flow: user did not request a sample
-  } else {
-    language = language.toLowerCase()
+  language = language.toLowerCase()
+  if (!languages.includes(language)) {
+    logger.handleError(`${language} is not a supported language`)
   }
-  // TODO the following should be coordinated with the runtime table and some common source of samples used by playground,
-  // cloud editor, and this code
-  if (languages.includes(language)) { return { kind: language + ':default', sampleText: samples[language] } }
-  logger.handleError(`${language} is not a supported language`)
+  const kind = languageToKind(language)
+  return { kind, sampleText: samples[language] }
 }
 
 // Generate a sample.   The sample is called 'hello'.
 function generateSample(kind: string, config: DeployStructure, sampleText: string, samplePackage: string) {
-  kind = mapLanguage(kind)
   const [runtime] = kind.split(':')
   const suffix = fileExtensionForRuntime(runtime, false)
   const actionDir = path.join(samplePackage, 'hello')
@@ -126,8 +137,7 @@ function limitsFor(runtime: string): any {
   return {}
 }
 
-function mapLanguage(kind: string) {
-  const [language, variant] = kind.split(':')
+function languageToKind(language: string) {
   let runtime = language
   switch (language) {
   case 'js':
@@ -152,7 +162,7 @@ function mapLanguage(kind: string) {
   default:
     break
   }
-  return `${runtime}:${variant}`
+  return `${runtime}:default`
 }
 
 // Test whether a path in the file system is a project based on some simple heuristics.  The path is known to exist.
