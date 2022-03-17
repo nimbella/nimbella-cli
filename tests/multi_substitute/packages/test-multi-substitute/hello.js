@@ -1,8 +1,18 @@
 function main(args) {
-    let name = args.name || 'stranger'
-    let greeting = 'Hello ' + name + '!'
-    console.log(greeting)
     return {
-        "greeting": greeting
+        "parameters": [
+            {
+                "key": "A",
+                "value": args.A
+            }, 
+            {
+                "key": "B",
+                "value": args.B
+            },
+            {
+                "key": "C",
+                "value": process.env.C
+            }
+        ]
     }
 }
