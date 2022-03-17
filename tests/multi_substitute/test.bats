@@ -13,7 +13,7 @@ teardown_file() {
 }
 
 @test "deploy project with multi-level parameter substitution" {
-	run $NIM action get test-multi-substitute/hello
+	run $NIM action invoke test-multi-substitute/hello -r
 	assert_success
 	assert_output --partial '"parameters": [
     {
@@ -25,9 +25,8 @@ teardown_file() {
       "value": "this is B"
     },
     {
-      "init": true,
       "key": "C",
       "value": "this is C"
     }
-  ],'
+  ]'
 }
