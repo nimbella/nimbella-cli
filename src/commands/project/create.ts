@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import { inBrowser } from '@nimbella/nimbella-deployer'
 import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
-import { createProject, languages } from '../../generator/project'
+import { createProject } from '../../generator/project'
 
 export default class ProjectCreate extends NimBaseCommand {
   static strict = false

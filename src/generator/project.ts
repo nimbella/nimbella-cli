@@ -15,7 +15,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
 import * as rimraf from 'rimraf'
-import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime, RuntimesConfig, initRuntimes, isValidRuntime } from '@nimbella/nimbella-deployer'
+import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime, initRuntimes, isValidRuntime } from '@nimbella/nimbella-deployer'
 import { samples } from './samples'
 import { branding } from '../NimBaseCommand'
 
