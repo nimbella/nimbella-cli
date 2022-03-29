@@ -5,11 +5,11 @@ setup_file() {
 }
 
 teardown_file() {
-	$NIM web:delete public/test-web-include.html
+	$NIM web:delete lib/test-web-include.html
 }
 
 @test "deploy project with web content included" {
 	run $NIM web:list
 	assert_success
-	assert_line 'public/test-web-include.html'
+	assert_line 'lib/test-web-include.html'
 }
