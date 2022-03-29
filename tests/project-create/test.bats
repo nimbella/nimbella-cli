@@ -72,6 +72,7 @@ function test_one() {
 }
 
 @test "Test project creation for typescript" {
+  skip "Not testing typescript compile-on-demand ... times out frequently"
   run test_one typescript
   assert_output "Successful test for language typescript"
 }
