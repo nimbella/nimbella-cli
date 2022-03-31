@@ -123,6 +123,7 @@ export class CaptureLogger implements NimLogger {
   tableColumns: Record<string, unknown> // The column definition needed to format the table with cli-ux
   tableOptions: Record<string, unknown> // The options definition needed to format the table with cli-ux
   captured: string[] = [] // Captured line by line output (flowing via Logger.log)
+  errors: string[] = [] // Captured calls to displayError (these are Errors that are not supposed to be thrown)
   entity: Record<string, unknown> // An output entity if that kind of output was produced
 
   log(msg = '', ...args: any[]): void {
@@ -140,7 +141,7 @@ export class CaptureLogger implements NimLogger {
 
   displayError(msg: string, err?: Error): void {
     msg = improveErrorMsg(msg, err)
-    this.log('Error: %s', msg)
+    this.errors.push(msg)
   }
 
   exit(_code: number): void {
