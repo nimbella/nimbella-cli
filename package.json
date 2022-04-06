@@ -1,6 +1,6 @@
 {
   "name": "@nimbella/nimbella-cli",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "A comprehensive CLI for the Nimbella stack",
   "main": "lib/index.js",
   "repository": {
@@ -16,7 +16,7 @@
   "dependencies": {
     "@adobe/aio-cli-plugin-runtime": "github:nimbella/aio-cli-plugin-runtime#v2021-11-19-1",
     "@adobe/aio-lib-core-config": "^2.0.0",
-    "@nimbella/nimbella-deployer": "^4.0.3",
+    "@nimbella/nimbella-deployer": "^4.0.4",
     "@nimbella/storage": "^0.0.7",
     "@oclif/command": "^1",
     "@oclif/config": "^1",
