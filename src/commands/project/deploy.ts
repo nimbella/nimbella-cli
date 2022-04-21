@@ -184,7 +184,7 @@ function displayHeader(project: string, creds: Credentials, logger: NimLogger) {
     hostClause = `\n  on host '${creds.ow.apihost}'`
   }
   const projectPath = isGithubRef(project) ? project : path.resolve(project)
-  logger.log(`Deploying project '${projectPath}'${namespaceClause}${hostClause}`)
+  logger.log(`Deploying '${projectPath}'${namespaceClause}${hostClause}`)
 }
 
 // Display the result of a successful run when deploying a slice or when JSON is requested.
@@ -255,7 +255,7 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
       logger.log(`Skipped ${skippedWeb} unchanged web resources${bucketClause}`)
     }
     if (actions.length > 0) {
-      logger.log(`Deployed actions ('${branding.brand} action get <actionName> --url' for URL):`)
+      logger.log(branding.deployedActionsHeader)
       for (const action of actions) {
         logger.log(`  - ${action}`)
       }
