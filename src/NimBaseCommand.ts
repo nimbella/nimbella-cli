@@ -56,6 +56,8 @@ export interface Branding {
   workbenchURL: string
   // Preview workbench URL
   previewWorkbenchURL: string
+  // Display header for successful deploys
+  deployedActionsHeader: string
 }
 
 // Branding.  The values here reflect the standard 'nim from Nimbella' branding.
@@ -66,7 +68,8 @@ export let branding: Branding = {
   hostPrefix: 'api',
   namespaceRepair: "Use 'nim logon' to create a new one or 'nim auth switch' to use an existing one",
   workbenchURL: 'https://apigcp.nimbella.io/wb',
-  previewWorkbenchURL: 'https://preview-apigcp.nimbella.io/workbench'
+  previewWorkbenchURL: 'https://preview-apigcp.nimbella.io/workbench',
+  deployedActionsHeader: "Deployed actions ('nim action get <actionName> --url' for URL):"
 }
 
 // A place where workbench can store its help helper
