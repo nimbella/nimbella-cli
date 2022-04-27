@@ -84,8 +84,8 @@ function createProjectPackage(samplePackage: string) {
 // Make a more fully populated config (with defaults filled in and comments)
 // TODO we don't have an internal representation of comments, so we punt on that for the moment.
 function configTemplate(): DeployStructure {
-  const config: DeployStructure = { targetNamespace: '', cleanNamespace: false, bucket: {}, parameters: {}, packages: [] }
-  const defPkg: PackageSpec = { name: 'sample', shared: false, clean: false, environment: {}, parameters: {}, annotations: {}, actions: [] }
+  const config: DeployStructure = { targetNamespace: '', parameters: {}, packages: [] }
+  const defPkg: PackageSpec = { name: 'sample', environment: {}, parameters: {}, annotations: {}, actions: [] }
   config.packages.push(defPkg)
   return config
 }
@@ -112,12 +112,10 @@ function generateSample(kind: string, config: DeployStructure, sampleText: strin
   const sampPkg = config.packages.find(pkg => pkg.name === 'sample')
   const action: ActionSpec = {
     name: 'hello',
-    clean: false,
     binary: false,
     main: '',
     runtime: kind,
     web: true,
-    webSecure: false,
     parameters: {},
     environment: {},
     annotations: {},
