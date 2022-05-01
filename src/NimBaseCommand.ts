@@ -295,11 +295,7 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     debug('runAio with rawArgv: %O, argv: %O, args: %O, flags: %O', rawArgv, argv, args, flags)
     fixAioCredentials(logger, flags)
     const cmd = new AioClass(rawArgv, {} as IConfig)
-    if (flags.verbose) {
-      debug('verbose flag intercepted')
-      flags.verbose = false
-      verboseError.enabled = true
-    }
+    setErrorVerbosity(flags)
     reloadAioConfig()// The credentials fix doesn't take in the browser unless redone
     if (isCaptureLogger(logger)) {
       cmd.log = logger.log.bind(logger)
@@ -356,11 +352,8 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
   async init(): Promise<void> {
     const { flags } = this.parse(this.constructor as typeof NimBaseCommand)
 
-    // See https://www.npmjs.com/package/debug for usage in commands
-    if (flags.verbose) {
-      // verbose just sets the debug filter to nim:error
-      verboseError.enabled = true
-    } else if (flags.debug) {
+    setErrorVerbosity(flags)
+    if (flags.debug) {
       createDebug.enable(flags.debug)
     }
   }
@@ -389,6 +382,15 @@ export abstract class NimBaseCommand extends Command implements NimLogger {
     help: flags.boolean({ description: 'Show help' }),
     json: flags.boolean({ description: 'Provide output in JSON form' })
   }
+}
+
+// Set the error verbosity based on the verbose flag or the NIM_ERROR_VERBOSITY environment variable.
+// Also resets the verbose flag value to false for aio.
+function setErrorVerbosity(flags: any): void {
+  if (flags.verbose || process.env.NIM_ERROR_VERBOSITY) {
+    verboseError.enabled = true
+  }
+  flags.verbose = false
 }
 
 // For JSON stringify, to ensure that errors are printed
