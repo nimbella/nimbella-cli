@@ -5,7 +5,10 @@ const rimraf = require('rimraf')
 // Automatically exclude all node_modules from the bundled version
 const { nodeExternalsPlugin } = require('esbuild-node-externals')
 
-const exit = () => process.exit(1)
+const exit = (err) => {
+  console.error(err)
+  process.exit(1)
+}
 
 const removeExistingBuildOutput = async () => {
   return new Promise((resolve, reject) => {
@@ -39,4 +42,4 @@ removeExistingBuildOutput()
   .then(findSourceFiles)
   .then(build)
   .then(() => console.timeEnd('build finished in'))
-  .catch(exit)
+  .catch(err => exit(err))
