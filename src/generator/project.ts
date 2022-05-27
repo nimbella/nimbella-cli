@@ -24,6 +24,7 @@ import { branding } from '../NimBaseCommand'
 // It is considered best practice for developers to list these in a personal global
 // ignore file (`core.excludesfile` in the git config) and not in a committed .gitignore.
 const gitignores = `.nimbella
+.deployed
 __deployer__.zip
 __pycache__/
 node_modules
