@@ -14,7 +14,7 @@
 import { flags } from '@oclif/command'
 import {
   readProject, Flags, isGithubRef, getGithubAuth, authPersister, inBrowser, makeIncluder,
-  getRuntimeForAction
+  getRuntimeForAction, renameActionsToFunctions
 } from '@nimbella/nimbella-deployer'
 
 import { NimBaseCommand, NimLogger, branding } from '../../NimBaseCommand'
@@ -77,6 +77,7 @@ export class ProjectMetadata extends NimBaseCommand {
     }
 
     // Display result
+    renameActionsToFunctions(result)
     logger.logJSON(result)
   }
 }
