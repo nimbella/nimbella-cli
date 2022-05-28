@@ -15,7 +15,10 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
 import * as rimraf from 'rimraf'
-import { DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime, initRuntimes, isValidRuntime } from '@nimbella/nimbella-deployer'
+import {
+  DeployStructure, PackageSpec, ActionSpec, fileExtensionForRuntime, initRuntimes,
+  renameActionsToFunctions, isValidRuntime
+} from '@nimbella/nimbella-deployer'
 import { samples } from './samples'
 import { branding } from '../NimBaseCommand'
 
@@ -55,6 +58,7 @@ export async function createProject(project: string, flags: any, logger: any): P
     generateSample(kind, projectConfig, sampleText, samplePackage)
   }
   // Write the config.
+  renameActionsToFunctions(projectConfig)
   const data = yaml.safeDump(projectConfig)
   fs.writeFileSync(configFile, data)
   // Add the .gitignore
@@ -85,7 +89,7 @@ function createProjectPackage(samplePackage: string) {
 // Make a more fully populated config (with defaults filled in and comments)
 // TODO we don't have an internal representation of comments, so we punt on that for the moment.
 function configTemplate(): DeployStructure {
-  const config: DeployStructure = { targetNamespace: '', parameters: {}, packages: [] }
+  const config: DeployStructure = { environment: {}, parameters: {}, packages: [] }
   const defPkg: PackageSpec = { name: 'sample', environment: {}, parameters: {}, annotations: {}, actions: [] }
   config.packages.push(defPkg)
   return config
