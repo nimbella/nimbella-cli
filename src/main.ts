@@ -21,7 +21,7 @@ export async function run(): Promise<void> {
   const topics = pj.oclif.topics
   const topicNames = Object.keys(topics)
   // Compute user agent
-  const userAgent = 'nimbella-cli/' + pj.version
+  const userAgent = process.env.NIM_USER_AGENT || 'nimbella-cli/' + pj.version
   // Initialize the API environment
   initializeAPI(userAgent)
   // Split an initial colon-separated topic:command token if found.  As the topic portion could be an alias, we look for that case also
