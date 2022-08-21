@@ -11,33 +11,31 @@
  * governing permissions and limitations under the License.
  */
 
-import { inBrowser } from '@nimbella/nimbella-deployer'
 import { NimBaseCommand, NimLogger } from '../../NimBaseCommand'
-import RuntimeBaseCommand from '@adobe/aio-cli-plugin-runtime/src/RuntimeBaseCommand'
-import { prompt } from '../../ui'
-import { flags } from '@oclif/command'
-const AioCommand: typeof RuntimeBaseCommand = require('@adobe/aio-cli-plugin-runtime/src/commands/runtime/action/delete')
+import { getCredentials, authPersister, deleteAction } from '@nimbella/nimbella-deployer'
+import openwhisk from 'openwhisk'
 
 export default class ActionDelete extends NimBaseCommand {
   async runCommand(rawArgv: string[], argv: string[], args: any, flags: any, logger: NimLogger): Promise<void> {
-    if (inBrowser && flags.json) { // behave correctly when invoked from sidecar delete button
-      if (!flags.force) {
-        const ans = await prompt(`type 'yes' to really delete '${args.actionName}'`)
-        if (ans !== 'yes') {
-          logger.log('doing nothing')
-          return
-        }
-      }
+    const arg = args.actionName
+    const creds = await getCredentials(authPersister).catch(err => logger.handleError('', err))
+    const owClient = openwhisk(creds.ow)
+    const deletedAction = await deleteAction(arg, owClient)
+    if (flags.json) {
+      logger.logJSON(deletedAction)
     }
-    await this.runAio(rawArgv, argv, args, flags, logger, AioCommand)
   }
 
-  static args = AioCommand.args
+  static args = [
+    {
+      name: 'actionName',
+      required: true
+    }
+  ]
 
   static flags = {
-    force: flags.boolean({ char: 'f', description: 'Just do it, omitting confirmatory prompt' }),
-    ...AioCommand.flags
+    ...NimBaseCommand.flags // includes json flag
   }
 
-  static description = AioCommand.description
+  static description = 'deletes an action'
 }
