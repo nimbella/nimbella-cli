@@ -1,5 +1,0 @@
-packages:
-  - name: test-filtering
-    actions:
-      - name: test
-        runtime: nodejs:default

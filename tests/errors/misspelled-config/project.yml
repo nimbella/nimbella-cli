@@ -1,5 +1,0 @@
-packages:
-  - name: emayl
-    actions:
-      - name: verifier
-        runtime: nodejs:default

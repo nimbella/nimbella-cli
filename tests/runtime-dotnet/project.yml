@@ -1,6 +1,0 @@
-packages:
-  - name: test_dotnet_runtime
-    actions:
-      - name: hello
-        runtime: "dotnet:3.1"
-        main: "Apache.OpenWhisk.Example.Dotnet::Apache.OpenWhisk.Example.Dotnet.Hello::Main"

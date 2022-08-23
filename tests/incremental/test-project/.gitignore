@@ -1,5 +1,0 @@
-# This is needed to add an empty directory to git:
-# https://stackoverflow.com/questions/115983/how-can-i-add-an-empty-directory-to-a-git-repository
-*
-# Except this file
-!.gitignore

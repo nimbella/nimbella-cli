@@ -1,7 +1,0 @@
-packages:
-  - name: incremental
-    actions:
-    - name: action1
-      web: false
-    - name: action2
-      web: raw

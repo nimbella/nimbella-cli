@@ -1,6 +1,0 @@
-packages:
-  - name: test-unweb
-    actions:
-      - name: notify
-        web: false
-        webSecure: true
