@@ -31,13 +31,45 @@ const gitignores = `.nimbella
 __deployer__.zip
 __pycache__/
 node_modules
+package-lock.json
 .DS_Store
+`
+
+const ignoreForTypescript = 'lib/\n'
+
+// A canned package.json for a minimal typescript project
+const packageJsonForTypescript = `{
+  "main": "lib/hello.js",
+  "devDependencies": {
+    "typescript": "^4"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  }
+}
+`
+
+// A canned tsconfig.json for typescript project
+const tsconfigJSON = `{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "importHelpers": true,
+    "module": "commonjs",
+    "outDir": "lib",
+    "rootDir": "src",
+    "target": "es2019"
+  },
+  "include": [
+    "src/**/*"
+  ]
+}
 `
 
 // Working function used by project create
 export async function createProject(project: string, flags: any, logger: any): Promise<void> {
   const { overwrite, language } = flags
-  const { kind, sampleText } = languageToKindAndSample(language, logger)
+  const { kind, sampleText, ts } = languageToKindAndSample(language, logger)
   const validKind = await isKindAValidRuntime(kind)
   if (!validKind) {
     logger.handleError(`${language} is not a supported language`)
@@ -54,15 +86,23 @@ export async function createProject(project: string, flags: any, logger: any): P
     }
   }
   createProjectPackage(samplePackage)
-  if (kind) {
-    generateSample(kind, projectConfig, sampleText, samplePackage)
-  }
+  const actionDir = generateSample(kind, projectConfig, sampleText, samplePackage, ts)
   // Write the config.
   renameActionsToFunctions(projectConfig)
   const data = yaml.safeDump(projectConfig)
   fs.writeFileSync(configFile, data)
   // Add the .gitignore
-  fs.writeFileSync(gitignoreFile, gitignores)
+  const ignores = gitignores + (ts ? ignoreForTypescript : '')
+  fs.writeFileSync(gitignoreFile, ignores)
+  // Add typescript-specific information
+  if (ts) {
+    const pjFile = path.join(actionDir, 'package.json')
+    fs.writeFileSync(pjFile, packageJsonForTypescript)
+    const tscFile = path.join(actionDir, 'tsconfig.json')
+    fs.writeFileSync(tscFile, tsconfigJSON)
+    const includeFile = path.join(actionDir, '.include')
+    fs.writeFileSync(includeFile, 'lib\n')
+  }
   const msgs = [
     `A sample project called '${project}' was created for you.`,
     'You may deploy it by running the command shown on the next line:',
@@ -97,22 +137,29 @@ function configTemplate(): DeployStructure {
 
 // Convert a user-specified language name to a runtime kind plus a sample.
 // Handle the error case of user requesting an unsupported language.
-function languageToKindAndSample(language: string, logger: any): { kind: string, sampleText: string } {
+function languageToKindAndSample(language: string, logger: any): { kind: string, sampleText: string, ts: boolean } {
   language = language.toLowerCase()
   if (!languages.includes(language)) {
     logger.handleError(`${language} is not a supported language`)
   }
-  const kind = languageToKind(language)
-  return { kind, sampleText: samples[language] }
+  const { kind, ts } = languageToKind(language)
+  return { kind, sampleText: samples[language], ts }
 }
 
 // Generate a sample.   The sample is called 'hello'.
-function generateSample(kind: string, config: DeployStructure, sampleText: string, samplePackage: string) {
+function generateSample(kind: string, config: DeployStructure, sampleText: string, samplePackage: string, ts: boolean): string {
   const [runtime] = kind.split(':')
-  const suffix = fileExtensionForRuntime(runtime, false)
+  const suffix = ts ? 'ts' : fileExtensionForRuntime(runtime, false)
   const actionDir = path.join(samplePackage, 'hello')
   fs.mkdirSync(actionDir, { recursive: true })
-  const file = path.join(actionDir, `hello.${suffix}`)
+  let file: string
+  if (ts) {
+    const srcDir = path.join(actionDir, 'src')
+    fs.mkdirSync(srcDir)
+    file = path.join(srcDir, `hello.${suffix}`)
+  } else {
+    file = path.join(actionDir, `hello.${suffix}`)
+  }
   fs.writeFileSync(file, sampleText)
   const sampPkg = config.packages.find(pkg => pkg.name === 'sample')
   const action: ActionSpec = {
@@ -127,6 +174,7 @@ function generateSample(kind: string, config: DeployStructure, sampleText: strin
     limits: limitsFor(runtime)
   }
   sampPkg.actions.push(action)
+  return actionDir
 }
 
 // Set time limits based on the runtime.  Most runtimes are fine with the default
@@ -142,30 +190,33 @@ function limitsFor(runtime: string): any {
 
 function languageToKind(language: string) {
   let runtime = language
+  let ts = false
   switch (language) {
+  case 'ts':
+  case 'typescript':
+    ts = true
+    runtime = 'nodejs'
+    break
   case 'js':
   case 'javascript':
     runtime = 'nodejs'
     break
-  case 'ts':
-    runtime = 'typescript'
-    break
   case 'py':
     runtime = 'python'
     break
-  case 'rb':
-    runtime = 'ruby'
-    break
-  case 'rs':
-    runtime = 'rust'
-    break
+  //  case 'rb':
+  //    runtime = 'ruby'
+  //    break
+  //  case 'rs':
+  //    runtime = 'rust'
+  //    break
   case 'golang':
     runtime = 'go'
     break
   default:
     break
   }
-  return `${runtime}:default`
+  return { kind: `${runtime}:default`, ts }
 }
 
 // Test whether a path in the file system is a project based on some simple heuristics.  The path is known to exist.
