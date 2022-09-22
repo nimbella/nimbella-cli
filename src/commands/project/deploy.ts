@@ -212,9 +212,11 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
   } else {
     logger.log('')
     const actions: string[] = []
+    const triggers: string[] = []
     let deployedWeb = 0
     let skippedActions = 0
     let skippedWeb = 0
+    let skippedTriggers = 0
     for (const success of result.successes) {
       if (success.kind === 'web') {
         if (success.skipped) {
@@ -231,6 +233,12 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
             name += ` (wrapping ${success.wrapping})`
           }
           actions.push(name)
+        }
+      } else if (success.kind === 'trigger') {
+        if (success.skipped) {
+          skippedTriggers++
+        } else {
+          triggers.push(success.name)
         }
       }
     }
@@ -262,6 +270,15 @@ function displayResult(result: DeployResponse, watching: boolean, webLocal: stri
     }
     if (skippedActions > 0) {
       logger.log(`Skipped ${skippedActions} unchanged actions`)
+    }
+    if (triggers.length > 0) {
+      logger.log('Deployed triggers:')
+      for (const trigger of triggers) {
+        logger.log(`  - ${trigger}`)
+      }
+    }
+    if (skippedTriggers > 0) {
+      logger.log(`Skipped ${skippedTriggers} triggers`)
     }
     if (result.failures.length > 0) {
       success = false
