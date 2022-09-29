@@ -21,6 +21,19 @@ export default class ActionDelete extends NimBaseCommand {
     const creds = await getCredentials(authPersister).catch(err => logger.handleError('', err))
     const owClient = openwhisk(creds.ow)
     const deletedAction = await deleteAction(arg, owClient)
+    if (Array.isArray(deletedAction)) {
+      const errors = deletedAction as Error[]
+      // We have tried using AggregateError here but ran into perplexing problems.  So, using an ad hoc approach
+      // when combining errors.
+      if (errors.length > 1) {
+        const combined = Error('multiple errors occurred while deleting an action') as any
+        combined.errors = errors
+        throw combined
+      }
+      if (errors.length === 1) {
+        throw errors[0]
+      }
+    }
     if (flags.json) {
       logger.logJSON(deletedAction)
     }
